@@ -19,9 +19,13 @@
 
 
 
-//===========================
-//tcp对象
-//==========================
+
+
+
+/*============================================================
+                      数据结构定义
+==============================================================*/
+
 #define TCP_IPV4_NAME_MAX_LEN 64
 #define TCP_USER_NUM 32
 
@@ -32,7 +36,7 @@ typedef struct __tcpUser_obj{       //用户
     char used;
 }tcpUser_obj_t;
 
-
+//服务器
 typedef struct __tcp_server{
     char ipv4[TCP_IPV4_NAME_MAX_LEN];
     int port;
@@ -52,16 +56,35 @@ typedef struct __tcp_clinet{
 
 
 
+/*============================================================
+                        本地管理
+==============================================================*/
+typedef struct tcp_manager_t{
+    int pool_id;
+    char pool_name[POOL_USER_NAME_MAX_LEN];
+    //tcp_server_t *tcp[];
+}tcp_manager_t;
 
-
+tcp_manager_t tcp_local_mg = {0};
 
 //使用内存池
-int pool_id_g = -1;
-char pool_name_g[] = "tcp";
-#define POOL_MALLOC(SIZE) pool_user_malloc(pool_id_g, SIZE)
-#define POOL_FREE(HANDLE) pool_user_free(HANDLE)
+#define POOL_MALLOC(x) pool_user_malloc(tcp_local_mg.pool_id, x)
+#define POOL_FREE(x) pool_user_free(x)
+#define TCP_POOL_NAME "tcp"
 
 
+
+
+
+/*============================================================
+                            xx
+==============================================================*/
+//初始化
+void tcp_init()
+{
+    strncpy(tcp_local_mg.pool_name, TCP_POOL_NAME, POOL_USER_NAME_MAX_LEN);
+    tcp_local_mg.pool_id = pool_apply_user_id(tcp_local_mg.pool_name);
+}
 
 //用户列表管理-占用
 int tcpUser_get_id(tcp_server_t *tcp)
@@ -163,13 +186,6 @@ void tcp_client_destory(tcp_client_t * client)
 }
 
 
-//初始化
-void tcp_init()
-{
-    pool_id_g = pool_apply_user_id(pool_name_g);
-}
-
-
 //接受线程
 void *thread_tcp_accept(void *in)
 {
@@ -255,7 +271,7 @@ int tcp_client_start(tcp_client_t *client, char *ipv4, int port)
 }
 
 //读写数据
-/*============================================================
+/*-----------------------------------------------------------
 #include <unistd.h>
 
 ssize_t write(int fd, const void *buf, size_t count);
@@ -266,7 +282,7 @@ ssize_t read(int fd, void *buf, size_t count)
 返回值
 成功：读取/写入的字节数
 失败：-1
-==============================================================*/
+-----------------------------------------------------------*/
 int tcp_server_write(tcp_server_t *tcp, int userId, char *msg, int size)
 {
     if(userId < 0 || userId > TCP_USER_NUM)
@@ -326,7 +342,6 @@ void tcp_test(char *ipv4, int port)
     
     //pool_show();
 
-    
 
     while (1) 
     {
@@ -385,7 +400,7 @@ void tcp_client_test(char *ipv4, int port, char *targetIpv4, int targetPort)
 
     tcp_client_t *client = tcp_client_create(ipv4, port);
 
-    tcp_client_start(client, targetIpv4, targetPort);  
+   if(0 != tcp_client_start(client, targetIpv4, targetPort))return;  
     
     snprintf(buf521, 512, "this msg form is client [%s:%d]!", ipv4, port);
     tcp_client_send(client, buf521, strlen(buf521));

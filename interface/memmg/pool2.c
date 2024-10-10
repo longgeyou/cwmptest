@@ -30,7 +30,7 @@ typedef struct __block_obj{
 }block_obj_t;
 
 //管理
-#define POOL_BLOCK_MAX_NUM 1024
+#define POOL_BLOCK_MAX_NUM (1024*32)     //有必要增加个数
 #define POOL_TOTLE_BYTE (1024*1024*4)     //内存池总量4M
 //#define POOL_USER_MAX_NUM 256     //头文件中定义
 typedef struct __pool_mg{
@@ -147,6 +147,7 @@ static void *__apply_new_block(int id, int size)
 //释放区块
 static void __free_block(void *handle)
 {
+    if(handle == NULL)return ;
     int i;
     block_obj_t *b = pool_local_mg.block;
    
@@ -156,6 +157,7 @@ static void __free_block(void *handle)
         {
             b[i].en = 0;
             free(handle);
+            handle = NULL;   //有待考虑
             pool_local_mg.freeCnt++;
             return ;
         }
@@ -309,12 +311,15 @@ void pool_show()
             "内存池使用占比=%d 千分比\n"
             "内存池剩余字节数=%d 字节\n"
             "内存池剩占比=%d 千分比\n"
-            "分配块的个数:%d\n",
+            "总共块的个数：%d\n"
+            "分配块的个数：%d\n",
+            
             stat.totle,
             stat.used,
             stat.usedRate,
             stat.residue,
             stat.residueRate,
+            POOL_BLOCK_MAX_NUM,
             stat.blockCnt);
     for(i = 0; i < POOL_USER_MAX_NUM; i++)
     {  

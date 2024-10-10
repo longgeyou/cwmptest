@@ -22,6 +22,7 @@ SRCDIRS				:=	acs \
 					   	interface/memmg \
 					   	interface/log \
 					   	interface/linux \
+					   	interface/tool \
 					   	protocol/transport 
 
 
