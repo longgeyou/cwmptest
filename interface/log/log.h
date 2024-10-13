@@ -53,6 +53,7 @@ typedef struct log_manager_t{
     char logFileFullName[LOG_FILE_NAME_MAX_LEN];
     int maxSize;        //日志文件最大字节数(没用到，保留)
     log_level_obj llo[LOG_LEVEL_END];
+    int initCode;
 }log_manager_t;
 
 

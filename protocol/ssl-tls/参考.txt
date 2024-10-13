@@ -1,0 +1,243 @@
+﻿# SSL参考
+
+
+
+> linux的socket如何使用ssl
+
+---
+
+在 Linux 中使用 SSL/TLS 保护 Socket 通信通常需要借助 OpenSSL 库。OpenSSL 提供了一套 API 来实现安全的网络通信。以下是一个简单的示例，展示如何在客户端和服务器端使用 OpenSSL 进行 SSL/TLS 通信。
+
+### 服务器端
+
+1. **安装 OpenSSL 库**：
+   确保你的系统上已经安装了 OpenSSL 库。如果没有安装，可以使用包管理器进行安装：
+   ```sh
+   sudo apt-get install libssl-dev  # Debian/Ubuntu
+   sudo yum install openssl-devel   # CentOS/RHEL
+   ```
+
+2. **编写服务器代码**：
+   以下是一个简单的 SSL 服务器示例：
+
+   ```c
+   #include <stdio.h>
+   #include <stdlib.h>
+   #include <string.h>
+   #include <unistd.h>
+   #include <arpa/inet.h>
+   #include <openssl/ssl.h>
+   #include <openssl/err.h>
+   
+   void init_openssl() {
+       SSL_load_error_strings();
+       OpenSSL_add_ssl_algorithms();
+   }
+   
+   void cleanup_openssl() {
+       EVP_cleanup();
+   }
+   
+   SSL_CTX *create_context() {
+       const SSL_METHOD *method;
+       SSL_CTX *ctx;
+   
+       method = TLS_server_method();
+       ctx = SSL_CTX_new(method);
+       if (!ctx) {
+           perror("Unable to create SSL context");
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   
+       return ctx;
+   }
+   
+   void configure_context(SSL_CTX *ctx, const char *cert_file, const char *key_file) {
+       if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   
+       if (SSL_CTX_use_PrivateKey_file(ctx, key_file, SSL_FILETYPE_PEM) <= 0 ) {
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   }
+   
+   int main() {
+       int sock, conn, len;
+       struct sockaddr_in server_addr, client_addr;
+       SSL_CTX *ctx;
+   
+       init_openssl();
+       ctx = create_context();
+   
+       configure_context(ctx, "server-cert.pem", "server-key.pem");
+   
+       sock = socket(AF_INET, SOCK_STREAM, 0);
+       if (sock < 0) {
+           perror("Unable to create socket");
+           exit(EXIT_FAILURE);
+       }
+   
+       server_addr.sin_family = AF_INET;
+       server_addr.sin_addr.s_addr = INADDR_ANY;
+       server_addr.sin_port = htons(4433);
+   
+       if (bind(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+           perror("Unable to bind");
+           exit(EXIT_FAILURE);
+       }
+   
+       if (listen(sock, 1) < 0) {
+           perror("Unable to listen");
+           exit(EXIT_FAILURE);
+       }
+   
+       len = sizeof(client_addr);
+       conn = accept(sock, (struct sockaddr*)&client_addr, &len);
+       if (conn < 0) {
+           perror("Unable to accept");
+           exit(EXIT_FAILURE);
+       }
+   
+       SSL *ssl = SSL_new(ctx);
+       SSL_set_fd(ssl, conn);
+   
+       if (SSL_accept(ssl) <= 0) {
+           ERR_print_errors_fp(stderr);
+       } else {
+           char buffer[1024];
+           SSL_read(ssl, buffer, sizeof(buffer) - 1);
+           printf("Received: %s\n", buffer);
+   
+           const char *response = "Hello from the server";
+           SSL_write(ssl, response, strlen(response));
+       }
+   
+       SSL_shutdown(ssl);
+       SSL_free(ssl);
+       close(conn);
+       close(sock);
+       SSL_CTX_free(ctx);
+       cleanup_openssl();
+   
+       return 0;
+   }
+   ```
+
+### 客户端
+
+1. **编写客户端代码**：
+   以下是一个简单的 SSL 客户端示例：
+
+   ```c
+   #include <stdio.h>
+   #include <stdlib.h>
+   #include <string.h>
+   #include <unistd.h>
+   #include <arpa/inet.h>
+   #include <openssl/ssl.h>
+   #include <openssl/err.h>
+   
+   void init_openssl() {
+       SSL_load_error_strings();
+       OpenSSL_add_ssl_algorithms();
+   }
+   
+   void cleanup_openssl() {
+       EVP_cleanup();
+   }
+   
+   SSL_CTX *create_context() {
+       const SSL_METHOD *method;
+       SSL_CTX *ctx;
+   
+       method = TLS_client_method();
+       ctx = SSL_CTX_new(method);
+       if (!ctx) {
+           perror("Unable to create SSL context");
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   
+       return ctx;
+   }
+   
+   int main() {
+       int sock;
+       struct sockaddr_in server_addr;
+       SSL_CTX *ctx;
+       SSL *ssl;
+   
+       init_openssl();
+       ctx = create_context();
+   
+       SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+   
+       sock = socket(AF_INET, SOCK_STREAM, 0);
+       if (sock < 0) {
+           perror("Unable to create socket");
+           exit(EXIT_FAILURE);
+       }
+   
+       server_addr.sin_family = AF_INET;
+       server_addr.sin_port = htons(4433);
+       if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+           perror("Invalid address/ Address not supported");
+           exit(EXIT_FAILURE);
+       }
+   
+       if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+           perror("Connection failed");
+           exit(EXIT_FAILURE);
+       }
+   
+       ssl = SSL_new(ctx);
+       SSL_set_fd(ssl, sock);
+   
+       if (SSL_connect(ssl) <= 0) {
+           ERR_print_errors_fp(stderr);
+       } else {
+           const char *msg = "Hello from the client";
+           SSL_write(ssl, msg, strlen(msg));
+   
+           char buffer[1024];
+           SSL_read(ssl, buffer, sizeof(buffer) - 1);
+           printf("Received: %s\n", buffer);
+       }
+   
+       SSL_shutdown(ssl);
+       SSL_free(ssl);
+       close(sock);
+       SSL_CTX_free(ctx);
+       cleanup_openssl();
+   
+       return 0;
+   }
+   ```
+
+### 编译和运行
+
+1. **编译服务器和客户端代码**：
+   使用 `gcc` 编译服务器和客户端代码，并链接 OpenSSL 库：
+   ```sh
+   gcc -o server server.c -lssl -lcrypto
+   gcc -o client client.c -lssl -lcrypto
+   ```
+
+2. **生成证书和密钥**：
+   你可以使用 OpenSSL 工具生成自签名的证书和密钥：
+   ```sh
+   openssl req -new -x509 -keyout server-key.pem -out server-cert.pem -days 365 -nodes
+   ```
+
+3. **运行服务器和客户端**：
+   先启动服务器，然后启动客户端：
+   ```sh
+   ./server
+   ./client
+   ```
+
+通过以上步骤，你可以在 Linux 中使用 OpenSSL 实现安全的 SSL/TLS 通信。希望这些信息对你有帮助！如果有任何问题，欢迎继续提问。

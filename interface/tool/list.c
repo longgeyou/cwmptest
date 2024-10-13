@@ -22,6 +22,8 @@ typedef struct list_manager_t{
     int list_pool_id;
     char list_pool_name[POOL_USER_NAME_MAX_LEN];
     int list_num;
+
+    int isInit;
 }list_manager_t;
 
 list_manager_t list_local_mg = {0};
@@ -39,48 +41,69 @@ list_manager_t list_local_mg = {0};
 #define RET_OK 0
 #define RET_FAILD -1
 #define RET_EXIST 1
+
+//强制初始化
+void list_init_force()
+{
+    strncpy(list_local_mg.list_pool_name, LIST_POOL_NAME, POOL_USER_NAME_MAX_LEN);
+    list_local_mg.list_pool_id = pool_apply_user_id(list_local_mg.list_pool_name); 
+    list_local_mg.list_num = 0;
+    list_local_mg.isInit = LIST_INIT_CODE;
+}
     
 //初始化
 void list_init()
 {    
-    strncpy(list_local_mg.list_pool_name, LIST_POOL_NAME, POOL_USER_NAME_MAX_LEN);
-    list_local_mg.list_pool_id = pool_apply_user_id(list_local_mg.list_pool_name); 
-    list_local_mg.list_num = 0;
+    if(list_local_mg.isInit == LIST_INIT_CODE)return ;
+    return list_init_force(); 
 }
 
-//创建list对象
-list_obj_t *list_create(int maxSize)
+
+//list对象初始化
+int list_obj_init(list_obj_t *list, int size)
 {
-    list_obj_t *list = (list_obj_t *)POOL_MALLOC(sizeof(list_obj_t));   
-    if(list == NULL)return NULL;
+    if(list == NULL)return RET_FAILD;
 
     int i;
-    list->maxSize = maxSize;
+    list->maxSize = size;
     list->size = 0;
-    list->array = (list_member_t *)POOL_MALLOC(sizeof(list_member_t) * maxSize);
+    list->array = (list_member_t *)POOL_MALLOC(sizeof(list_member_t) * size);
     if(list->array == NULL)
     {
         POOL_FREE(list);
-        return NULL; 
+        return RET_FAILD; 
     }
-    for(i = 0 ; i < maxSize; i++)
+    for(i = 0 ; i < size; i++)
     {
         (list->array)[i].en = 0;
         (list->array)[i].data = NULL;
     }
     list_local_mg.list_num++;
+    
+    return RET_OK;
+
+}
+
+//创建list对象
+list_obj_t *list_create(int size)
+{
+    list_obj_t *list = (list_obj_t *)POOL_MALLOC(sizeof(list_obj_t));   
+    //if(list == NULL)return NULL;
+    if(RET_OK != list_obj_init(list, size))return NULL;
+
     return list;
 }
 
-//创建member，并赋值
-//list_member_t list_create_member(void *data)
-int list_member_init(list_member_t *member_p, void *data)
+//member赋值，注意member_p已经被分配了内容
+/*int list_member_init(list_member_t *member_p, void *data, int dataSize)
 {
     if(member_p == NULL)return RET_FAILD;
+
     member_p->data = data;
+    
     member_p->en = 1; 
     return RET_OK;
-}
+}*/
 
 //找到可用索引(用线性搜索法)
 static int __find_useful(list_obj_t *obj)
@@ -97,27 +120,33 @@ static int __find_useful(list_obj_t *obj)
     return RET_FAILD;
 }
 
+
+//增加成员, 
+int list_append(list_obj_t *obj, void *data, int dataSize)
+{
+    if(obj == NULL )return RET_FAILD;
+    
+    int index = __find_useful(obj);
+    list_member_t *member_p = obj->array + index;
+    if(index >= 0 || index < obj->maxSize)
+    {
+        //memcpy(member_p->data, data, dataSize);   //弃用
+        //注意 member_p->data 只是指针，所以列表是指针数组，没有分配存储数据的内存空间
+        member_p->data = data;
+        member_p->dataSize = dataSize;
+        member_p->en = 1;
+        obj->size++;
+        return RET_OK;
+    }
+    return RET_FAILD;    
+}
+
 //通过已有成员添加
 int list_append_member(list_obj_t *obj, list_member_t member)
 {
-    if(obj == NULL )return RET_FAILD;
-    member.en = 1;
-    int index = __find_useful(obj);
-    if(index >= 0 || index < obj->maxSize)
-    {
-          (obj->array)[index] = member;
-          obj->size++;
-          return RET_OK;
-    }
-    return RET_FAILD;     
+    return list_append(obj, member.data, member.dataSize);     
 }
-//增加成员
-int list_append(list_obj_t *obj, void *data)
-{
-    list_member_t member;
-    list_member_init(&member, data);
-   return list_append_member(obj, member);
-}
+
 //删除成员
 int list_remove(list_obj_t *obj, int index)
 {
@@ -127,6 +156,15 @@ int list_remove(list_obj_t *obj, int index)
     obj->size--;
     return RET_OK; 
 }
+
+//删除成员时候，对成员的操作，member_p->data 由调用者释放内存
+void list_remove_member(list_obj_t *obj, list_member_t *member_p)
+{
+    //不作判断了，调用的时候自己注意
+    obj->size--;
+    member_p->en = 0;
+}
+
 //可用成员访问
 list_member_t *list_index(list_obj_t *obj, int index)
 {
@@ -176,10 +214,10 @@ void list_test()
 {
     list_obj_t *obj = list_create(32);
     int array[] = {1,7,3,5};
-    list_append(obj, &(array[0]));
-    list_append(obj, &(array[1]));
-    list_append(obj, &(array[2]));
-    list_append(obj, &(array[3]));
+    list_append(obj, &(array[0]), sizeof(int));
+    list_append(obj, &(array[1]), sizeof(int));
+    list_append(obj, &(array[2]), sizeof(int));
+    list_append(obj, &(array[3]), sizeof(int));
 
     list_remove(obj, 2);
 

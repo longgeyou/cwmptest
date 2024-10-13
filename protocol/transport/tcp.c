@@ -8,51 +8,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #include "tcp.h"
-#include "linux.h"
-#include "log.h"
-#include "pool2.h"
-#include "linux_itf.h"
 
 
-
-
-
-
-
-
-/*============================================================
-                      数据结构定义
-==============================================================*/
-
-#define TCP_IPV4_NAME_MAX_LEN 64
-#define TCP_USER_NUM 32
-
-typedef struct __tcpUser_obj{       //用户
-    char ipv4[TCP_IPV4_NAME_MAX_LEN];
-    int port;    
-    int fd;
-    char used;
-}tcpUser_obj_t;
-
-//服务器
-typedef struct __tcp_server{
-    char ipv4[TCP_IPV4_NAME_MAX_LEN];
-    int port;
-    int fd;
-    tcpUser_obj_t user[TCP_USER_NUM];
-    //int userCnt;
-    pthread_t accept;
-}tcp_server_t;
-
-
-//客户端
-typedef struct __tcp_clinet{
-    char ipv4[TCP_IPV4_NAME_MAX_LEN];
-    int port;
-    int fd;
-}tcp_client_t;
 
 
 
@@ -60,33 +18,51 @@ typedef struct __tcp_clinet{
                         本地管理
 ==============================================================*/
 typedef struct tcp_manager_t{
-    int pool_id;
-    char pool_name[POOL_USER_NAME_MAX_LEN];
+    int poolId;
+    char poolName[POOL_USER_NAME_MAX_LEN];
     //tcp_server_t *tcp[];
+    int tcpServerCnt;
+    int tcpClientCnt;
+
+    int initCode; 
 }tcp_manager_t;
 
 tcp_manager_t tcp_local_mg = {0};
 
 //使用内存池
-#define POOL_MALLOC(x) pool_user_malloc(tcp_local_mg.pool_id, x)
+#define POOL_MALLOC(x) pool_user_malloc(tcp_local_mg.poolId, x)
 #define POOL_FREE(x) pool_user_free(x)
 #define TCP_POOL_NAME "tcp"
 
 
+//初始化
+void tcp_init()
+{
+    if(tcp_local_mg.initCode == TCP_INIT_CODE)return ;  //一次调用
+ 
+    strncpy(tcp_local_mg.poolName, TCP_POOL_NAME, POOL_USER_NAME_MAX_LEN);
+    tcp_local_mg.poolId = pool_apply_user_id(tcp_local_mg.poolName);
+
+    tcp_local_mg.tcpServerCnt = 0;
+    tcp_local_mg.tcpClientCnt = 0;
+
+    pool_init();    //依赖 pool2.c
+    //log_init();     //依赖 log.c
+    ssl_mg_init();      //使用 ssl.c
+
+    ssl_init();     //ssl初始化？？
+
+    tcp_local_mg.initCode = TCP_INIT_CODE;
+}
 
 
 
 /*============================================================
-                            xx
+                            user列表
 ==============================================================*/
-//初始化
-void tcp_init()
-{
-    strncpy(tcp_local_mg.pool_name, TCP_POOL_NAME, POOL_USER_NAME_MAX_LEN);
-    tcp_local_mg.pool_id = pool_apply_user_id(tcp_local_mg.pool_name);
-}
 
-//用户列表管理-占用
+
+//获取可用用户 index
 int tcpUser_get_id(tcp_server_t *tcp)
 {
     int i;
@@ -101,12 +77,33 @@ int tcpUser_get_id(tcp_server_t *tcp)
     return -1;  //调用者，可能会导致数组溢出
 }
 
+//新增成员
+int tcpUser_add_member(tcp_server_t *tcp, char *ipv4, int port, int fd)
+{
+    int id = tcpUser_get_id(tcp);
+    if(id >= 0)
+    {
+        strncpy(tcp->user[id].ipv4, ipv4, TCP_IPV4_NAME_MAX_LEN);
+        tcp->user[id].port = port;
+        tcp->user[id].used = 1;
+        tcp->user[id].fd = fd;
+        tcp->userCnt++;
+    }
+    else
+    {
+        LOG_ALARM("[%s:%d] user full", ipv4, port);
+    }
+
+    return id;
+}
+
 //用户列表管理-释放
 void tcpUser_release(tcp_server_t *tcp, int id)
 {
     if(id >= 0 && id < TCP_USER_NUM)
     {
         tcp->user[id].used = 0;
+        tcp->userCnt--;
     }
 }
 
@@ -141,6 +138,11 @@ int tcpUser_match_fd(tcp_server_t *tcp, int fd)
 
 
 
+
+/*============================================================
+                            对象
+==============================================================*/
+
 //tcp服务器对象创建
 tcp_server_t *tcp_server_create(char *ipv4, int port)
 {
@@ -157,13 +159,30 @@ tcp_server_t *tcp_server_create(char *ipv4, int port)
         tcp->user[i].fd = -1;
     }
     //tcp->userCnt = 0;
+
+    //ssl设置
+    ssl_obj_t *serverSsl = ssl_create();
+    ssl_server_config(serverSsl, SSL_CERT_FILE_PATH, SSL_KEY_FILE_PATH);
+    tcp->ssl = serverSsl; 
+    
+    tcp_local_mg.tcpServerCnt++;
     return tcp;
 }
 
 //tcp服务器对象摧毁
 void tcp_server_destory(tcp_server_t *tcp)
 {
-    if(tcp != NULL)POOL_FREE(tcp);
+    
+    if(tcp != NULL)
+    {
+        tcp_local_mg.tcpServerCnt--;
+
+        //成员释放
+        ssl_destory(tcp->ssl);
+        
+        POOL_FREE(tcp);
+
+    }
 }
 
 
@@ -176,15 +195,30 @@ tcp_client_t *tcp_client_create(char *ipv4, int port)
     if(ipv4 != NULL)strncpy(client->ipv4, ipv4, TCP_IPV4_NAME_MAX_LEN);
     client->port = port;
 
+     //ssl 的使用
+    ssl_obj_t *clientSsl = ssl_create();
+    ssl_client_config(clientSsl);
+    client->ssl = clientSsl;
+    
+    tcp_local_mg.tcpClientCnt++;
     return client;
 }
 
 //服务器客户端摧毁
 void tcp_client_destory(tcp_client_t * client)
 {
+    tcp_local_mg.tcpClientCnt--;
+
+    //if(client == NULL)return ;
+    //成员释放
+    if(client->ssl != NULL)ssl_destory(client->ssl);
+    
     POOL_FREE(client);
 }
 
+/*============================================================
+                            应用
+==============================================================*/
 
 //接受线程
 void *thread_tcp_accept(void *in)
@@ -192,16 +226,23 @@ void *thread_tcp_accept(void *in)
     if(in == NULL){LOG_ALARM("thread accept");return NULL;}
     tcp_server_t *tcp = (tcp_server_t *)in;
 
-    int userId, fd, port;
+    int fd, port, ret;
+    //int userId;
     char ipv4[TCP_IPV4_NAME_MAX_LEN] = {0};
+
     
     //tcp->user[userId].used = 
     while(1)
     {
         fd = LINUX_itf_accept(tcp->fd, (char *)ipv4, TCP_IPV4_NAME_MAX_LEN, &port);
+
+        //使用ssl
+        tcp->ssl->set_fd(tcp->ssl->ssl, fd);    
+
+        
         if(fd != -1)//代表成功
         {
-            while(1)    //申请用户列表资源
+            /*while(1)    //申请用户列表资源
             {
                 userId = tcpUser_get_id(tcp);
                 if(userId >= 0)
@@ -210,11 +251,19 @@ void *thread_tcp_accept(void *in)
                     tcp->user[userId].port = port;
                     tcp->user[userId].used = 1;
                     tcp->user[userId].fd = fd;
+                    tcp->userCnt++;
+                    
                     break;
-                }                
+                }  
+                //ret = tcpUser_add_member(tcp, ipv4, port, fd);
+                //if(ret >= 0)break;
+                
                 LOG_ALARM("userId");
                 system("sleep 3");    
-            }                       
+            }  */
+
+            ret = tcpUser_add_member(tcp, ipv4, port, fd);
+            if(ret < 0)LOG_ALARM("apply user list faild\n");
         }
         else
         {
@@ -263,6 +312,7 @@ int tcp_client_start(tcp_client_t *client, char *ipv4, int port)
     if(ret < 0){LOG_ALARM("clinet bind"); return ret;};
     
     //连接
+    client->ssl->set_fd(client->ssl->ssl, client->fd);  //ssl的使用   
     ret = LINUX_itf_connect(client->fd, ipv4, port);
     if(ret < 0){LOG_ALARM("clinet connect"); return ret;};
 
@@ -315,6 +365,9 @@ int tcp_client_read(tcp_client_t *cl, char *content, int size)
 }
 
 
+/*============================================================
+                            测试
+==============================================================*/
 
 //测试
 /*
@@ -340,7 +393,7 @@ void tcp_test(char *ipv4, int port)
     
     struct pollfd fds[TCP_USER_NUM] = {0};
     
-    //pool_show();
+    pool_show();
 
 
     while (1) 

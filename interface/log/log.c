@@ -33,6 +33,9 @@
 log_manager_t logLocalManager;
 
 
+#define LOG_MG_INIT_CODE 0x8080
+
+
 void log_write(int level, const char * file, const char *fmtIn, va_list valIn, const char * fmt, ...);
 void log_to_console(int level, const char *fmtIn, va_list valIn, const char * fmt, ...);
 
@@ -40,6 +43,8 @@ void log_to_console(int level, const char *fmtIn, va_list valIn, const char * fm
 
 void log_init(char *home, char *logFile)
 {
+    if(logLocalManager.initCode == LOG_MG_INIT_CODE)return; //初始化一次
+
     if(home != NULL)
         strcpy(logLocalManager.homeDir, home);
     else
@@ -79,6 +84,9 @@ void log_init(char *home, char *logFile)
     va_list val;
     log_write(LOG_LEVEL_START, logLocalManager.logFileFullName, NULL, val, "\n======================log start=======================");
     log_to_console(LOG_LEVEL_START, NULL, val, "\n======================log start=======================");
+
+
+    logLocalManager.initCode = LOG_MG_INIT_CODE;
 }
 
 void log_write(int level, const char * file, const char *fmtIn, va_list valIn, const char * fmt, ...)

@@ -37,3 +37,18 @@ This document specifies the generic requirements of the management protocol meth
 - **C** 签名凭证：安全相关
 - **D** WEB身份管理：安全相关
 - **E** 签名包格式：安全相关
+
+
+
+### 3、程序
+
+#### 3.1 简介
+
+**（1）编译环境**
+
+linux 下的编程，使用一个makefile管理工程
+
+**（2）目标**
+
+两个独立的目标，acs（Auto-Configuration Server）和cpe（Customer Premise Equipment），前者作为服务器，后者则是客户端。
+

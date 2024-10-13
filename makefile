@@ -23,7 +23,8 @@ SRCDIRS				:=	acs \
 					   	interface/log \
 					   	interface/linux \
 					   	interface/tool \
-					   	protocol/transport 
+					   	protocol/transport \
+					   	protocol/ssl-tls
 
 
 
@@ -71,12 +72,15 @@ COMMON_CFILES		:= $(foreach dir, $(COMMON_SRCDIRS), $(wildcard $(dir)/*.c))
 #VPATH 声明所有的源文件存在的路径
 VPATH				:= $(SRCDIRS)
 
-#线程
-PTHREAD			:=-lpthread
-#PTHREAD				:=
+#要链接的库：线程、openSSL等
+LINK_LIB			:=-lpthread -lssl -lcrypto
+
 
 #中间的目标文件存放点
 OBJ_DIR				:= object
+
+#gdb调试信息
+GDB_DEBUG			:= -g
 
 
 #编译
@@ -87,10 +91,10 @@ all:$(OBJ_DIR)/$(ACS_TARGET) $(OBJ_DIR)/$(CPE_TARGET)
 
 	
 $(OBJ_DIR)/$(ACS_TARGET) : $(ACS_CFILES) $(COMMON_CFILES)
-	$(CC) -Wall $(INCDIRS_PRO) -o $@ $^ $(PTHREAD)
+	$(CC) -Wall $(INCDIRS_PRO) -o $@ $^ $(LINK_LIB) $(GDB_DEBUG)
 	
 $(OBJ_DIR)/$(CPE_TARGET) : $(CPE_CFILES) $(COMMON_CFILES)
-	$(CC) -Wall $(INCDIRS_PRO) -o $@ $^ $(PTHREAD)	
+	$(CC) -Wall $(INCDIRS_PRO) -o $@ $^ $(LINK_LIB) $(GDB_DEBUG)
 
 .PHONY : clean
 clean:

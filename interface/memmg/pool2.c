@@ -38,7 +38,12 @@ typedef struct __pool_mg{
     pool_user_t user[POOL_USER_MAX_NUM];
     int mallocCnt;  //malloc次数统计(成功次数)
     int freeCnt;    //free次数统计
+
+    int initCode;  //已经被初始化 标志
 }pool_mg_t;
+
+
+#define POOL_INIT_CODE 0x8080
 
 
 static pool_mg_t pool_local_mg = {0};
@@ -47,6 +52,7 @@ static pool_mg_t pool_local_mg = {0};
 //初始化
 void pool_init()
 {
+    if(pool_local_mg.initCode == POOL_INIT_CODE)return ; // 只初始化一次
     int i;
     block_obj_t *b = pool_local_mg.block;
     pool_user_t *u = pool_local_mg.user;
@@ -67,7 +73,8 @@ void pool_init()
 
     pool_local_mg.mallocCnt = 0;
     pool_local_mg.freeCnt = 0;
-    
+
+    pool_local_mg.initCode = POOL_INIT_CODE;
 }
 //取得内存池的使用量
 static int __get_pool_used_byte()

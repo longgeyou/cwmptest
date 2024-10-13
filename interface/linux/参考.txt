@@ -1,0 +1,87 @@
+
+以下是一个简单的 TCP 服务器的示例代码，使用 C 语言和 Linux 套接字编程实现：
+
+
+#include <stdio.h>  
+#include <stdlib.h>  
+#include <string.h>  
+#include <unistd.h>  
+#include <arpa/inet.h>  
+  
+#define PORT 8080  
+#define BUF_SIZE 1024  
+  
+int main() {  
+    int server_fd, client_fd;  
+    struct sockaddr_in server_addr, client_addr;  
+    socklen_t client_len = sizeof(client_addr);  
+    char buffer[BUF_SIZE];  
+  
+    // 创建套接字  
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {  
+        perror("socket");  
+        exit(1);  
+    }  
+  
+    // 设置服务器地址信息  
+    memset(&server_addr, 0, sizeof(server_addr));  
+    server_addr.sin_family = AF_INET;  
+    server_addr.sin_addr.s_addr = INADDR_ANY;  
+    server_addr.sin_port = htons(PORT);  
+  
+    // 绑定套接字和地址  
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {  
+        perror("bind");  
+        exit(1);  
+    }  
+  
+    // 监听连接请求  
+    if (listen(server_fd, 5) == -1) {  
+        perror("listen");  
+        exit(1);  
+    }  
+  
+    printf("Server is listening on port %d...\n", PORT);  
+  
+    // 接受客户端连接请求  
+    if ((client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len)) == -1) {  
+        perror("accept");  
+        exit(1);  
+    }  
+  
+    printf("Client connected from %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));  
+  
+    // 读取客户端发送的数据并回复  
+    while (1) {  
+        memset(buffer, 0, BUF_SIZE);  
+        int n = read(client_fd, buffer, BUF_SIZE);  
+        if (n <= 0) {  
+            break;  
+        }  
+        printf("Received: %s\n", buffer);  
+        write(client_fd, buffer, n);  
+    }  
+  
+    // 关闭套接字和连接  
+    close(client_fd);  
+    close(server_fd);  
+  
+    return 0;  
+}
+
+这个示例代码创建了一个 TCP 服务器，监听本地的 8080 
+端口，等待客户端的连接请求。当客户端连接成功后，服务器会读取客户端发送的数据，?
+?回复相同的数据。当客户端断开连接时，服务器也会关闭连接并退出程序。
+
+你可以使用 gcc 编译器编译这个代码，例如：
+
+bash
+gcc server.c -o server
+
+然后在终端中运行这个服务器程序：
+
+bash
+./server
+
+现在，你可以使用 telnet 或其他 TCP 客户端工具连接到这个服务器，测试它的功能。
+
