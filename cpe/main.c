@@ -15,6 +15,8 @@
 #include "keyvalue.h"
 #include "ssl.h"
 
+//#include "httphead.h"
+
 
 
 
@@ -43,14 +45,15 @@ void test(int port)
     printf("OK! my name is cpe\n");
 
     //int port;
-    log_init("/mnt/hgfs/share/PRO/CWMP_TEST/cwmptest", "/mnt/hgfs/share/PRO/CWMP_TEST/cwmptest/debug/log2.txt");
+    log_init("/mnt/hgfs/share/PRO/CWMP_TEST/cwmptest", "/mnt/hgfs/share/PRO/CWMP_TEST/cwmptest/debug/log1.txt");
     pool_init();
-    link_init();
-    list_init();
-    dic_init();
+    link_mg_init();
+    list_mg_init();
+    dic_mg_init();
     keyvalue_init();
     ssl_mg_init();
     tcp_init();
+    //httphead_mg_init();
 
        
     if(port > 0)
@@ -60,10 +63,11 @@ void test(int port)
 	//link_test();
 	//list_test();
 	//dic_test();
-	//keyvalue_test();
+	keyvalue_test();
 	//ssl_test();
 
-	pool_show();
+    //httphead_test();
+	//pool_show();
 }
 
 

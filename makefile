@@ -22,9 +22,13 @@ SRCDIRS				:=	acs \
 					   	interface/memmg \
 					   	interface/log \
 					   	interface/linux \
-					   	interface/tool \
+					   	interface/struct \
 					   	protocol/transport \
-					   	protocol/ssl-tls
+					   	protocol/ssl-tls 
+
+					   	
+#					   	protocol/session \
+#					   	protocol/session/struct 
 
 
 
@@ -81,7 +85,7 @@ OBJ_DIR				:= object
 
 #gdb调试信息
 GDB_DEBUG			:= -g
-
+#GDB_DEBUG			:=
 
 #编译
 all:$(OBJ_DIR)/$(ACS_TARGET) $(OBJ_DIR)/$(CPE_TARGET)

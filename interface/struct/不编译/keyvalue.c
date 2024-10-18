@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "pool2.h"
-#include "list.h"
 #include "keyvalue.h"
 
 
@@ -23,13 +22,17 @@
 
 
 
-/*============================================================
+/*=============================================================
                         本地管理
 ==============================================================*/
+#define KEYVALUE_INIT_CODE 0x88
+
 typedef struct kevalue_manager_t{
     int pool_id;
     char pool_name[POOL_USER_NAME_MAX_LEN];
     int instance_num;
+
+    int initCode;
 }kevalue_manager_t;
 
 kevalue_manager_t keyvalue_local_mg = {0};
@@ -40,7 +43,7 @@ kevalue_manager_t keyvalue_local_mg = {0};
 #define KEYVALUE_POOL_NAME "keyvalue"
     
     
-/*============================================================
+/*=============================================================
                         xx
 ==============================================================*/
 //返回值
@@ -51,6 +54,9 @@ kevalue_manager_t keyvalue_local_mg = {0};
 //初始化
 void keyvalue_init()
 {    
+    if(keyvalue_local_mg.initCode == KEYVALUE_INIT_CODE)return;
+    keyvalue_local_mg.initCode = KEYVALUE_INIT_CODE;
+
     strncpy(keyvalue_local_mg.pool_name, KEYVALUE_POOL_NAME, POOL_USER_NAME_MAX_LEN);
     keyvalue_local_mg.pool_id = pool_apply_user_id(keyvalue_local_mg.pool_name); 
     keyvalue_local_mg.instance_num = 0;
@@ -173,7 +179,11 @@ int keyvalue_append_data(keyvalue_obj_t *keyvalue, keyvalue_data_t *data_p)
             {            
                 if(data_p->value != NULL &&  data_p->valueSize > 0)
                 memcpy(tmpData->value, data_p->value, data_p->valueSize);
-                isExist = 1;               
+                isExist = 1; 
+
+                //分配了动态内存的数据，再弃用的时候要及时清理，例如这里的 data_p
+                keyvalue_data_destroy(data_p);
+                
                 break;
             }
         }
@@ -267,6 +277,42 @@ void keyvalue_strRemove(keyvalue_obj_t *keyvalue, char *key)
 }
 
 
+//释放   数据 的内存
+void keyvalue_data_destroy(keyvalue_data_t *data)
+{
+    if(data == NULL)return;
+    if(data->en == 0)return;
+
+    //成员 key 和 value ，释放可能出错 
+    POOL_FREE(data->key);  
+    POOL_FREE(data->value);
+
+    POOL_FREE(data);
+
+}
+
+
+//keyvalue 对象销毁
+void keyvalue_obj_destory(keyvalue_obj_t *keyvalue)
+{
+    if(keyvalue == NULL)return ;
+
+    //成员
+    LIST_FOREACH_START(&(keyvalue->list), probe)   //遍历列表
+    {
+        keyvalue_data_destroy(probe->data);
+        //probe->data = NULL;
+        
+    }LIST_FOREACH_END;
+
+    //链表销毁
+    list_free_array(&(keyvalue->list));
+    POOL_FREE(keyvalue);    //需要保证 keyvalue 指向的是 动态内存
+}
+
+
+
+
 
 void __keyvalue_test_aux(keyvalue_obj_t  *keyvalue)
 {
@@ -301,10 +347,15 @@ void keyvalue_test()
     
     keyvalue_strRemove(keyvalue, key[2]);
 
-    __keyvalue_test_aux(keyvalue);
+    //__keyvalue_test_aux(keyvalue);
     
+    pool_show();
+
+    //keyvalue_data_destroy((keyvalue_data_t *)(keyvalue->list.array->data));
+    keyvalue_obj_destory(keyvalue);
     
-    //pool_show();
+    pool_show();
+
 }
 
 

@@ -40,11 +40,16 @@ void log_write(int level, const char * file, const char *fmtIn, va_list valIn, c
 void log_to_console(int level, const char *fmtIn, va_list valIn, const char * fmt, ...);
 
 
+//日志写入文件模式，是否覆盖
+#define LOG_MODE_OVER_WRITE 1
+
+
 
 void log_init(char *home, char *logFile)
 {
     if(logLocalManager.initCode == LOG_MG_INIT_CODE)return; //初始化一次
-
+    logLocalManager.initCode = LOG_MG_INIT_CODE;
+    
     if(home != NULL)
         strcpy(logLocalManager.homeDir, home);
     else
@@ -58,6 +63,11 @@ void log_init(char *home, char *logFile)
         logLocalManager.llo[i] = gLLO[i];
 
     FILE *fpr, *fpw;
+    
+#if(LOG_MODE_OVER_WRITE)    //清空模式   
+        fpr = fopen(logLocalManager.logFileFullName, "w");
+#endif
+
     fpr = fopen(logLocalManager.logFileFullName, "r");
     if(fpr == NULL)//说明文件不存在或者无法打开
     {
@@ -68,7 +78,7 @@ void log_init(char *home, char *logFile)
             fclose(fpw);
     }
     else
-    {
+    {        
         fseek(fpr, 0, SEEK_END);
         if(ftell(fpr) >= LOG_FILE_MAX_BYTE)//超过限制大小
         {
@@ -86,7 +96,7 @@ void log_init(char *home, char *logFile)
     log_to_console(LOG_LEVEL_START, NULL, val, "\n======================log start=======================");
 
 
-    logLocalManager.initCode = LOG_MG_INIT_CODE;
+    
 }
 
 void log_write(int level, const char * file, const char *fmtIn, va_list valIn, const char * fmt, ...)
@@ -104,6 +114,8 @@ void log_write(int level, const char * file, const char *fmtIn, va_list valIn, c
         return;
     //打开文件
     fp = fopen(file, "a");
+
+    
     if(fp == NULL)
         return;       
     //内容写入日志文件
@@ -168,7 +180,7 @@ void log_record(int level, const char *info, const char *fmt, ...)
     //附加：打印级别、时间戳
     else
         log_write(level, logLocalManager.logFileFullName, fmt, val, "[%s %d][%s]%s", 
-                logLocalManager.llo[level].name, logLocalManager.llo[level].cnt++, bufTime, info);
+                logLocalManager.llo[level].name, logLocalManager.llo[level].cnt, bufTime, info);
     va_end(val);
     
 #if(LOG_TO_CONSOLE_ENABLE)
@@ -179,10 +191,11 @@ void log_record(int level, const char *info, const char *fmt, ...)
     //附加：打印级别、时间戳
     else
         log_to_console(level, fmt, val, "[%s %d][%s]%s",  logLocalManager.llo[level].name, 
-                        logLocalManager.llo[level].cnt++, bufTime, info);
+                        logLocalManager.llo[level].cnt, bufTime, info);
     va_end(val);
 #endif
 
+    logLocalManager.llo[level].cnt++;   //计数
 }
 
 

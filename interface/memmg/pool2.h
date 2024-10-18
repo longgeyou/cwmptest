@@ -30,6 +30,10 @@ typedef struct __pool_stat{
     int userUsed[POOL_USER_MAX_NUM];
     int userUsedRate[POOL_USER_MAX_NUM];
     //char userEn[POOL_USER_MAX_NUM];
+    int mallocFaildCnt[POOL_USER_MAX_NUM];
+
+    int mallocCnt;  //请求内存总次数
+    int freeCnt; //内存释放总次数
 }pool_stat_t;
 
 

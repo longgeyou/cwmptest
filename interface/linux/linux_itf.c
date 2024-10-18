@@ -13,10 +13,6 @@
 #include <stdlib.h>  
 #include <string.h>  
 
-#include <unistd.h>  
-#include <arpa/inet.h>  
-
-
 #include "log.h"
 
 
@@ -24,6 +20,8 @@
 /*=============================================================
                         socket
 ==============================================================*/
+#include <unistd.h>  
+#include <arpa/inet.h>  
 
 
 /*----------------------------------------------
@@ -133,8 +131,35 @@ int LINUX_itf_connect(int fd, char *ipv4, int port)
 
 
 /*=============================================================
-                        ??
+                        线程
 ==============================================================*/
+#include <pthread.h>
+
+
+
+/*----------------------------------------------
+创建线程
+
+#include <pthread.h>
+
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                  void *(*start_routine) (void *), void *arg);
+
+Compile and link with -pthread.
+返回：成功返回0，失败返回错误码
+----------------------------------------------*/
+
+
+
+/*----------------------------------------------
+取消线程
+
+#include <pthread.h>
+
+int pthread_cancel(pthread_t thread);
+
+返回：成功返回0，失败返回非0错误码
+----------------------------------------------*/
 
 
 

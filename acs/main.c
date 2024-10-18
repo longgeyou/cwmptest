@@ -15,8 +15,10 @@
 #include "link.h"
 #include "list.h"
 #include "dic.h"
-#include "keyvalue.h"
+//#include "keyvalue.h"
 #include "ssl.h"
+
+//#include "http.h"
 
 
 void test();
@@ -38,21 +40,24 @@ void test()
     //int port;
     log_init("/mnt/hgfs/share/PRO/CWMP_TEST/cwmptest", "/mnt/hgfs/share/PRO/CWMP_TEST/cwmptest/debug/log2.txt");
     pool_init();
-    link_init();
-    list_init();
-    dic_init();
-    keyvalue_init();
+    link_mg_init();
+    list_mg_init();
+    dic_mg_init();
+    //keyvalue_init();
     ssl_mg_init();
     tcp_init();
+    //http_mg_init();
 	
 	//link_test();
 	//list_test();
 	//dic_test();
 	//keyvalue_test();
 	//ssl_test();
-    tcp_test("192.168.1.20", 8080);
+    //tcp_test("192.168.1.20", 8080);
 
-	pool_show();
+    //http_test();
+
+	//pool_show();
 }
 
 

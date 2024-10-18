@@ -38,7 +38,8 @@ typedef struct __pool_mg{
     pool_user_t user[POOL_USER_MAX_NUM];
     int mallocCnt;  //malloc次数统计(成功次数)
     int freeCnt;    //free次数统计
-
+    int mallocFaildCnt[POOL_USER_MAX_NUM]; //内存分配失败次数统计
+    
     int initCode;  //已经被初始化 标志
 }pool_mg_t;
 
@@ -53,9 +54,12 @@ static pool_mg_t pool_local_mg = {0};
 void pool_init()
 {
     if(pool_local_mg.initCode == POOL_INIT_CODE)return ; // 只初始化一次
+    pool_local_mg.initCode = POOL_INIT_CODE;
+    
     int i;
     block_obj_t *b = pool_local_mg.block;
     pool_user_t *u = pool_local_mg.user;
+    
     
     for(i = 0; i < POOL_BLOCK_MAX_NUM; i++)
     {
@@ -65,6 +69,8 @@ void pool_init()
     for(i = 0; i < POOL_USER_MAX_NUM; i++)
     {
         u[i].en = 0;
+
+        pool_local_mg.mallocFaildCnt[i] = 0;
     }
 
     //默认用户
@@ -74,7 +80,7 @@ void pool_init()
     pool_local_mg.mallocCnt = 0;
     pool_local_mg.freeCnt = 0;
 
-    pool_local_mg.initCode = POOL_INIT_CODE;
+    
 }
 //取得内存池的使用量
 static int __get_pool_used_byte()
@@ -189,13 +195,17 @@ void pool_statistic(pool_stat_t *stat)
     stat->residue = POOL_TOTLE_BYTE - usedByte;
     stat->residueRate = (long long)(stat->residue) * 1000 / POOL_TOTLE_BYTE;   
     stat->blockCnt = __get_pool_block_num();
-
+    stat->mallocCnt = pool_local_mg.mallocCnt;
+    stat->freeCnt = pool_local_mg.freeCnt;
+    
     block_obj_t *b = pool_local_mg.block;
     pool_user_t *u = pool_local_mg.user;
-    //for(i = 0; i < POOL_USER_MAX_NUM; i++)
-    //{  
-    //    stat->userEn[i] = 0; //清零
-    //}
+    
+    for(i = 0; i < POOL_USER_MAX_NUM; i++)
+    {  
+        stat->mallocFaildCnt[i] = pool_local_mg.mallocFaildCnt[i]; //内存失败分配次数
+    }
+    
     for(i = 0; i < POOL_BLOCK_MAX_NUM; i++)
     {   
         if(b[i].en == 1 && b[i].handle != NULL && b[i].id < POOL_USER_MAX_NUM) //用户id号是用户数组的序号
@@ -212,6 +222,7 @@ void pool_statistic(pool_stat_t *stat)
 
     for(i = 0; i < POOL_USER_MAX_NUM; i++)
     {   
+    
         if(b[i].en == 1 && b[i].id < POOL_USER_MAX_NUM) //用户id号是用户数组的序号
         {
             stat->userUsedRate[b[i].id] = (long long)(stat->userUsed[b[i].id]) * 1000 / POOL_TOTLE_BYTE;   //千分比
@@ -283,7 +294,14 @@ void pool_free_by_userId(int userId)
 //用户malloc接口
 void *pool_user_malloc(int id, int size)
 {
-    return __apply_new_block(id, size);
+    void *ret = __apply_new_block(id, size);
+
+    if(ret == NULL)
+    {
+        pool_local_mg.mallocFaildCnt[id]++;
+    }
+
+    return ret;
 }
 
 //用户free接口
@@ -319,7 +337,9 @@ void pool_show()
             "内存池剩余字节数=%d 字节\n"
             "内存池剩占比=%d 千分比\n"
             "总共块的个数：%d\n"
-            "分配块的个数：%d\n",
+            "分配块的个数：%d\n"
+            "请求内存总次数：%d\n"
+            "释放内存总次数:%d\n",
             
             stat.totle,
             stat.used,
@@ -327,17 +347,20 @@ void pool_show()
             stat.residue,
             stat.residueRate,
             POOL_BLOCK_MAX_NUM,
-            stat.blockCnt);
+            stat.blockCnt,
+            stat.mallocCnt,
+            stat.freeCnt);
     for(i = 0; i < POOL_USER_MAX_NUM; i++)
     {  
         //if(stat.userEn[i] == 1)
         if(user[i].en == 1)
         {
-            printf("用户%d\t[%s]\t使用字节：%d字节\t        占比：%d 千分比\n",
+            printf("用户%d\t[%s]\t\t使用字节：%d字节\t        占比：%d 千分比\t内存分配失败次数:%d\n",
                     i,
                     user[i].name,
                     stat.userUsed[i],
-                    stat.userUsedRate[i]);
+                    stat.userUsedRate[i],
+                    stat.mallocFaildCnt[i]);
         }
     }
     printf("====================== end =====================\n"); 

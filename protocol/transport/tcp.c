@@ -88,6 +88,13 @@ int tcpUser_add_member(tcp_server_t *tcp, char *ipv4, int port, int fd)
         tcp->user[id].used = 1;
         tcp->user[id].fd = fd;
         tcp->userCnt++;
+
+        // 初始化自旋锁
+        //pthread_spin_init(&(tcp->user[id].spinlock), 0); 
+
+        //初始化互斥锁
+        //tcp->user[id].mutex = PTHREAD_MUTEX_INITIALIZER;
+        pthread_mutex_init(&(tcp->user[id].mutex), NULL);
     }
     else
     {
@@ -104,6 +111,8 @@ void tcpUser_release(tcp_server_t *tcp, int id)
     {
         tcp->user[id].used = 0;
         tcp->userCnt--;
+
+        pthread_mutex_destroy(&(tcp->user[id].mutex));     
     }
 }
 
@@ -157,6 +166,7 @@ tcp_server_t *tcp_server_create(char *ipv4, int port)
     {
         tcp->user[i].used = 0;
         tcp->user[i].fd = -1;
+        tcp->user[i].disconnect = 0;    //失去连接 指示
     }
     //tcp->userCnt = 0;
 
@@ -164,6 +174,13 @@ tcp_server_t *tcp_server_create(char *ipv4, int port)
     ssl_obj_t *serverSsl = ssl_create();
     ssl_server_config(serverSsl, SSL_CERT_FILE_PATH, SSL_KEY_FILE_PATH);
     tcp->ssl = serverSsl; 
+
+    //初始化 互斥锁和条件变量
+    //tcp->mutex = PTHREAD_MUTEX_INITIALIZER;
+    //tcp->cond = PTHREAD_COND_INITIALIZER;
+
+    //初始化信号量
+    sem_init(&(tcp->semBufReady), 0, 0);
     
     tcp_local_mg.tcpServerCnt++;
     return tcp;
@@ -177,9 +194,26 @@ void tcp_server_destory(tcp_server_t *tcp)
     {
         tcp_local_mg.tcpServerCnt--;
 
-        //成员释放
-        ssl_destory(tcp->ssl);
+        //1、成员释放
         
+        //1.1 ssl对象释放
+        ssl_destory(tcp->ssl);
+
+        //1.2 互斥锁和条件变量
+        //pthread_mutex_destroy(tcp->mutex);
+        //pthread_cond_destroy(tcp->cond);
+        
+        //信号量
+        sem_destroy(&(tcp->semBufReady));
+        
+
+        //1.3 释放线程 用户握手线程accept、用户数据收发线程等
+        
+        
+        //1.4 关闭 服务器socket、关闭用户的连接
+        
+        
+        //3、释放tcp对象
         POOL_FREE(tcp);
 
     }
@@ -217,7 +251,7 @@ void tcp_client_destory(tcp_client_t * client)
 }
 
 /*============================================================
-                            应用
+                            开启的线程
 ==============================================================*/
 
 //接受线程
@@ -276,6 +310,110 @@ void *thread_tcp_accept(void *in)
 }
 
 
+//收发器线程
+void *thread_tcp_transceiver(void *in)
+{
+//#define READ_BLOCK_SIZE 24   //每次读取的字节数，一般设计得比用户读取数据的缓存小
+    if(in == NULL){LOG_ALARM("in");return NULL;}
+
+    int i, ret;
+    //char buf[READ_BLOCK_SIZE + 8] = {0};    // + 8 是为了 冗余
+    //int len;
+    tcp_server_t *tcp = (tcp_server_t *)in;
+    if(tcp == NULL){LOG_ALARM("tcp");return NULL;}
+    tcpUser_obj_t *user_p;
+
+    //使用 poll 方法来并发处理用户的数据收发
+    struct pollfd fds[TCP_USER_NUM] = {0};
+   
+    while (1) 
+    {
+        //将有效用户的文件描述符，添加到 集合中
+        for(i = 0; i < TCP_USER_NUM; i++)
+        {
+            if(tcp->user[i].used == 1 && user_p->disconnect == 0)
+            {
+                fds[i].fd = tcp->user[i].fd;
+                fds[i].events = POLLIN;
+            }
+            else
+            {
+                memset(&(fds[i]), 0, sizeof(struct pollfd));    //这一步可能有问题
+            }
+        }
+        
+        ret = poll(fds, TCP_USER_NUM, 2000); // 阻塞直到有事件发生或超时
+        if (ret == -1) 
+        {
+            LOG_ALARM("poll");
+            system("sleep 3");
+            continue;
+        }
+
+
+        //读取的长度len大于0，说明有数据可读；等于0，代表断开连接，小于0，没有数据
+        for(i = 0; i < TCP_USER_NUM; i++)
+        {
+            user_p = &(tcp->user[i]);
+
+            if ((user_p->used == 1) && 
+                    user_p->disconnect == 0 && 
+                    (fds[i].revents & POLLIN))  //有数据进入
+            {
+                //memset(buf, '\0', strlen(buf));                 
+                //len = read(fds[i].fd, buf, READ_BLOCK_SIZE); 
+
+                LOG_SHOW("---->POLL    IN\n");
+                
+                pthread_mutex_lock(&(user_p->mutex));   //该锁用于保护 tcp user 缓存相关的资源
+                
+                if(user_p->bufReady == 1)continue;
+                memset(user_p->buf, '\0', TCP_USER_BUF_SIZE + 1);   // + 1 位 
+                user_p->bufLen = read(fds[i].fd, user_p->buf, TCP_USER_BUF_SIZE); 
+                
+                pthread_mutex_unlock(&(user_p->mutex));
+                
+                if(user_p->bufLen == 0)    
+                {
+                    if(user_p->disconnect != 1)
+                    {
+                        LOG_INFO("i=%d [%s-%d] 断开连接\n", i, user_p->ipv4, user_p->port);
+                        user_p->disconnect = 1;     //断开连接标记
+                    }
+                    
+                    
+                    //tcpUser_release(tcp, i);
+                }                
+                else if(user_p->bufLen > 0)
+                {                    
+//                     LOG_SHOW("\n【用户id：%d ip地址：%s:%d 读取的字节：%dbyte】\n"
+//                               "------------------------------------\n"
+//                               "%s\n------------------------------------\n\n",
+//                               i, user_p->ipv4, user_p->port, user_p->bufLen, user_p->buf); 
+                               
+                     pthread_mutex_lock(&(user_p->mutex));          
+                     user_p->bufReady = 1;
+                     pthread_mutex_unlock(&(user_p->mutex));
+                     
+                     sem_post(&(tcp->semBufReady)); //发出信号量
+                }
+
+                
+                
+                
+            }
+
+            
+
+
+            
+        }
+        
+    }
+}
+/*============================================================
+                            应用
+==============================================================*/
 
 //开启tcp服务器
 int tcp_server_start(tcp_server_t *tcp)
@@ -283,17 +421,21 @@ int tcp_server_start(tcp_server_t *tcp)
     int ret;
     //绑定
     ret = LINUX_itf_bind(tcp->ipv4, tcp->port, &(tcp->fd));
-    if(ret < 0){LOG_ALARM("bind"); return ret;};
+    if(ret < 0){LOG_ALARM("bind faild"); return ret;};
     
     //监听
     ret = LINUX_itf_listen(tcp->fd);
-    if(ret < 0){LOG_ALARM("listen"); return ret;};
+    if(ret < 0){LOG_ALARM("listen ..."); return ret;};
     
     //等待连接（开启线程）
     /*int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                           void *(*start_routine) (void *), void *arg);*/
     ret = pthread_create(&(tcp->accept), NULL, thread_tcp_accept, (void *)tcp);
-    if(ret != 0){LOG_ALARM("pthread"); return ret;};
+    if(ret != 0){LOG_ERROR("thread_tcp_accept error"); return ret;};
+
+    //开启 数据接收线程
+    ret = pthread_create(&(tcp->transceiver), NULL, thread_tcp_transceiver, (void *)tcp);
+    if(ret != 0){LOG_ERROR("thread_tcp_transceiver error"); return ret;};
 
     return 0;
 }
@@ -343,7 +485,7 @@ int tcp_server_write(tcp_server_t *tcp, int userId, char *msg, int size)
     return write(tcp->user[userId].fd, msg, size);
 }
 
-int tcp_server_read(tcp_server_t *tcp, int userId, char *content, int size)
+int tcp_server_read(tcp_server_t *tcp, int userId, char *content, int size) //访问可能要考虑  资源竞争和互斥锁
 {
     if(userId < 0 || userId > TCP_USER_NUM)
     {
@@ -428,6 +570,8 @@ void tcp_test(char *ipv4, int port)
                 if(len == 0)  //读取的长度len大于0，说明有数据可读；等于0，代表断开连接，小于0，没有数据
                 {
                     LOG_INFO("i=%d [%s-%d] 断开连接\n", i, tcp->user[i].ipv4, tcp->user[i].port);
+
+                    
                     tcpUser_release(tcp, i);
                 }
                 else if(len > 0)
@@ -435,6 +579,7 @@ void tcp_test(char *ipv4, int port)
                      LOG_SHOW("-----------------------i=%d [%s-%d]msg %dbyte--------------------\n%s\n",
                                         i, tcp->user[i].ipv4, tcp->user[i].port, len, buf512);
                 }
+                
             }
         }
         
@@ -461,10 +606,18 @@ void tcp_client_test(char *ipv4, int port, char *targetIpv4, int targetPort)
 
     while(1)
     {
-        system("sleep 10");
+        system("sleep 2");
 
         snprintf(buf521, 512, "this is second msg……!");
         tcp_client_send(client, buf521, strlen(buf521));
+
+        system("sleep 2");
+
+        snprintf(buf521, 512, "GET /index.html HTTP/1.1\r\n"
+                                "Host: www.example.com\r\n\r\n");
+        tcp_client_send(client, buf521, strlen(buf521));
+
+        system("sleep 2");
 
         close(client->fd);      //关闭连接
         break;
