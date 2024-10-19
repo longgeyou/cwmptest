@@ -241,6 +241,8 @@ void dic_destory(dic_obj_t *dic)
     
     //释放自己
     FREE(dic);
+
+    dic_local_mg.dicCnt--;
 }
 
 /*==============================================================
@@ -291,7 +293,7 @@ int dic_append_set_poniter(dic_obj_t *dic, dic_data_t *data)
         LINK_FOREACH(dic->array[index], probe)
         {
             dic_data_t *it = (dic_data_t *)(probe->data);
-            if(it->keyEn  == 1 && it != NULL)
+            if(it != NULL && it->keyEn  == 1 )
             {
                 if(it->keyLen == data->keyLen &&
                     memcmp(it->key, data->key, data->keyLen) == 0)
@@ -393,8 +395,6 @@ int dic_remove_by_str(dic_obj_t *dic, char *key)
 }
 
 
-
-
 //字典通过 关键词key 来读取value的值
 int dic_get_value(dic_obj_t *dic, const void *key, int keyLen, void *value, int valueLen)
 {
@@ -414,10 +414,12 @@ int dic_get_value(dic_obj_t *dic, const void *key, int keyLen, void *value, int 
                 memcmp(it->key, key, keyLen) == 0)
             {
                 if(value != NULL && valueLen > 0 && it->valueEn == 1)
+                {
                     len = valueLen;
                     if(len > it->valueLen)len = it->valueLen;  //注意复制字节的长度，不要超过 数据的大小
                     memcpy(value, it->value, len);                    
-                return RET_OK;
+                    return RET_OK;
+                }
             }
         }
         

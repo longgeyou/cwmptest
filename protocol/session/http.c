@@ -51,7 +51,7 @@ typedef struct http_head_t{
     char version[HTTP_VERSION_STRING_SIZE + 8];
     
     //2、键值对
-    keyvalue_obj_t *keyvalue;   //需要动态分配内存
+    //keyvalue_obj_t *keyvalue;   //需要动态分配内存
        
 }http_head_t;
 
@@ -157,7 +157,7 @@ void http_mg_init()
     http_local_mg.serverCnt = 0;
     http_local_mg.clientCnt = 0;
 
-    keyvalue_init();
+    //keyvalue_init();
 }
 
 
@@ -180,7 +180,7 @@ http_server_t *http_create_server(char *ipv4, int port)
         http->user[i].status = http_status_start;   //状态机处于初始状态
 
         //http 头部解析键值对 分配内存
-        http->user[i].head.keyvalue = keyvalue_create(HTTP_HEAD_KEYVALUE_MAX_SIZE);
+        //http->user[i].head.keyvalue = keyvalue_create(HTTP_HEAD_KEYVALUE_MAX_SIZE);
         
     }
     
@@ -199,8 +199,8 @@ void http_destory_server(http_server_t *http)
     //释放http user 成员
     for(i = 0; i < HTTP_USER_NUM; i++)
     {
-        if(http->user[i].head.keyvalue != NULL)
-            keyvalue_obj_destory(http->user[i].head.keyvalue);
+        ;//if(http->user[i].head.keyvalue != NULL)
+            //keyvalue_obj_destory(http->user[i].head.keyvalue);
     }
         
     //释放自己

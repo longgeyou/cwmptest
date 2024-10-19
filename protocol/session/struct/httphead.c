@@ -1,4 +1,4 @@
-﻿
+﻿ 
 
 #include <stdio.h>
 #include <string.h>
@@ -7,6 +7,8 @@
 #include "log.h"
 #include "pool2.h"
 #include "link.h"
+#include "keyvalue.h"
+#include "strpro.h"
 
 
 
@@ -38,48 +40,51 @@
                         value:0.8
     --------------------------------------
 
-    可以理解为树形结构
+
+    实现：
+    1、数据结构
+    --------------------------------------
+    root（链表）
+        每一行（名字       + 键值对列表）
+    --------------------------------------
+    
 
 */
 
-#define KEY_STRING_SIZE 32
-#define VALUE_STRING_SIZE 256
+#define LINE_NAME_STRING_SIZE 256
 
-//树节点结构
-typedef struct httphead_node_t{
-    char key[KEY_STRING_SIZE];
-    char value[VALUE_STRING_SIZE];
-    char keyEn;
-    char valueEn;
 
-    link_obj_t *son;   //子树（用链表表示）
-}httphead_node_t;
+//每一行数据的结构
+typedef struct httphead_line_t{
+    char name[LINE_NAME_STRING_SIZE];
+    keyvalue_obj_t *keyvalue;
+}httphead_line_t;
 
 
 //头部数据结构体（四层树，包括了根）
 typedef struct httphead_head_t{
-    httphead_node_t *root;   //树根
+    link_obj_t *link;   //链表，链表节点的数据类型为 httphead_line_t 
 }httphead_head_t;
 
 
-/*=============================================================
+/*==============================================================
                         本地管理
 ==============================================================*/
 #define HTTPHEAD_MG_INIT_CODE 0x8080
 
 typedef struct httphead_manager_t{
     int poolId;
-    char poolName[POOL_USER_NAME_MAX_LEN];
+    char poolName[POOL_USER_NAME_MAX_LEN + 8];
     int initCode;
     
-    int instanceNum;
+    int httpheadCnt;
 }httphead_manager_t;
 
 httphead_manager_t httphead_local_mg = {0};
     
 //使用内存池
-#define POOL_MALLOC(x) pool_user_malloc(httphead_local_mg.poolId, x)
-#define POOL_FREE(x) pool_user_free(x)
+#define MALLOC(x) pool_user_malloc(httphead_local_mg.poolId, x)
+#define FREE(x) pool_user_free(x)
 #define HTTPHEAD_POOL_NAME "httphead"
     
     
@@ -96,79 +101,71 @@ void httphead_mg_init()
     
     strncpy(httphead_local_mg.poolName, HTTPHEAD_POOL_NAME, POOL_USER_NAME_MAX_LEN);
     httphead_local_mg.poolId = pool_apply_user_id(httphead_local_mg.poolName); 
-    httphead_local_mg.instanceNum = 0;
+    httphead_local_mg.httpheadCnt = 0;
    
 
-    link_init();
+    link_mg_init();
+    keyvalue_mg_init();
 
 }
 
-
-
-/*=============================================================
+/*==============================================================
                         对象
 ==============================================================*/
 
-//动态创建 树节点
-httphead_node_t *httphead_node_create()
+//创建 一行的数据结构
+httphead_line_t *httphead_create_line(int size)
 {
-    httphead_node_t *node = (httphead_node_t *)POOL_MALLOC(sizeof(httphead_node_t));
-    if(node == NULL)
+    httphead_line_t *line = (httphead_line_t *)MALLOC(sizeof(httphead_line_t));
+    if(line == NULL)return NULL;
+
+    line->keyvalue = keyvalue_create(size);
+    if(line->keyvalue == NULL)
     {
+        FREE(line);
         return NULL;
     }
-    memset(node->key, '\0', KEY_STRING_SIZE);
-    memset(node->value, '\0', VALUE_STRING_SIZE);
-    node->keyEn = 0;
-    node->valueEn = 0;
+
     
-    node->son = NULL;
+    memset(line->name, '\0', LINE_NAME_STRING_SIZE);
     
-    return node;
+    return line;
 }
 
 //释放 数据节点
-void httphead_node_release(httphead_node_t *node)
+void httphead_line_destroy(httphead_line_t *line)
 {
-    if(node == NULL)return;
+    if(line == NULL)return;
 
-
-    if(node->son != NULL)
+    
+    if(line->keyvalue != NULL)
     {
-        //遍历子节点，然后释放对应内存
-        LINK_FOREACH(node->son, probe)
-        {
-            httphead_node_release((httphead_node_t *)(probe->data_p));    //递归
-        }
-    
-    
-        //子成员
-        link_destory(node->son);
+        //键值对列表的释放
+        keyvalue_destroy(line->keyvalue);
     }
-    
-    
+        
     //自己
-    POOL_FREE(node);        //注意node 指向的是动态分配内存，不然会出错
+    FREE(line);        //注意node 指向的是动态分配内存，不然会出错
 }
 
 
 //创建头部数据
-httphead_head_t *httphead_head_create()
+httphead_head_t *httphead_create_head()
 {
     //http 头部（除了第一行）
-    httphead_head_t *head = (httphead_head_t *)POOL_MALLOC(sizeof(httphead_head_t));
+    httphead_head_t *head = (httphead_head_t *)MALLOC(sizeof(httphead_head_t));
     if(head == NULL)
     {
         LOG_ALARM("head 分配内存失败");
         return NULL;
     }
 
-    //创建树根
-    head->root = httphead_node_create();
-    if(head->root == NULL)
+    //创建链表
+    head->link = link_create();
+    if(head->link == NULL)
     {
-        LOG_ALARM("root 分配内存失败");
-        POOL_FREE(head);
+        LOG_ALARM("link 创建失败");
+        FREE(head);
         return NULL;
     }
     
@@ -177,176 +174,328 @@ httphead_head_t *httphead_head_create()
 
 
 //释放 头部数据结构
-void httphead_head_release(httphead_head_t *head)
+void httphead_destroy_head(httphead_head_t *head)
 {
     if(head == NULL)return;
-    //子成员
-    if(head->root != NULL)httphead_node_release(head->root);
+    //遍历
+    if(head->link != NULL)
+    {
+        LINK_FOREACH(head->link, probe){
+            //1、释放链表节点的 数据
+            httphead_line_destroy(probe->data);
+        }
+
+        //2、释放链表
+            link_destory(head->link );
+    }
     
-    //自己
-    POOL_FREE(head);        //注意head 指向的是动态分配内存，不然会出错
+    
+    
+    //3、自己
+    FREE(head);        //注意head 指向的是动态分配内存，不然会出错
 }
 
 
-/*=============================================================
-                        应用
+/*==============================================================
+                        对象操作
 ==============================================================*/
 
 
+
+
+
+
+
+
+/*==============================================================
+                        应用
+==============================================================*/
+
 //解析一行数据
-int httphead_parse_line(httphead_head_t *head, const char *lineStr)
+int httphead_parse_line(httphead_line_t *line, const char *lineStr)
 {
-    char *find;
+    char *findA, *findB, *findC, *findD;
+    char *strA, *strB;
     int step;
     int pos;
-    int len;
-    
-    
-    
-    if(head == NULL || lineStr == NULL)return RET_FAILD;
-    
-    httphead_node_t *line = httphead_node_create();     //一个节点
-    if(line == NULL)return RET_FAILD;
+    int lenA, lenB, lenD;
 
-    len = strlen(lineStr);
-    char *buf = (char *)POOL_MALLOC(len + 8);
-    if(buf == NULL)
-    {
-        httphead_node_release(line);
-        return RET_FAILD;
-    }
+
+//BUF_SIZE 大小要求：应该可以容纳 key、value 字符串
+//或许可以考虑分配动态内存
+#define BUF_SIZE 512        
+    char localBufA[BUF_SIZE] = {0};
+    char localBufB[BUF_SIZE] = {0};
+    
+    
+
+    //参数检测
+    if(line == NULL || lineStr == NULL)return RET_FAILD;
+
+    //给buf分配动态内存 
+    lenA = strlen(lineStr);
+    char *buf = (char *)MALLOC(lenA + 8);
+    if(buf == NULL)return RET_FAILD; 
     strcpy(buf, lineStr);
 
-    
-    
-    
-    step = 0;
-    //对一行数据的解析步骤
-    //1、找到 冒号
-    find = strstr(buf, ":");
-    line->valueEn = 1;
-    if(find == NULL)
-    {
-        strncpy(line->value, lineStr, VALUE_STRING_SIZE);
+    char *bufTmp = (char *)MALLOC(lenA + 8);
+    if(bufTmp == NULL)
+    {   
+        FREE(buf);
+        return RET_FAILD; 
+    }
 
+   
+    step = 0;
+    //1、找到 冒号
+    findA = strstr(buf, ":");
+    if(findA == NULL)
+    {
+        strA = localBufA;
+        strpro_clean_space(&strA);
+        //LOG_SHOW("【A1】%s\n", strA);
+
+        strncpy(line->name, strA, LINE_NAME_STRING_SIZE);   //存入 linde 的名字中
+        
     }
     else
     {
-        memcpy(line->value, buf, find - buf);   //名字
-        line->value[find - buf] = '\0';
+        memcpy(localBufA, buf, findA - buf);
+        localBufA[findA - buf] = '\0';
+        
+        strA = localBufA;
+        strpro_clean_space(&strA);
+        //LOG_SHOW("【A2】%s\n", strA);
+        strncpy(line->name, strA, LINE_NAME_STRING_SIZE);   //存入 linde 的名字中
+        
          
-        pos = find - buf;
-        memmove(buf, buf + pos + 1, len - pos - 1);   //内容
-        buf[len - pos - 1] = '\0';
+        pos = findA - buf + 1;
+        memmove(buf, buf + pos, lenA - pos);   //内容
+        buf[lenA - pos] = '\0';
+        //LOG_SHOW("【A3】%s\n", buf);
+        
         step = 1;
     }
 
-    //2、用 分号 分割内容
-    const char delimA[] = ";";
-    char *tokenA;
-    
-#define TMP_BUF_LEN 512    
-    char bufB[TMP_BUF_LEN] = {0};
-    const char delimB[] = ",";
-    char *tokenB;
-
-    char bufC[TMP_BUF_LEN] = {0};
-    //const char delimC[] = "=";
-    //char *tokenC;
-
-    httphead_node_t *nodeA;     //分号
-    httphead_node_t *nodeB;     //逗号
-    httphead_node_t *nodeC;     //等于号
     if(step == 1)
     {
-        
-        tokenA = strtok(buf, delimA);
-        while(tokenA != NULL)
+        while(1)
         {
-//            //step = 2;
-//            nodeA = httphead_node_create(); //这里没有考虑 创建失败 的情况
-//            link_append(line->son, (void *)nodeA , sizeof(httphead_node_t));
-//            
-//            
-//            //3、用 逗号 去分割子内容
-//            strncpy(bufB, tokenA, TMP_BUF_LEN);
-//            tokenB = strtok(bufB, delimB);
-//            while(tokenB != NULL)
-//            {
-//                nodeB = httphead_node_create(); //这里没有考虑 创建失败 的情况
-//                link_append(nodeA->son, (void *)nodeB , sizeof(httphead_node_t));
-//
-//                //4、查找 等于号
-//                strncpy(bufC, tokenB, TMP_BUF_LEN);
-//                find = strstr(bufC, "=");
-//                nodeC = httphead_node_create(); //这里没有考虑 创建失败 的情况
-//                if(find == NULL)
-//                {
-//                    strncpy(nodeC->value, bufC, VALUE_STRING_SIZE);
-//                    nodeC->valueEn = 1;
-//                    
-//                }
-//                else
-//                {
-//                    find = '\0';    //'=' 变为 '\0'，分割为两个字符串
-//                    strncpy(nodeC->key, bufC, KEY_STRING_SIZE);
-//                    nodeC->keyEn = 1;
-//                    strncpy(nodeC->value, find + 1, VALUE_STRING_SIZE);
-//                    nodeC->valueEn = 1;
-//                    
-//                }
-//                link_append(nodeB->son, (void *)nodeC , sizeof(httphead_node_t));
-//                
-//            
-//                tokenB = strtok(NULL, delimB);
-//            }
+            //LOG_SHOW("-------------------\n");
+            //找到 , 或者 ;
+            lenB = strlen(buf);
+            findB = strstr(buf, ",");
+            findC = strstr(buf, ";");
+            if(findB == NULL)
+                findB = findC;
+            else if(findC != NULL)
+                 if(findC - findB < 0)findB = findC;
+            
+            if(findB != NULL)
+            {
+                memcpy(localBufA, buf, findB - buf);
+                localBufA[findB - buf] = '\0';
+                //LOG_SHOW("【B1】%s\n", localBufA);
+                strcpy(bufTmp, localBufA);                
+            }
+            else
+            {
+                strcpy(bufTmp, buf); 
+                step = 2;
+            }
+            
+            //找到 =
+            lenD = strlen(bufTmp);
+            findD = strstr(bufTmp, "=");
+            if(findD != NULL)
+            {
+                pos = findD - bufTmp;
+                memcpy(localBufA, bufTmp, pos);
+                localBufA[pos] = '\0';
 
-            LOG_SHOW("---->%s\n", tokenA);
-            tokenA = strtok(NULL, delimA);
+                strA = localBufA;
+                strpro_clean_space(&strA);
+                //LOG_SHOW("【D1】【%s】【%s】\n", strA, localBufA);                
+                 
+                
+
+                pos = findD - bufTmp + 1;
+                memcpy(localBufB, bufTmp + pos, lenD - pos);
+                localBufB[lenD - pos] = '\0';
+                
+                strB = localBufB;
+                strpro_clean_space(&strB);
+                //LOG_SHOW("【D2】【%s】\n", strB); 
+
+                //添加到line的 键值对列表 中
+                keyvalue_append_set_str(line->keyvalue, strA, strB);
+            }
+            else
+            {           
+                strA = localBufA;
+                strpro_clean_space(&strA);
+                //LOG_SHOW("【D3】【%s】\n", strA); 
+
+                //添加到line的 键值对列表 中
+                keyvalue_append_set_str(line->keyvalue, strA, NULL);
+            }
+
+            if(step == 2)break;
+            
+            pos = findB - buf + 1;
+            memmove(buf, buf + pos, lenB - pos);   //内容
+            buf[lenB - pos] = '\0';
+            //LOG_SHOW("【B2】%s\n", buf);
+            
+            
         }
 
     }
-
-    link_append(head->root->son, (void *)line , sizeof(httphead_node_t));
     
-
-    POOL_FREE(buf);
+    FREE(buf);
+    FREE(bufTmp);
 
     return RET_OK;
 }
 
-//打印 一行 结构体的内容
-void __show_line(httphead_node_t *line)
+//解析 http头部数据（除了第一行）
+int httphead_parse_head(httphead_head_t *head, const char *headStr)
 {
-    LOG_SHOW("valueEn:%d value:【%s】\n", line->valueEn, line->value);
+    char *find;
+    int len;
+    int bufLen;
+    httphead_line_t *line;
+    
+    if(head == NULL || headStr == NULL)return RET_FAILD;
+
+    //给buf分配动态内存 
+    len = strlen(headStr);
+    char *buf = (char *)MALLOC(len + 8);
+    if(buf == NULL)return RET_FAILD; 
+    strcpy(buf, headStr);
+
+    char *bufTmp = (char *)MALLOC(len + 8);
+    if(bufTmp== NULL)
+    {
+        FREE(buf);
+        return RET_FAILD;  
+    }
+    
+    //1、找到 换行符
+    while(1)
+    {
+        len = strlen(buf);
+        find = strstr(buf, "\n");
+        bufLen = find - buf;
+        if(find != NULL && bufLen > 0)
+        {                   
+            if((bufLen == 1 && buf[0] == '\n') || 
+                    (bufLen == 2 && buf[1] == '\n'))    
+            {
+                break;  //http 头部和负荷之间有一个空行
+            }
+            else
+            {
+                memcpy(bufTmp, buf, bufLen);
+                bufTmp[bufLen] = '\0';
+                
+                //LOG_SHOW("【L1】【%s】\n", bufTmp);
+#define LINE_KEYVALUE_SIZE 10                
+                line = httphead_create_line(LINE_KEYVALUE_SIZE);                  
+                httphead_parse_line(line, bufTmp);  //解析
+                link_append_by_set_pointer(head->link, (void *)line); //添加
+                
+                memmove(buf, buf + bufLen + 1, len - bufLen - 1);
+                buf[len - bufLen - 1] = '\0';
+
+                //LOG_SHOW("【L2】【%s】\n", buf);
+            }   
+        }
+        else
+        {
+            break;  //到达了结尾
+        }
+        
+    }
+
+
+    FREE(buf);
+    FREE(bufTmp);
+    return RET_OK;
 }
-
-
-
 
 /*=============================================================
                         测试
 ==============================================================*/
+//测试辅助：显示 httphead_line_t 对象内容
+void __test_aux_show_line(httphead_line_t *line)
+{
+    if(line == NULL)return ;
+    if(line->keyvalue == NULL)return ;
 
+    LOG_SHOW("--------------show line--------------\n");
+    LOG_SHOW("name:%s\n", line->name);
+    KEYVALUE_FOREACH_START(line->keyvalue, iter){
+        if(iter->keyEn == 1)
+        {
+            LOG_SHOW("key:%s ", iter->key);
+            if(iter->valueEn == 1)
+            {
+                LOG_SHOW("value:%s ", iter->value);
+            }
+            LOG_SHOW("\n");
+        }
+        
+    }KEYVALUE_FOREACH_END;    
+}
+
+//测试辅助：显示 httphead_head_t 内容
+void __test_aux_show_head(httphead_head_t *head)
+{
+    if(head == NULL)return ;
+    if(head->link == NULL)return ;
+
+    LOG_SHOW("============================show head\n");
+    LOG_SHOW("num:%d\n", head->link->nodeNum);
+    LINK_FOREACH(head->link, probe){
+        __test_aux_show_line(probe->data);
+    }    
+}
 
 
 
 void httphead_test()
 {
-    char lineStr[] = "Accept-Language: en-US,en;q=0.8";
+    printf("httphead test ...\n");
 
-    httphead_head_t *head = httphead_head_create();    
+//    httphead_line_t *line = httphead_create_line(100);    
+//    char lineStr[] = "Accept-Language: en-US,en; q =0.8 ; new, old  =100";
+//    httphead_parse_line(line, lineStr);
+//    __test_aux_show_line(line);
+//
+//    httphead_line_t *line2 = httphead_create_line(100);
+//    char lineStr2[] = "Accept-Language1: en- US ,en =1232131 ; q =0.8 ; new, old  =100";
+//    httphead_parse_line(line2, lineStr2);
+//    __test_aux_show_line(line2);
+//    
+//
+//    httphead_head_t *head = httphead_create_head();
+//    link_append_by_set_pointer(head->link, (void *)line); 
+//    link_append_by_set_pointer(head->link, (void *)line2); 
+//    __test_aux_show_head(head);
+//     
+//    pool_show();
+//
+//    httphead_destroy_head(head);
+//    pool_show();
 
-    httphead_parse_line(head, lineStr);
 
-    link_node_t *node = link_get_node(head->root->son, 0);
-    
-    if(node == NULL)
-        LOG_ALARM("node is NULL");
-    httphead_node_t *line = (httphead_node_t *)(node->data_p);
-    //__show_line(line);
+    char headStr[] = "Accept-Language: en-US,en; q =0.8 ; new, old  =100\n"
+                        "Accept-Language1: en- US ,en =1232131 ; q =0.8 ; new, old  =100\n\n";
+    httphead_head_t *head = httphead_create_head();                    
+    httphead_parse_head(head, headStr);  
 
-    pool_show();
+    __test_aux_show_head(head);
 }
 
 

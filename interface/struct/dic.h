@@ -47,8 +47,8 @@ void dic_test();
 
 
 //遍历
-#define DIC_FOREACH_START(dic, iter) for(int i_conut = 0; i_conut < dic->size; i_conut++){\
-                                        LINK_FOREACH((dic->array)[i_conut], probe){\
+#define DIC_FOREACH_START(dic, iter) for(int dic_conut = 0; dic_conut < dic->size; dic_conut++){\
+                                        LINK_FOREACH((dic->array)[dic_conut], probe){\
                                         dic_data_t *iter = (dic_data_t *)(probe->data); 
             
 #define DIC_FOREACH_END }}

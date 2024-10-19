@@ -72,9 +72,11 @@ link_node_t *link_create_node()
 }
 
 //创建节点 数据指针设置为给定值（给定值 data 需要指向动态内存）
+// 【出错记录】：新增的 node，没有给 node->next 赋值 NULL，导致遍历出错
 link_node_t *link_create_node_set_pointer(void *data)
 {
-    link_node_t *node = (link_node_t *)POOL_MALLOC(sizeof(link_node_t ));
+    //link_node_t *node = (link_node_t *)POOL_MALLOC(sizeof(link_node_t ));
+    link_node_t *node = link_create_node();
     if(node == NULL)return NULL;    //分配失败
    
     node->data = data;
@@ -86,8 +88,8 @@ link_node_t *link_create_node_set_pointer(void *data)
 //创建节点 分配动态内存给 数据指针
 link_node_t *link_create_node_and_malloc(int size)
 {
-    link_node_t *node = (link_node_t *)POOL_MALLOC(sizeof(link_node_t ));
-    
+    //link_node_t *node = (link_node_t *)POOL_MALLOC(sizeof(link_node_t ));
+    link_node_t *node = link_create_node();
     if(node == NULL)return NULL;    //分配失败
     
     node->data = (void *)POOL_MALLOC(size);
@@ -99,8 +101,8 @@ link_node_t *link_create_node_and_malloc(int size)
 //创建节点 分配动态内存给 数据指针，并且赋值给 数据指针
 link_node_t *link_create_node_set_value(void *data, int dataLen)
 {
-    link_node_t *node = (link_node_t *)POOL_MALLOC(sizeof(link_node_t ));
-    
+    //link_node_t *node = (link_node_t *)POOL_MALLOC(sizeof(link_node_t ));
+    link_node_t *node = link_create_node();
     if(node == NULL)return NULL;    //分配失败
     
     node->data = (void *)POOL_MALLOC(dataLen);

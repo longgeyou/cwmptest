@@ -23,12 +23,13 @@ SRCDIRS				:=	acs \
 					   	interface/log \
 					   	interface/linux \
 					   	interface/struct \
+					   	interface/strpro \
 					   	protocol/transport \
-					   	protocol/ssl-tls 
-
+					   	protocol/ssl-tls \
+					   	protocol/session/struct 
 					   	
 #					   	protocol/session \
-#					   	protocol/session/struct 
+
 
 
 

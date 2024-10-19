@@ -173,11 +173,15 @@ void list_destory(list_obj_t *list)
     {
         for(i = 0; i < list->size; i++)
         {
+            //1、释放member、 member->data 
             if(list->array[i] != NULL && list->array[i]->en == 1)
                 list_destory_member(list->array[i]);
         }        
     }
 
+    //2、释放指针数组
+    if(list->array != NULL)FREE(list->array);
+    
     //释放自己
     FREE(list);
 }

@@ -15,8 +15,8 @@
 #include "keyvalue.h"
 #include "ssl.h"
 
-//#include "httphead.h"
-
+#include "httphead.h"
+#include "strpro.h"
 
 
 
@@ -50,7 +50,7 @@ void test(int port)
     link_mg_init();
     list_mg_init();
     dic_mg_init();
-    keyvalue_init();
+    keyvalue_mg_init();
     ssl_mg_init();
     tcp_init();
     //httphead_mg_init();
@@ -63,10 +63,12 @@ void test(int port)
 	//link_test();
 	//list_test();
 	//dic_test();
-	keyvalue_test();
+	//keyvalue_test();
 	//ssl_test();
 
-    //httphead_test();
+    httphead_test();
+    //strpro_test();
+    
 	//pool_show();
 }
 

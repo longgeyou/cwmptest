@@ -1,2 +1,18 @@
 
 ======================log start=======================
+============================show head
+num:2
+--------------show line--------------
+name:Accept-Language
+key:en-US 
+key:en 
+key:q value:0.8 
+key:new 
+key:old value:100 
+--------------show line--------------
+name:Accept-Language1
+key:en- US 
+key:en value:1232131 
+key:q value:0.8 
+key:new 
+key:old value:100 
