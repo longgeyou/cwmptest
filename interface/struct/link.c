@@ -181,6 +181,33 @@ void link_destory(link_obj_t *link)
     
 }
 
+//清空链表节点，不销毁 node->data 指向的动态内存，不销毁链表头
+void link_clear(link_obj_t *link)
+{
+    if(link == NULL)return;
+
+    link->nodeNum = 0;
+    //销毁节点
+    if(link->head != NULL) 
+    {
+        link_node_t *node = link->head->next;
+        link->head->next = NULL; //链表头的 next 必须指向空，不然又出错
+        link_node_t *nodeNext;
+        while(node != NULL)
+        {
+            nodeNext = node->next;
+            
+            //link_destory_node_and_data(node);
+            link_destory_node(node);
+
+            node = nodeNext;
+            
+        }
+    }
+    
+}
+
+
 
 /*==============================================================
                         应用

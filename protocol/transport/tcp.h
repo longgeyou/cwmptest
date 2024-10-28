@@ -75,6 +75,17 @@ typedef struct __tcp_clinet{
 
     //ssl 的使用
     ssl_obj_t *ssl;
+
+    //线程
+    pthread_t transceiver;     //收发器
+
+    //用于数据接收
+    unsigned char buf[TCP_USER_BUF_SIZE + 8];  //缓存
+    char bufReady;  //状态
+    int bufLen;     //缓存的长度
+    sem_t semBufReady;  //信号量
+    pthread_mutex_t mutex;  //互斥锁
+    
 }tcp_client_t;
 
 #define TCP_INIT_CODE 0x8080
@@ -95,7 +106,7 @@ void tcp_client_destory(tcp_client_t * client);
 
 int tcp_server_start(tcp_server_t *tcp);
 int tcp_client_start(tcp_client_t *client, char *ipv4, int port);
-int tcp_server_write(tcp_server_t *tcp, int userId, char *msg, int size);
+int tcp_server_send(tcp_server_t *tcp, int userId, char *msg, int size);
 int tcp_server_read(tcp_server_t *tcp, int userId, char *content, int size) ;
 int tcp_client_send(tcp_client_t *cl, char *msg, int size);
 int tcp_client_read(tcp_client_t *cl, char *content, int size);

@@ -49,7 +49,11 @@ int keyvalue_remove(keyvalue_obj_t *keyvalue, void *key, int keyLen);
 int keyvalue_remove_by_str(keyvalue_obj_t *keyvalue, char *key);
 int keyvalue_get_value(keyvalue_obj_t *keyvalue, const void *key, int keyLen, void *value, int valueLen);
 int keyvalue_get_value_by_str(keyvalue_obj_t *keyvalue, char *key, char *value, int valueLen);
+keyvalue_data_t *keyvalue_get_data(keyvalue_obj_t *keyvalue, const void *key, int keyLen);
+keyvalue_data_t *keyvalue_get_data_by_str(keyvalue_obj_t *keyvalue, char *key);
 
+
+void keyvalue_show(keyvalue_obj_t  *keyvalue);
 
 
 /*==============================================================

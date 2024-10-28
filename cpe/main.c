@@ -17,14 +17,20 @@
 
 #include "httphead.h"
 #include "strpro.h"
-
+#include "base64.h"
+#include "auth.h"
+#include "http.h"
 
 
 void test(int);
+void dig_test(int argc, char ** argv);
+int mddriver_test(int, char **);
+
 int main(int argn, char *argv[])
 {
     
-	
+	//dig_test(argn, argv);
+	//mddriver_test(argn, argv);
 
 	if(argn >= 2)
     {
@@ -40,6 +46,8 @@ int main(int argn, char *argv[])
 
 
 //测试
+
+
 void test(int port)
 {
     printf("OK! my name is cpe\n");
@@ -53,11 +61,16 @@ void test(int port)
     keyvalue_mg_init();
     ssl_mg_init();
     tcp_init();
-    //httphead_mg_init();
+    httphead_mg_init();
+    http_mg_init();
 
        
     if(port > 0)
-	    tcp_client_test("192.168.1.20", port, "192.168.1.20", 8080);  
+    {
+        //tcp_client_test("192.168.1.20", port, "192.168.1.20", 8080);  
+        http_client_test("192.168.1.20", port, "192.168.1.20", 8080);
+    }
+	    
     
 	
 	//link_test();
@@ -66,10 +79,14 @@ void test(int port)
 	//keyvalue_test();
 	//ssl_test();
 
-    httphead_test();
+    //httphead_test();
     //strpro_test();
     
 	//pool_show();
+
+	//base64_test();
+	//serverauth_test();
+
 }
 
 

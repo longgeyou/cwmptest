@@ -18,6 +18,7 @@ CPE_TARGET			:= c
 #所有的源文件路径
 
 SRCDIRS				:=	acs \
+						acs/cfg \
 					   	cpe \
 					   	interface/memmg \
 					   	interface/log \
@@ -26,9 +27,12 @@ SRCDIRS				:=	acs \
 					   	interface/strpro \
 					   	protocol/transport \
 					   	protocol/ssl-tls \
-					   	protocol/session/struct 
+					   	protocol/session \
+					   	protocol/session/struct \
+					   	protocol/session/auth \
+					   	protocol/session/auth/interface
 					   	
-#					   	protocol/session \
+					   	
 
 
 

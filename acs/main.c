@@ -6,19 +6,20 @@
 #include "main.h"
 #include <stdio.h>
 
-
-
-
 #include "log.h"
 #include "pool2.h"
 #include "tcp.h"
 #include "link.h"
 #include "list.h"
 #include "dic.h"
-//#include "keyvalue.h"
+#include "keyvalue.h"
 #include "ssl.h"
 
-//#include "http.h"
+#include "http.h"
+#include "auth.h"
+#include "strpro.h"
+#include "base64.h"
+
 
 
 void test();
@@ -43,10 +44,10 @@ void test()
     link_mg_init();
     list_mg_init();
     dic_mg_init();
-    //keyvalue_init();
+    keyvalue_mg_init();
     ssl_mg_init();
     tcp_init();
-    //http_mg_init();
+    http_mg_init();
 	
 	//link_test();
 	//list_test();
@@ -55,8 +56,8 @@ void test()
 	//ssl_test();
     //tcp_test("192.168.1.20", 8080);
 
-    //http_test();
-
+    http_test();
+    //serverauth_test();
 	//pool_show();
 }
 

@@ -233,6 +233,12 @@ tcp_client_t *tcp_client_create(char *ipv4, int port)
     ssl_obj_t *clientSsl = ssl_create();
     ssl_client_config(clientSsl);
     client->ssl = clientSsl;
+
+    //用于数据接收
+    sem_init(&(client->semBufReady), 0, 0); //初始化信号量
+    pthread_mutex_init(&(client->mutex), NULL);   //初始化互斥锁
+
+    
     
     tcp_local_mg.tcpClientCnt++;
     return client;
@@ -319,6 +325,8 @@ void *thread_tcp_transceiver(void *in)
     int i, ret;
     //char buf[READ_BLOCK_SIZE + 8] = {0};    // + 8 是为了 冗余
     //int len;
+
+    
     tcp_server_t *tcp = (tcp_server_t *)in;
     if(tcp == NULL){LOG_ALARM("tcp");return NULL;}
     tcpUser_obj_t *user_p;
@@ -363,11 +371,16 @@ void *thread_tcp_transceiver(void *in)
                 //memset(buf, '\0', strlen(buf));                 
                 //len = read(fds[i].fd, buf, READ_BLOCK_SIZE); 
 
-                LOG_SHOW("---->POLL    IN\n");
-                
+                LOG_SHOW("---->POLL    IN  ready:%d\n", user_p->bufReady);
+            
                 pthread_mutex_lock(&(user_p->mutex));   //该锁用于保护 tcp user 缓存相关的资源
                 
-                if(user_p->bufReady == 1)continue;
+                if(user_p->bufReady == 1)
+                {
+                    pthread_mutex_unlock(&(user_p->mutex));
+                    continue;
+                }
+                
                 memset(user_p->buf, '\0', TCP_USER_BUF_SIZE + 1);   // + 1 位 
                 user_p->bufLen = read(fds[i].fd, user_p->buf, TCP_USER_BUF_SIZE); 
                 
@@ -393,24 +406,99 @@ void *thread_tcp_transceiver(void *in)
                                
                      pthread_mutex_lock(&(user_p->mutex));          
                      user_p->bufReady = 1;
+                     //LOG_SHOW("   锁 里面 ---------------------\n");
                      pthread_mutex_unlock(&(user_p->mutex));
+                     //LOG_SHOW("   锁 外面 ---------------------\n");
                      
                      sem_post(&(tcp->semBufReady)); //发出信号量
+
+                     //LOG_SHOW("   激活信号量 ---------------------\n");
                 }
-
-                
-                
-                
-            }
-
-            
-
-
-            
+  
+            }  
         }
         
     }
+
+    return NULL;
 }
+
+
+//客户端的收发器线程
+void *thread_tcp_client_transceiver(void *in)
+{
+    if(in == NULL){LOG_ALARM("in");return NULL;}
+
+    tcp_client_t *client = (tcp_client_t *)in;
+    if(client == NULL){LOG_ALARM("client");return NULL;}    
+
+    int ret;
+//#define BUF_SIZE 512        
+    //char buf[BUF_SIZE] = {0};  
+    //int len;
+
+#define POLL_SIZE 1    
+    struct pollfd fds[POLL_SIZE] = {0};  //使用 poll 方法来并发处理用户的数据收发
+    fds[0].fd = client->fd;
+    fds[0].events = POLLIN;
+    
+    while (1) 
+    {
+       
+        ret = poll(fds, POLL_SIZE, 2000); // 阻塞直到有事件发生或超时
+        if (ret == -1) 
+        {
+            LOG_ALARM("客户端 poll 失败");
+            system("sleep 3");
+            continue;
+        }
+
+        //读取的长度len大于0，说明有数据可读；等于0，代表断开连接，小于0，没有数据        
+        if (fds[0].revents & POLLIN)  //有数据进入
+        {
+            LOG_SHOW("---------------->POLL   IN\n");
+                
+            pthread_mutex_lock(&(client->mutex));   //该锁用于保护 tcp user 缓存相关的资源
+            
+            if(client->bufReady == 1)
+            {
+                pthread_mutex_unlock(&(client->mutex));
+                continue;
+            }
+            
+            memset(client->buf, '\0', TCP_USER_BUF_SIZE + 1);   // + 1 位 
+            client->bufLen = read(client->fd, client->buf, TCP_USER_BUF_SIZE); 
+            
+            pthread_mutex_unlock(&(client->mutex));
+           
+            if(client->bufLen == 0)    
+            {
+                LOG_INFO("断开连接 ..."); 
+                close(client->fd);
+                return NULL;
+            }                
+            else if(client->bufLen > 0)
+            {                    
+                 LOG_SHOW("\n【客户端 ip地址：%s:%d 读取的字节：%dbyte】\n"
+                           "------------------------------------\n"
+                           "%s\n------------------------------------\n\n",
+                           client->ipv4, client->port, client->bufLen, client->buf);  
+                           
+                pthread_mutex_lock(&(client->mutex));          
+                client->bufReady = 1;
+                pthread_mutex_unlock(&(client->mutex));
+
+                sem_post(&(client->semBufReady)); //发出信号量                
+            }   
+        }
+
+    }
+
+    return NULL;
+}
+
+
+
 /*============================================================
                             应用
 ==============================================================*/
@@ -459,6 +547,11 @@ int tcp_client_start(tcp_client_t *client, char *ipv4, int port)
     if(ret < 0){LOG_ALARM("clinet connect"); return ret;};
 
     LOG_INFO("connect to [%s:%d] OK", ipv4, port);
+
+    //开启 数据接收线程
+    ret = pthread_create(&(client->transceiver), NULL, thread_tcp_client_transceiver, (void *)client);
+    if(ret != 0){LOG_ERROR("thread_tcp_client_transceiver error"); return ret;};
+    
     return 0;
 }
 
@@ -475,7 +568,7 @@ ssize_t read(int fd, void *buf, size_t count)
 成功：读取/写入的字节数
 失败：-1
 -----------------------------------------------------------*/
-int tcp_server_write(tcp_server_t *tcp, int userId, char *msg, int size)
+int tcp_server_send(tcp_server_t *tcp, int userId, char *msg, int size)
 {
     if(userId < 0 || userId > TCP_USER_NUM)
     {
@@ -604,25 +697,102 @@ void tcp_client_test(char *ipv4, int port, char *targetIpv4, int targetPort)
     tcp_client_send(client, buf521, strlen(buf521));
 
 
-    while(1)
-    {
-        system("sleep 2");
+    //----------------------------------------------发送
+    system("sleep 2");
 
-        snprintf(buf521, 512, "this is second msg……!");
-        tcp_client_send(client, buf521, strlen(buf521));
+    snprintf(buf521, 512, "this is second msg……!");
+    tcp_client_send(client, buf521, strlen(buf521));
 
-        system("sleep 2");
+    system("sleep 2");
 
-        snprintf(buf521, 512, "GET /index.html HTTP/1.1\r\n"
-                                "Host: www.example.com\r\n\r\n");
-        tcp_client_send(client, buf521, strlen(buf521));
+//        snprintf(buf521, 512, "GET /index.html HTTP/1.1\r\n"
+//                                "Host: www.example.com\r\n\r\n");
+//        tcp_client_send(client, buf521, strlen(buf521));
 
-        system("sleep 2");
+//        char sendStr[] =    "GET /index.html HTTP/1.1\r\n"
+//                            "Accept-Language: en-US,en; q =0.8 ; new, old  =100\n"
+//                            "Accept-Language1: en- US ,en =1232131 ; q =0.8 ; new, old  =100\n"
+//                            "Authorization: Digest username=username, realm=realm-name, nonce=nonce-value,"
+//                                "uri=request-uri, response=response-value, opaque=opaque-value, qop=qop-value,"
+//                                "nc=nonce-count, cnonce=client-nonce\n"
+//                            "\n";
 
-        close(client->fd);      //关闭连接
-        break;
-    }
+//        char sendStr[] =    "GET /protected/resource HTTP/1.1\n"
+//                            "Host: example.com\n"
+//                            "Authorization: Basic dXNlck5hbWU6cGFzc3dvcmQ=,\n\n";
 
+   char sendStr[] = "GET /protected/resource HTTP/1.1\n"
+                    "Host: example.com\n"
+                    "Authorization: Digest username=\"user\", "
+                    "realm=\"Restricted Area\", "
+                    "nonce=\"af8c7760297db973dfbbbe1d268cb6bd\", "
+                    "uri=\"/protected/resource\", "
+                    "response=\"6629fae49393a05397450978507c4ef1\", "
+                    "opaque=\"8c85f23cbe747fe648bb2d130f2986a3\", "
+                    "qop=auth, "
+                    "nc=00000101, "
+                    "cnonce=\"0a4f113b\" "
+                    "\n\n";
+
+    tcp_client_send(client, sendStr, strlen(sendStr));
+
+    //system("sleep 2");
+
+
+
+    //----------------------------------------------接收
+//    int ret;
+//#define BUF_SIZE 512        
+//    char buf[BUF_SIZE] = {0};  
+//    int len;
+//
+//#define POLL_SIZE 1    
+//    struct pollfd fds[POLL_SIZE] = {0};  //使用 poll 方法来并发处理用户的数据收发
+//    fds[0].fd = client->fd;
+//    fds[0].events = POLLIN;
+//    
+//    while (1) 
+//    {
+//       
+//        ret = poll(fds, POLL_SIZE, 2000); // 阻塞直到有事件发生或超时
+//        if (ret == -1) 
+//        {
+//            LOG_ALARM("客户端 poll 失败");
+//            system("sleep 3");
+//            continue;
+//        }
+//
+//
+//        //读取的长度len大于0，说明有数据可读；等于0，代表断开连接，小于0，没有数据
+//        
+//        if (fds[0].revents & POLLIN)  //有数据进入
+//        {
+//            LOG_SHOW("---------------->POLL   IN\n");
+//            len = read(client->fd, buf, BUF_SIZE);
+//            if(len == 0)    
+//            {
+//                LOG_INFO("断开连接 ...");
+//                break;
+//            }                
+//            else if(len > 0)
+//            {                    
+//                 LOG_SHOW("\n【客户端 ip地址：%s:%d 读取的字节：%dbyte】\n"
+//                           "------------------------------------\n"
+//                           "%s\n------------------------------------\n\n",
+//                           client->ipv4, client->port, len, buf);  
+//
+//                 //break;
+//            }
+//   
+//        }
+//
+//    }
+//
+//    //----------------------------------------------关闭连接
+//    close(client->fd);      
+
+    
+    pthread_join(client->transceiver, NULL);
 }
 
 

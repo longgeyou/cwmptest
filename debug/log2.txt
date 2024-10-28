@@ -1,4 +1,139 @@
 
 ======================log start=======================
-[info 0][Wed Oct 16 11:50:09 2024]file:protocol/session/http.c  fun:http_test  line:565 
+[info 0][Mon Oct 28 23:40:47 2024]file:protocol/session/http.c  fun:http_test  line:2073 
 http_test start ......
+---->POLL    IN  ready:0
+
+-------------------------------------
+status:0 dataLen:54 
+dataIn:【GET /protected/resource HTTP/1.1
+Host: example.com
+
+
+
+】
+
+
+-------------------------------------
+status:1 dataLen:54 
+dataIn:【GET /protected/resource HTTP/1.1
+Host: example.com
+
+
+
+】
+
+__http_message_first_line_parse len:54 buf:【GET /protected/resource HTTP/1.1
+Host: example.com
+
+
+
+】
+
+-------------------------------------
+status:2 dataLen:21 
+dataIn:【Host: example.com
+
+
+
+】
+
+============================show head
+num:1
+--------------show line--------------
+name:Host
+key:example.com 
+[info 1][Mon Oct 28 23:40:51 2024]file:protocol/session/http.c  fun:http_data_accept  line:1235 
+http 头部处理完毕 ...
+
+-------------------------------------
+status:3 dataLen:2 
+dataIn:【
+
+】
+
+__http_head_pro start ...
+认证失败，要求 摘要认证...
+---->POLL    IN  ready:0
+
+-------------------------------------
+status:1 dataLen:255 
+dataIn:【
+
+GET /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=f83a55554c51ad4bbacfa616797741ce, uri="/cwmp", response="a1aec7f795a7b68426f1bab3d5926143", opaque=b1b53dbaaf3a6d2af022fa15f3e4798e, qop=auth-int, nc=10, cnonce="8a8b15482"
+
+】
+
+__http_message_first_line_parse len:254 buf:【
+
+GET /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=f83a55554c51ad4bbacfa616797741ce, uri="/cwmp", response="a1aec7f795a7b68426f1bab3d5926143", opaque=b1b53dbaaf3a6d2af022fa15f3e4798e, qop=auth-int, nc=10, cnonce="8a8b15482"
+
+】
+
+-------------------------------------
+status:2 dataLen:234 
+dataIn:【Authorization: Digest username="admin", realm=/cwmp, nonce=f83a55554c51ad4bbacfa616797741ce, uri="/cwmp", response="a1aec7f795a7b68426f1bab3d5926143", opaque=b1b53dbaaf3a6d2af022fa15f3e4798e, qop=auth-int, nc=10, cnonce="8a8b15482"
+
+】
+
+============================show head
+num:1
+--------------show line--------------
+name:Authorization
+key:Digest username value:"admin" 
+key:realm value:/cwmp 
+key:nonce value:f83a55554c51ad4bbacfa616797741ce 
+key:uri value:"/cwmp" 
+key:response value:"a1aec7f795a7b68426f1bab3d5926143" 
+key:opaque value:b1b53dbaaf3a6d2af022fa15f3e4798e 
+key:qop value:auth-int 
+key:nc value:10 
+key:cnonce value:"8a8b15482" 
+[info 2][Mon Oct 28 23:40:51 2024]file:protocol/session/http.c  fun:http_data_accept  line:1235 
+http 头部处理完毕 ...
+
+-------------------------------------
+status:3 dataLen:1 
+dataIn:【】
+
+__http_head_pro start ...
+存在 Authorization，可以开始认证 len:13 result:0 str:Authorization name:Authorization
+--------------show line--------------
+name:Authorization
+key:Digest username value:"admin" 
+key:realm value:/cwmp 
+key:nonce value:f83a55554c51ad4bbacfa616797741ce 
+key:uri value:"/cwmp" 
+key:response value:"a1aec7f795a7b68426f1bab3d5926143" 
+key:opaque value:b1b53dbaaf3a6d2af022fa15f3e4798e 
+key:qop value:auth-int 
+key:nc value:10 
+key:cnonce value:"8a8b15482" 
+摘要认证 ...
+///////////////////////////////////
+新键值对 key:username value:"admin"
+客户端上来的 nonce:f83a55554c51ad4bbacfa616797741ce 本地:f83a55554c51ad4bbacfa616797741ce
+本地nc值:0 报文nc值:10
+[info 3][Mon Oct 28 23:40:51 2024]file:protocol/session/http.c  fun:__http_head_pro  line:952 
+用户名：admin 密码：123456
+
+计算摘要值所需参数：
+pszNonce:f83a55554c51ad4bbacfa616797741ce
+pszCNonce:8a8b15482
+pszUser:admin
+pszRealm:/cwmp
+pszPass:123456
+pszAlg:md5
+szNonceCount:00000010
+pszMethod:GET
+pszQop:auth-int
+pszURI:/cwmp
+Response = a1aec7f795a7b68426f1bab3d5926143 client Response:a1aec7f795a7b68426f1bab3d5926143
+摘要认证成功！
+step:5
+---->POLL    IN  ready:0
+[info 4][Mon Oct 28 23:40:55 2024]file:protocol/transport/tcp.c  fun:thread_tcp_transceiver  line:393 
+i=0 [192.168.1.20-8083] 断开连接
+

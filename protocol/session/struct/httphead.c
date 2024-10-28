@@ -6,65 +6,7 @@
 #include "httphead.h"
 #include "log.h"
 #include "pool2.h"
-#include "link.h"
-#include "keyvalue.h"
 #include "strpro.h"
-
-
-
-
-/*=============================================================
-                        数据结构
-==============================================================*/
-/*
-    http 头部结构
-    类似于 Accept-Language: en-US,en;q=0.8 的一行数据，
-    1、冒号前面是名字，后面是内容；
-    2、内容用 分号 分割成多个子内容；
-    3、子内容里面则是一个个用 逗号 成员，可以看为 键值对 的成员；
-        键值对有的只有 key，没有value，有的两者都有
-    例子里，可以理解为：
-    --------------------------------------
-    名字：Accept-Language
-    内容：
-        子内容1:
-                键值对1：
-                        key:空
-                        value:en-US
-                键值对2：
-                        key:空
-                        value:en
-        子内容2:
-                键值对1：
-                        key:q
-                        value:0.8
-    --------------------------------------
-
-
-    实现：
-    1、数据结构
-    --------------------------------------
-    root（链表）
-        每一行（名字       + 键值对列表）
-    --------------------------------------
-    
-
-*/
-
-#define LINE_NAME_STRING_SIZE 256
-
-
-//每一行数据的结构
-typedef struct httphead_line_t{
-    char name[LINE_NAME_STRING_SIZE];
-    keyvalue_obj_t *keyvalue;
-}httphead_line_t;
-
-
-//头部数据结构体（四层树，包括了根）
-typedef struct httphead_head_t{
-    link_obj_t *link;   //链表，链表节点的数据类型为 httphead_line_t 
-}httphead_head_t;
 
 
 /*==============================================================
@@ -195,10 +137,24 @@ void httphead_destroy_head(httphead_head_t *head)
     FREE(head);        //注意head 指向的是动态分配内存，不然会出错
 }
 
+//清空 头部数据结构 里面的链表节点，但是不销毁链表头
+void httphead_clear_head(httphead_head_t *head)
+{
+    if(head == NULL)return;
+    //遍历
+    if(head->link != NULL)
+    {
+        LINK_FOREACH(head->link, probe){
+            //1、释放链表节点的 数据
+            httphead_line_destroy(probe->data);
+        }
 
-/*==============================================================
-                        对象操作
-==============================================================*/
+        //2、清空链表
+            link_clear(head->link );
+    }
+   
+       
+}
 
 
 
@@ -220,6 +176,14 @@ int httphead_parse_line(httphead_line_t *line, const char *lineStr)
     int pos;
     int lenA, lenB, lenD;
 
+    //-------------------------------------
+#define SPECIAL_CONDITION_A "Authorization"
+#define SPECIAL_CONDITION_B "Basic"
+    //特殊情况：
+    //例如http的基本认证 "Authorization: Basic dXNlck5hbWU6cGFzc3dvcmQ=\n" 等于号会被去除
+    //这种情况下不搜索 = 号
+    int specialCondition = 0;
+    //-------------------------------------
 
 //BUF_SIZE 大小要求：应该可以容纳 key、value 字符串
 //或许可以考虑分配动态内存
@@ -254,7 +218,6 @@ int httphead_parse_line(httphead_line_t *line, const char *lineStr)
         strA = localBufA;
         strpro_clean_space(&strA);
         //LOG_SHOW("【A1】%s\n", strA);
-
         strncpy(line->name, strA, LINE_NAME_STRING_SIZE);   //存入 linde 的名字中
         
     }
@@ -266,6 +229,11 @@ int httphead_parse_line(httphead_line_t *line, const char *lineStr)
         strA = localBufA;
         strpro_clean_space(&strA);
         //LOG_SHOW("【A2】%s\n", strA);
+        
+        //-------------------------------------
+        if(strcmp(strA, SPECIAL_CONDITION_A) == 0)specialCondition = 1;
+        //-------------------------------------
+
         strncpy(line->name, strA, LINE_NAME_STRING_SIZE);   //存入 linde 的名字中
         
          
@@ -273,7 +241,7 @@ int httphead_parse_line(httphead_line_t *line, const char *lineStr)
         memmove(buf, buf + pos, lenA - pos);   //内容
         buf[lenA - pos] = '\0';
         //LOG_SHOW("【A3】%s\n", buf);
-        
+ 
         step = 1;
     }
 
@@ -303,11 +271,19 @@ int httphead_parse_line(httphead_line_t *line, const char *lineStr)
                 strcpy(bufTmp, buf); 
                 step = 2;
             }
+
+            //-------------------------------------
+            if(specialCondition == 1)   //特殊情况
+            {
+                if(strstr(bufTmp, SPECIAL_CONDITION_B) != NULL)
+                    specialCondition = 2;
+            }
+            //-------------------------------------
             
             //找到 =
             lenD = strlen(bufTmp);
             findD = strstr(bufTmp, "=");
-            if(findD != NULL)
+            if(findD != NULL && specialCondition != 2)  //注意特殊情况
             {
                 pos = findD - bufTmp;
                 memcpy(localBufA, bufTmp, pos);
@@ -332,7 +308,8 @@ int httphead_parse_line(httphead_line_t *line, const char *lineStr)
             }
             else
             {           
-                strA = localBufA;
+                //strA = localBufA;
+                strA = bufTmp;
                 strpro_clean_space(&strA);
                 //LOG_SHOW("【D3】【%s】\n", strA); 
 
@@ -347,7 +324,11 @@ int httphead_parse_line(httphead_line_t *line, const char *lineStr)
             buf[lenB - pos] = '\0';
             //LOG_SHOW("【B2】%s\n", buf);
             
-            
+
+            //-------------------------------------
+            if(specialCondition == 2)   //特殊情况
+                specialCondition = 0;
+            //-------------------------------------
         }
 
     }
@@ -400,7 +381,7 @@ int httphead_parse_head(httphead_head_t *head, const char *headStr)
                 bufTmp[bufLen] = '\0';
                 
                 //LOG_SHOW("【L1】【%s】\n", bufTmp);
-#define LINE_KEYVALUE_SIZE 10                
+#define LINE_KEYVALUE_SIZE 20                
                 line = httphead_create_line(LINE_KEYVALUE_SIZE);                  
                 httphead_parse_line(line, bufTmp);  //解析
                 link_append_by_set_pointer(head->link, (void *)line); //添加
@@ -463,7 +444,19 @@ void __test_aux_show_head(httphead_head_t *head)
 }
 
 
+//显示，作为外部接口
+void httphead_show(httphead_head_t *head)
+{
+    __test_aux_show_head(head);
+}
 
+void httphead_show_line(httphead_line_t *line)
+{
+    __test_aux_show_line(line);
+}
+
+
+//测试
 void httphead_test()
 {
     printf("httphead test ...\n");
@@ -490,8 +483,10 @@ void httphead_test()
 //    pool_show();
 
 
-    char headStr[] = "Accept-Language: en-US,en; q =0.8 ; new, old  =100\n"
-                        "Accept-Language1: en- US ,en =1232131 ; q =0.8 ; new, old  =100\n\n";
+//    char headStr[] = "Accept-Language: en-US,en; q =0.8 ; new, old  =100\n"
+//                        "Accept-Language1: en- US ,en =1232131 ; q =0.8 ; new, old  =100\n\n";
+    char headStr[] = "Host: example.com\n"
+                        "Authorization: Basic dXNlck5hbWU6cGFzc3dvcmQ=\n\n";                  
     httphead_head_t *head = httphead_create_head();                    
     httphead_parse_head(head, headStr);  
 

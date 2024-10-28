@@ -35,6 +35,28 @@ void strpro_clean_space(char **str_p) {
 }
 
 
+//去掉两边的双引号 （参考 去掉两边的空格）
+void strpro_clean_by_ch(char **str_p, char ch)
+{
+    int len;
+    int i;
+    
+    //char *str = *str_p;
+    len = strlen(*str_p);
+    while(**str_p == ch)
+        (*str_p)++;
+
+    len = strlen(*str_p);
+    for(i = 0; i < len; i++)
+    {
+        if((*str_p)[len - i - 1] == ch)
+            (*str_p)[len - i - 1] = '\0';
+        else
+            break;
+    }
+}
+
+
 /*==============================================================
                         测试
 ==============================================================*/

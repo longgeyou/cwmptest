@@ -139,6 +139,8 @@ keyvalue_data_t *keyvalue_create_data_set_value(void *key, int keyLen, void *val
     keyvalue_data_t *data = (keyvalue_data_t *)MALLOC(sizeof(keyvalue_data_t));
     if(data == NULL)return NULL;
 
+    if(key == NULL)return NULL; //key不能为空
+    
     if(key != NULL && keyLen > 0)
     {
          data->key = (void *)MALLOC(keyLen);
@@ -160,6 +162,12 @@ keyvalue_data_t *keyvalue_create_data_set_value(void *key, int keyLen, void *val
             data->valueEn = 1;
             data->valueLen = valueLen;
         }
+    }
+    else
+    {
+        data->valueLen = 0;
+        data->valueEn = 0;
+        data->value = NULL;
     }
     
 
@@ -292,7 +300,7 @@ int keyvalue_append_set_value(keyvalue_obj_t *keyvalue, void *key, int keyLen, v
     //查看容量
     if(list->num >= list->size)
     {
-        LOG_ALARM("dic 容量");
+        LOG_ALARM("keyvalue 容量");
         return RET_FAILD;
     }
 
@@ -398,6 +406,44 @@ int keyvalue_get_value_by_str(keyvalue_obj_t *keyvalue, char *key, char *value, 
 }
 
 
+//键值对列表 通过 key 来获取键值对数据（keyvalue_data_t）
+keyvalue_data_t *keyvalue_get_data(keyvalue_obj_t *keyvalue, const void *key, int keyLen)
+{
+    //int index;
+    //int len;
+
+    if(keyvalue == NULL || key == NULL || keyLen <= 0)return NULL;
+
+    list_obj_t *list = keyvalue->list;
+    if(list == NULL)return NULL;
+
+    LIST_FOREACH_START(list, probe)
+    {
+        keyvalue_data_t *it = (keyvalue_data_t *)(probe->data);
+
+        if(it->keyEn  == 1 && it != NULL)
+        {
+            if(it->keyLen == keyLen &&
+                memcmp(it->key, key, keyLen) == 0)
+            {
+                return it;
+            }
+        }
+        
+    }LIST_FOREACH_END;
+
+    return NULL;
+}
+
+//键值对列表 通过 key 来获取键值对数据（keyvalue_data_t）
+//key是字符串的情况
+keyvalue_data_t *keyvalue_get_data_by_str(keyvalue_obj_t *keyvalue, char *key)
+{
+    return keyvalue_get_data(keyvalue, (const void *)key, strlen(key) +  1);
+}
+
+
+
 /*==============================================================
                         测试
 ==============================================================*/
@@ -432,6 +478,16 @@ void __keyvalue_test_aux(keyvalue_obj_t  *keyvalue)
                         (char *)(iter->value), iter->valueLen, iter->valueEn);
     } KEYVALUE_FOREACH_END;
 }
+
+
+//给一个显示接口
+void keyvalue_show(keyvalue_obj_t  *keyvalue)
+{
+    __keyvalue_test_aux(keyvalue);
+}
+
+
+
 
 void keyvalue_test()
 {

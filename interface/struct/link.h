@@ -52,6 +52,8 @@ void link_destory_node(link_node_t *node);
 void link_destory_node_and_data(link_node_t *node);
 link_obj_t *link_create();
 void link_destory(link_obj_t *link);
+void link_clear(link_obj_t *link);
+
 
 int link_append_node(link_obj_t *link, link_node_t *node);
 int link_append_by_node(link_obj_t *link);

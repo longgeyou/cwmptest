@@ -204,11 +204,12 @@ bash
   - **`mutex`**£ºÖ¸Ïò `pthread_mutex_t` ÀàĞÍµÄÖ¸Õë¡£
 
 - **`pthread_cond_signal`**£º»½ĞÑÒ»¸öµÈ´ıÌõ¼ş±äÁ¿µÄÏß³Ì¡£
+  
   ```c
   int pthread_cond_signal(pthread_cond_t *cond);
   ```
   - **`cond`**£ºÖ¸Ïò `pthread_cond_t` ÀàĞÍµÄÖ¸Õë¡£
-
+  
 - **`pthread_cond_broadcast`**£º»½ĞÑËùÓĞµÈ´ıÌõ¼ş±äÁ¿µÄÏß³Ì¡£
   ```c
   int pthread_cond_broadcast(pthread_cond_t *cond);
@@ -1135,11 +1136,1098 @@ HTTP/1.1 ÇëÇóÍ·²¿Ìá¹©ÁË·á¸»µÄÔªÊı¾İ£¬°ïÖú·şÎñÆ÷¸üºÃµØÀí½âºÍ´¦Àí¿Í»§¶ËµÄÇëÇó¡£Í¨¹
 
 
 
-### 8¡¢http Í·²¿
+### 9¡¢http Í·²¿
 
 #### ÇëÇó·½·¨
 
-```
+```c
 const char *methods[] = { "GET", "POST", "PUT", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE", "PATCH" };
 ```
 
+
+
+### 10¡¢tr069µÄÈÏÖ¤
+
+ÔÚTR-069£¨Technical Report 069£©Ğ­ÒéÖĞ£¬CPE£¨Customer Premises Equipment£¬¿Í»§×¤µØÉè±¸£©ÓëACS£¨Auto Configuration Server£¬×Ô¶¯ÅäÖÃ·şÎñÆ÷£©Ö®¼äµÄÍ¨ĞÅ°²È«ÊÇÒ»¸öÖØÒªµÄ·½Ãæ¡£TR-069 ¹æ¶¨ÁË¶àÖÖÈÏÖ¤ºÍ¼ÓÃÜ»úÖÆ£¬ÒÔÈ·±£Í¨ĞÅµÄ°²È«ĞÔ¡£ÒÔÏÂÊÇ¶ÔÄãÌáµ½µÄÇé¿öµÄÏêÏ¸·ÖÎö£º
+
+#### Çé¿öÃèÊö
+
+- **SSL/TLS ÈÏÖ¤**£ºÈç¹û CPE Ê¹ÓÃ SSL/TLS£¨Secure Sockets Layer/Transport Layer Security£©½øĞĞÈÏÖ¤£¬ÔòÍ¨ĞÅÊÇ¼ÓÃÜµÄ£¬Ìá¹©ÁË½Ï¸ßµÄ°²È«ĞÔ¡£
+- **HTTP ÈÏÖ¤**£ºÈç¹û CPE Ã»ÓĞÊ¹ÓÃ SSL/TLS ½øĞĞÈÏÖ¤£¬Ôò ACS ±ØĞëÊ¹ÓÃ HTTP ÈÏÖ¤»úÖÆÀ´ÑéÖ¤ CPE µÄÉí·İ¡£
+
+#### TR-069 Ğ­ÒéÖĞµÄÈÏÖ¤»úÖÆ
+
+1. **SSL/TLS ÈÏÖ¤**£º
+   - **ÓÅµã**£ºÌá¹©¶Ëµ½¶ËµÄ¼ÓÃÜºÍÈÏÖ¤£¬È·±£Êı¾İµÄÍêÕûĞÔºÍ»úÃÜĞÔ¡£
+   - **ÊµÏÖ**£ºCPE ºÍ ACS Ö®¼äÍ¨¹ı SSL/TLS ÎÕÊÖ½¨Á¢°²È«Á¬½Ó£¬½»»»Ö¤Êé²¢ÑéÖ¤¶Ô·½µÄÉí·İ¡£
+   - **ÊÊÓÃ³¡¾°**£ºÊÊÓÃÓÚĞèÒª¸ß¶È°²È«ĞÔµÄ»·¾³£¬Èç½ğÈÚ¡¢Ò½ÁÆµÈĞĞÒµ¡£
+
+2. **HTTP ÈÏÖ¤**£º
+   - **»ù±¾ÈÏÖ¤£¨Basic Authentication£©**£º
+     - **Ô­Àí**£ºCPE ÔÚ HTTP ÇëÇóÍ·ÖĞ°üº¬Ò»¸ö `Authorization` ×Ö¶Î£¬ÆäÖĞ°üº¬ Base64 ±àÂëµÄÓÃ»§ÃûºÍÃÜÂë¡£
+     - **¸ñÊ½**£º`Authorization: Basic <Base64(username:password)>`
+     - **È±µã**£ºËäÈ»¼òµ¥Ò×ÓÃ£¬µ«°²È«ĞÔ½ÏµÍ£¬ÒòÎªÓÃ»§ÃûºÍÃÜÂëÔÚ´«Êä¹ı³ÌÖĞÊÇÃ÷ÎÄµÄ£¨¾¡¹Ü¾­¹ı Base64 ±àÂë£¬µ« Base64 ±àÂë²»ÊÇ¼ÓÃÜ£©¡£
+   - **ÕªÒªÈÏÖ¤£¨Digest Authentication£©**£º
+     - **Ô­Àí**£ºCPE ºÍ ACS Ö®¼äÍ¨¹ıÒ»ÏµÁĞÌôÕ½-ÏìÓ¦»úÖÆÀ´ÑéÖ¤Éí·İ£¬±ÜÃâÁËÔÚ´«Êä¹ı³ÌÖĞ·¢ËÍÃ÷ÎÄÃÜÂë¡£
+     - **¸ñÊ½**£º`Authorization: Digest username="user", realm="example.com", nonce="...", uri="/path", response="..."`
+     - **ÓÅµã**£ºÏà±È»ù±¾ÈÏÖ¤£¬Ìá¹©ÁË¸ü¸ßµÄ°²È«ĞÔ¡£
+     - **È±µã**£ºÊµÏÖÏà¶Ô¸´ÔÓ£¬ÇÒÈÔÈ»´æÔÚÒ»Ğ©°²È«·çÏÕ¡£
+
+#### TR-069 ¹æ·¶ÒªÇó
+
+¸ù¾İ TR-069 ¹æ·¶£¬Èç¹û CPE Ã»ÓĞÊ¹ÓÃ SSL/TLS ½øĞĞÈÏÖ¤£¬Ôò ACS ±ØĞëÊ¹ÓÃ HTTP ÈÏÖ¤»úÖÆÀ´ÑéÖ¤ CPE µÄÉí·İ¡£¾ßÌåÒªÇóÈçÏÂ£º
+
+1. **HTTP »ù±¾ÈÏÖ¤**£º
+   - ACS Ó¦µ±Ö§³Ö HTTP »ù±¾ÈÏÖ¤£¬ÒÔÑéÖ¤ CPE µÄÉí·İ¡£
+   - CPE ĞèÒªÔÚÃ¿´ÎÇëÇóÖĞ°üº¬ `Authorization` Í·£¬Ê¹ÓÃ Base64 ±àÂëµÄÓÃ»§ÃûºÍÃÜÂë¡£
+
+2. **HTTP ÕªÒªÈÏÖ¤**£º
+   - ACS Ó¦µ±Ö§³Ö HTTP ÕªÒªÈÏÖ¤£¬ÒÔÌá¹©¸ü¸ßµÄ°²È«ĞÔ¡£
+   - CPE ĞèÒªÏìÓ¦ ACS ·¢³öµÄÌôÕ½£¬Éú³É²¢·¢ËÍ°üº¬¹şÏ£ÖµµÄ `Authorization` Í·¡£
+
+#### ÊµÏÖ½¨Òé
+
+1. **ÓÅÏÈÊ¹ÓÃ SSL/TLS**£º
+   - ¾¡Á¿Ê¹ÓÃ SSL/TLS ½øĞĞÍ¨ĞÅ£¬ÒÔÈ·±£Êı¾İµÄÍêÕûĞÔºÍ»úÃÜĞÔ¡£
+   - ÅäÖÃ CPE ºÍ ACS ÒÔÖ§³Ö SSL/TLS£¬Ê¹ÓÃÓĞĞ§µÄÖ¤Êé½øĞĞÉí·İÑéÖ¤¡£
+
+2. **±¸ÓÃ HTTP ÈÏÖ¤**£º
+   - Èç¹ûÎŞ·¨Ê¹ÓÃ SSL/TLS£¬È·±£ ACS Ö§³Ö HTTP ÕªÒªÈÏÖ¤£¬ÒÔÌá¸ß°²È«ĞÔ¡£
+   - ÅäÖÃ CPE ÒÔÖ§³Ö HTTP ÕªÒªÈÏÖ¤£¬È·±£ÔÚÃ¿´ÎÇëÇóÖĞÕıÈ·Éú³ÉºÍ·¢ËÍ `Authorization` Í·¡£
+
+3. **°²È«ÅäÖÃ**£º
+   - Ê¹ÓÃÇ¿ÃÜÂë²ßÂÔ£¬È·±£ÓÃ»§ÃûºÍÃÜÂëµÄÇ¿¶È¡£
+   - ¶¨ÆÚ¸üĞÂÖ¤ÊéºÍÃÜÔ¿£¬·ÀÖ¹³¤ÆÚÊ¹ÓÃÍ¬Ò»Æ¾Ö¤´øÀ´µÄ°²È«·çÏÕ¡£
+
+#### ×Ü½á
+
+ÔÚ TR-069 Ğ­ÒéÖĞ£¬Èç¹û CPE Ã»ÓĞÊ¹ÓÃ SSL/TLS ½øĞĞÈÏÖ¤£¬ACS ±ØĞëÊ¹ÓÃ HTTP ÈÏÖ¤»úÖÆÀ´ÑéÖ¤ CPE µÄÉí·İ¡£½¨ÒéÓÅÏÈÊ¹ÓÃ SSL/TLS£¬Èç¹ûÎŞ·¨Ê¹ÓÃ SSL/TLS£¬ÔòÓ¦Ê¹ÓÃ HTTP ÕªÒªÈÏÖ¤ÒÔÌá¸ß°²È«ĞÔ¡£Í¨¹ıºÏÀíµÄÅäÖÃºÍ¹ÜÀí£¬¿ÉÒÔÈ·±£ CPE ºÍ ACS Ö®¼äµÄÍ¨ĞÅ°²È«¿É¿¿¡£
+
+
+
+### 11¡¢SSL²Î¿¼
+
+
+
+> linuxµÄsocketÈçºÎÊ¹ÓÃssl
+
+---
+
+ÔÚ Linux ÖĞÊ¹ÓÃ SSL/TLS ±£»¤ Socket Í¨ĞÅÍ¨³£ĞèÒª½èÖú OpenSSL ¿â¡£OpenSSL Ìá¹©ÁËÒ»Ì× API À´ÊµÏÖ°²È«µÄÍøÂçÍ¨ĞÅ¡£ÒÔÏÂÊÇÒ»¸ö¼òµ¥µÄÊ¾Àı£¬Õ¹Ê¾ÈçºÎÔÚ¿Í»§¶ËºÍ·şÎñÆ÷¶ËÊ¹ÓÃ OpenSSL ½øĞĞ SSL/TLS Í¨ĞÅ¡£
+
+#### ·şÎñÆ÷¶Ë
+
+1. **°²×° OpenSSL ¿â**£º
+   È·±£ÄãµÄÏµÍ³ÉÏÒÑ¾­°²×°ÁË OpenSSL ¿â¡£Èç¹ûÃ»ÓĞ°²×°£¬¿ÉÒÔÊ¹ÓÃ°ü¹ÜÀíÆ÷½øĞĞ°²×°£º
+
+   ```sh
+   sudo apt-get install libssl-dev  # Debian/Ubuntu
+   sudo yum install openssl-devel   # CentOS/RHEL
+   ```
+
+2. **±àĞ´·şÎñÆ÷´úÂë**£º
+   ÒÔÏÂÊÇÒ»¸ö¼òµ¥µÄ SSL ·şÎñÆ÷Ê¾Àı£º
+
+   ```c
+   #include <stdio.h>
+   #include <stdlib.h>
+   #include <string.h>
+   #include <unistd.h>
+   #include <arpa/inet.h>
+   #include <openssl/ssl.h>
+   #include <openssl/err.h>
+   
+   void init_openssl() {
+       SSL_load_error_strings();
+       OpenSSL_add_ssl_algorithms();
+   }
+   
+   void cleanup_openssl() {
+       EVP_cleanup();
+   }
+   
+   SSL_CTX *create_context() {
+       const SSL_METHOD *method;
+       SSL_CTX *ctx;
+   
+       method = TLS_server_method();
+       ctx = SSL_CTX_new(method);
+       if (!ctx) {
+           perror("Unable to create SSL context");
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   
+       return ctx;
+   }
+   
+   void configure_context(SSL_CTX *ctx, const char *cert_file, const char *key_file) {
+       if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   
+       if (SSL_CTX_use_PrivateKey_file(ctx, key_file, SSL_FILETYPE_PEM) <= 0 ) {
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   }
+   
+   int main() {
+       int sock, conn, len;
+       struct sockaddr_in server_addr, client_addr;
+       SSL_CTX *ctx;
+   
+       init_openssl();
+       ctx = create_context();
+   
+       configure_context(ctx, "server-cert.pem", "server-key.pem");
+   
+       sock = socket(AF_INET, SOCK_STREAM, 0);
+       if (sock < 0) {
+           perror("Unable to create socket");
+           exit(EXIT_FAILURE);
+       }
+   
+       server_addr.sin_family = AF_INET;
+       server_addr.sin_addr.s_addr = INADDR_ANY;
+       server_addr.sin_port = htons(4433);
+   
+       if (bind(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+           perror("Unable to bind");
+           exit(EXIT_FAILURE);
+       }
+   
+       if (listen(sock, 1) < 0) {
+           perror("Unable to listen");
+           exit(EXIT_FAILURE);
+       }
+   
+       len = sizeof(client_addr);
+       conn = accept(sock, (struct sockaddr*)&client_addr, &len);
+       if (conn < 0) {
+           perror("Unable to accept");
+           exit(EXIT_FAILURE);
+       }
+   
+       SSL *ssl = SSL_new(ctx);
+       SSL_set_fd(ssl, conn);
+   
+       if (SSL_accept(ssl) <= 0) {
+           ERR_print_errors_fp(stderr);
+       } else {
+           char buffer[1024];
+           SSL_read(ssl, buffer, sizeof(buffer) - 1);
+           printf("Received: %s\n", buffer);
+   
+           const char *response = "Hello from the server";
+           SSL_write(ssl, response, strlen(response));
+       }
+   
+       SSL_shutdown(ssl);
+       SSL_free(ssl);
+       close(conn);
+       close(sock);
+       SSL_CTX_free(ctx);
+       cleanup_openssl();
+   
+       return 0;
+   }
+   ```
+
+#### ¿Í»§¶Ë
+
+1. **±àĞ´¿Í»§¶Ë´úÂë**£º
+   ÒÔÏÂÊÇÒ»¸ö¼òµ¥µÄ SSL ¿Í»§¶ËÊ¾Àı£º
+
+   ```c
+   #include <stdio.h>
+   #include <stdlib.h>
+   #include <string.h>
+   #include <unistd.h>
+   #include <arpa/inet.h>
+   #include <openssl/ssl.h>
+   #include <openssl/err.h>
+   
+   void init_openssl() {
+       SSL_load_error_strings();
+       OpenSSL_add_ssl_algorithms();
+   }
+   
+   void cleanup_openssl() {
+       EVP_cleanup();
+   }
+   
+   SSL_CTX *create_context() {
+       const SSL_METHOD *method;
+       SSL_CTX *ctx;
+   
+       method = TLS_client_method();
+       ctx = SSL_CTX_new(method);
+       if (!ctx) {
+           perror("Unable to create SSL context");
+           ERR_print_errors_fp(stderr);
+           exit(EXIT_FAILURE);
+       }
+   
+       return ctx;
+   }
+   
+   int main() {
+       int sock;
+       struct sockaddr_in server_addr;
+       SSL_CTX *ctx;
+       SSL *ssl;
+   
+       init_openssl();
+       ctx = create_context();
+   
+       SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+   
+       sock = socket(AF_INET, SOCK_STREAM, 0);
+       if (sock < 0) {
+           perror("Unable to create socket");
+           exit(EXIT_FAILURE);
+       }
+   
+       server_addr.sin_family = AF_INET;
+       server_addr.sin_port = htons(4433);
+       if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+           perror("Invalid address/ Address not supported");
+           exit(EXIT_FAILURE);
+       }
+   
+       if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+           perror("Connection failed");
+           exit(EXIT_FAILURE);
+       }
+   
+       ssl = SSL_new(ctx);
+       SSL_set_fd(ssl, sock);
+   
+       if (SSL_connect(ssl) <= 0) {
+           ERR_print_errors_fp(stderr);
+       } else {
+           const char *msg = "Hello from the client";
+           SSL_write(ssl, msg, strlen(msg));
+   
+           char buffer[1024];
+           SSL_read(ssl, buffer, sizeof(buffer) - 1);
+           printf("Received: %s\n", buffer);
+       }
+   
+       SSL_shutdown(ssl);
+       SSL_free(ssl);
+       close(sock);
+       SSL_CTX_free(ctx);
+       cleanup_openssl();
+   
+       return 0;
+   }
+   ```
+
+#### ±àÒëºÍÔËĞĞ
+
+1. **±àÒë·şÎñÆ÷ºÍ¿Í»§¶Ë´úÂë**£º
+   Ê¹ÓÃ `gcc` ±àÒë·şÎñÆ÷ºÍ¿Í»§¶Ë´úÂë£¬²¢Á´½Ó OpenSSL ¿â£º
+
+   ```sh
+   gcc -o server server.c -lssl -lcrypto
+   gcc -o client client.c -lssl -lcrypto
+   ```
+
+2. **Éú³ÉÖ¤ÊéºÍÃÜÔ¿**£º
+   Äã¿ÉÒÔÊ¹ÓÃ OpenSSL ¹¤¾ßÉú³É×ÔÇ©ÃûµÄÖ¤ÊéºÍÃÜÔ¿£º
+
+   ```sh
+   openssl req -new -x509 -keyout server-key.pem -out server-cert.pem -days 365 -nodes
+   ```
+
+3. **ÔËĞĞ·şÎñÆ÷ºÍ¿Í»§¶Ë**£º
+   ÏÈÆô¶¯·şÎñÆ÷£¬È»ºóÆô¶¯¿Í»§¶Ë£º
+
+   ```sh
+   ./server
+   ./client
+   ```
+
+Í¨¹ıÒÔÉÏ²½Öè£¬Äã¿ÉÒÔÔÚ Linux ÖĞÊ¹ÓÃ OpenSSL ÊµÏÖ°²È«µÄ SSL/TLS Í¨ĞÅ¡£Ï£ÍûÕâĞ©ĞÅÏ¢¶ÔÄãÓĞ°ïÖú£¡Èç¹ûÓĞÈÎºÎÎÊÌâ£¬»¶Ó­¼ÌĞøÌáÎÊ¡£
+
+
+
+### 12¡¢SSL ¿Í»§¶Ë£¨ĞÂÀı×Ó£©
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
+#define PORT 443
+#define SERVER "yourdomain.com"
+
+void init_openssl() {
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+}
+
+void cleanup_openssl() {
+    EVP_cleanup();
+}
+
+SSL_CTX* create_context() {
+    const SSL_METHOD *method;
+    SSL_CTX *ctx;
+
+    method = TLS_client_method();
+    ctx = SSL_CTX_new(method);
+    if (!ctx) {
+        perror("Unable to create SSL context");
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    return ctx;
+}
+
+void configure_context(SSL_CTX *ctx) {
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+    SSL_CTX_load_verify_locations(ctx, "/path/to/cacert.pem", NULL);
+}
+
+int main() {
+    int sock;
+    struct sockaddr_in server;
+    SSL_CTX *ctx;
+    SSL *ssl;
+
+    init_openssl();
+    ctx = create_context();
+    configure_context(ctx);
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("Unable to create socket");
+        exit(EXIT_FAILURE);
+    }
+
+    server.sin_family = AF_INET;
+    server.sin_port = htons(PORT);
+    server.sin_addr.s_addr = inet_addr(SERVER);
+
+    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0) {
+        close(sock);
+        perror("Connect failed");
+        exit(EXIT_FAILURE);
+    }
+
+    ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, sock);
+
+    if (SSL_connect(ssl) <= 0) {
+        ERR_print_errors_fp(stderr);
+    } else {
+        const char *msg = "GET / HTTP/1.1\r\nHost: yourdomain.com\r\nConnection: close\r\n\r\n";
+        SSL_write(ssl, msg, strlen(msg));
+
+        char buffer[1024];
+        int bytes;
+        while ((bytes = SSL_read(ssl, buffer, sizeof(buffer))) > 0) {
+            write(STDOUT_FILENO, buffer, bytes);
+        }
+    }
+
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+    close(sock);
+    SSL_CTX_free(ctx);
+    cleanup_openssl();
+
+    return 0;
+}
+```
+
+### 13¡¢·şÎñÆ÷ºÍ¿Í»§¶ËµÄCAÖ¤Êé
+
+·şÎñÆ÷µÄ CA Ö¤ÊéºÍ¿Í»§¶ËµÄ CA Ö¤ÊéÔÚ SSL/TLS Í¨ĞÅÖĞ°çÑİ²»Í¬µÄ½ÇÉ«£¬µ«ËüÃÇÖ®¼äÓĞÒ»Ğ©¹²Í¬µãºÍÏà»¥¹ØÏµ¡£ÏÂÃæÊÇÏêÏ¸µÄ½âÊÍ£º
+
+#### 1. ·şÎñÆ÷µÄ CA Ö¤Êé
+
+##### ¶¨Òå
+- **·şÎñÆ÷µÄ CA Ö¤Êé**£ºÕâÊÇÓÉÖ¤Êé°ä·¢»ú¹¹£¨CA£©Ç©·¢µÄÖ¤Êé£¬ÓÃÓÚÑéÖ¤·şÎñÆ÷µÄÉí·İ¡£·şÎñÆ÷Ê¹ÓÃÕâ¸öÖ¤ÊéÀ´Ö¤Ã÷×Ô¼ºÊÇ¿ÉĞÅµÄ¡£
+
+##### ×÷ÓÃ
+- **Éí·İÑéÖ¤**£º·şÎñÆ÷ÔÚ SSL/TLS ÎÕÊÖ¹ı³ÌÖĞÏò¿Í»§¶Ë·¢ËÍ×Ô¼ºµÄÖ¤Êé£¬¿Í»§¶ËÊ¹ÓÃÕâ¸öÖ¤ÊéÀ´ÑéÖ¤·şÎñÆ÷µÄÉí·İ¡£
+- **¹«Ô¿·Ö·¢**£ºÖ¤ÊéÖĞ°üº¬·şÎñÆ÷µÄ¹«Ô¿£¬¿Í»§¶ËÊ¹ÓÃÕâ¸ö¹«Ô¿À´¼ÓÃÜ»á»°ÃÜÔ¿£¬È·±£Ö»ÓĞ·şÎñÆ÷ÄÜ½âÃÜ¡£
+
+##### Àı×Ó
+- ·şÎñÆ÷Ö¤ÊéÍ¨³£°üº¬ÒÔÏÂĞÅÏ¢£º
+  - **Ö÷ÌåÃû³Æ**£¨Subject Name£©£º·şÎñÆ÷µÄÓòÃû£¨Èç `yourdomain.com`£©¡£
+  - **¹«Ô¿**£¨Public Key£©£º·şÎñÆ÷µÄ¹«Ô¿¡£
+  - **°ä·¢ÕßÃû³Æ**£¨Issuer Name£©£ºÇ©·¢Ö¤ÊéµÄ CA µÄÃû³Æ¡£
+  - **ÓĞĞ§ÆÚ**£¨Validity Period£©£ºÖ¤ÊéµÄÓĞĞ§ÆğÊ¼ÈÕÆÚºÍ½áÊøÈÕÆÚ¡£
+  - **Ç©Ãû**£¨Signature£©£ºCA Ê¹ÓÃÆäË½Ô¿¶ÔÖ¤ÊéÄÚÈİ½øĞĞÇ©Ãû£¬ÒÔÈ·±£Ö¤ÊéµÄÍêÕûĞÔºÍÕæÊµĞÔ¡£
+
+#### 2. ¿Í»§¶ËµÄ CA Ö¤Êé
+
+##### ¶¨Òå
+- **¿Í»§¶ËµÄ CA Ö¤Êé**£ºÕâÊÇ¿Í»§¶ËÓÃÀ´ÑéÖ¤·şÎñÆ÷Ö¤ÊéµÄ CA Ö¤Êé¡£¿Í»§¶ËÊ¹ÓÃÕâĞ©Ö¤ÊéÀ´¹¹½¨ĞÅÈÎÁ´£¬ÑéÖ¤·şÎñÆ÷Ö¤ÊéµÄÓĞĞ§ĞÔºÍ¿ÉĞÅ¶È¡£
+
+##### ×÷ÓÃ
+- **Ö¤ÊéÑéÖ¤**£º¿Í»§¶ËÊ¹ÓÃÕâĞ© CA Ö¤ÊéÀ´ÑéÖ¤·şÎñÆ÷Ö¤ÊéµÄÇ©Ãû£¬È·±£·şÎñÆ÷Ö¤ÊéÊÇÓÉ¿ÉĞÅµÄ CA Ç©·¢µÄ¡£
+- **ĞÅÈÎÁ´**£º¿Í»§¶ËÍ¨¹ı¹¹½¨Ö¤ÊéÁ´£¬´Ó·şÎñÆ÷Ö¤Êé×·Ëİµ½¸ù CA Ö¤Êé£¬È·±£Õû¸öÁ´ÊÇ¿ÉĞÅµÄ¡£
+
+##### Àı×Ó
+- ¿Í»§¶ËµÄ CA Ö¤ÊéÍ¨³£°üº¬¶à¸öÊÜĞÅÈÎµÄ CA Ö¤Êé£¬ÕâĞ©Ö¤Êé¿ÉÒÔÊÇ¸ù CA Ö¤Êé»òÖĞ¼ä CA Ö¤Êé¡£
+
+##### ¹ØÏµ
+
+1. **ĞÅÈÎÁ´**£º
+   - **·şÎñÆ÷Ö¤Êé**£º·şÎñÆ÷Ö¤ÊéÍ¨³£ÓÉÒ»¸öÖĞ¼ä CA »ò¸ù CA Ç©·¢¡£
+   - **¿Í»§¶ËµÄ CA Ö¤Êé**£º¿Í»§¶ËÊ¹ÓÃÕâĞ© CA Ö¤ÊéÀ´ÑéÖ¤·şÎñÆ÷Ö¤ÊéµÄÇ©Ãû£¬È·±£·şÎñÆ÷Ö¤ÊéÊÇÓÉ¿ÉĞÅµÄ CA Ç©·¢µÄ¡£
+   - **Ö¤ÊéÁ´**£º´Ó·şÎñÆ÷Ö¤Êé×·Ëİµ½ÖĞ¼ä CA Ö¤Êé£¬ÔÙ×·Ëİµ½¸ù CA Ö¤Êé£¬ĞÎ³ÉÒ»¸öÍêÕûµÄĞÅÈÎÁ´¡£
+
+2. **ÑéÖ¤¹ı³Ì**£º
+   - **·şÎñÆ÷·¢ËÍÖ¤Êé**£ºÔÚ SSL/TLS ÎÕÊÖ¹ı³ÌÖĞ£¬·şÎñÆ÷Ïò¿Í»§¶Ë·¢ËÍ×Ô¼ºµÄÖ¤Êé¡£
+   - **¿Í»§¶ËÑéÖ¤Ö¤Êé**£º¿Í»§¶ËÊ¹ÓÃ±¾µØ´æ´¢µÄ CA Ö¤ÊéÀ´ÑéÖ¤·şÎñÆ÷Ö¤ÊéµÄÇ©Ãû£¬È·±£Ö¤ÊéµÄÓĞĞ§ĞÔºÍ¿ÉĞÅ¶È¡£
+   - **ĞÅÈÎÁ´ÑéÖ¤**£º¿Í»§¶ËÍ¨¹ı¹¹½¨Ö¤ÊéÁ´£¬´Ó·şÎñÆ÷Ö¤Êé×·Ëİµ½¸ù CA Ö¤Êé£¬È·±£Õû¸öÁ´ÊÇ¿ÉĞÅµÄ¡£
+
+##### Ê¾Àı
+
+##### ·şÎñÆ÷Ö¤ÊéÁ´
+
+1. **·şÎñÆ÷Ö¤Êé**£¨ÓÉÖĞ¼ä CA Ç©·¢£©£º
+   ```pem
+   -----BEGIN CERTIFICATE-----
+   MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
+   MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgTHRkMSwwKgYDVQQDEyNE
+   aWdpQ2VydCBTSEEyIFNlY3VyZSBTZXJ2ZXIgQ0EwHhcNMTIxMjExMDAwMDAwWhcN
+   MjExMjExMjM1OTU5WjBpMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFjAUBgNV
+   ...
+   -----END CERTIFICATE-----
+   ```
+
+2. **ÖĞ¼ä CA Ö¤Êé**£¨ÓÉ¸ù CA Ç©·¢£©£º
+   ```pem
+   -----BEGIN CERTIFICATE-----
+   MIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/
+   MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT
+   DkRTVCBSb290IENBIFgzMB4XDTIwMDEyMDkxMjM1NVoXDTIxMDEyMDkxMjM1NVow
+   TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+   ...
+   -----END CERTIFICATE-----
+   ```
+
+3. **¸ù CA Ö¤Êé**£º
+   ```pem
+   -----BEGIN CERTIFICATE-----
+   MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
+   MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgTHRkMSwwKgYDVQQDEyNE
+   aWdpQ2VydCBTSEEyIFNlY3VyZSBTZXJ2ZXIgQ0EwHhcNMTIxMjExMDAwMDAwWhcN
+   MjExMjExMjM1OTU5WjBpMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFjAUBgNV
+   ...
+   -----END CERTIFICATE-----
+   ```
+
+##### ¿Í»§¶ËµÄ CA Ö¤Êé
+
+¿Í»§¶ËµÄ CA Ö¤ÊéÎÄ¼ş£¨Èç `/path/to/cacert.pem`£©¿ÉÄÜ°üº¬ÉÏÊöµÄ¸ù CA Ö¤ÊéºÍÖĞ¼ä CA Ö¤Êé£¬ÓÃÓÚÑéÖ¤·şÎñÆ÷Ö¤Êé¡£
+
+##### ×Ü½á
+
+- **·şÎñÆ÷µÄ CA Ö¤Êé**£ºÓÃÓÚÑéÖ¤·şÎñÆ÷µÄÉí·İ£¬°üº¬·şÎñÆ÷µÄ¹«Ô¿¡£
+- **¿Í»§¶ËµÄ CA Ö¤Êé**£ºÓÃÓÚÑéÖ¤·şÎñÆ÷Ö¤ÊéµÄÇ©Ãû£¬È·±£·şÎñÆ÷Ö¤ÊéÊÇÓÉ¿ÉĞÅµÄ CA Ç©·¢µÄ¡£
+- **ĞÅÈÎÁ´**£º´Ó·şÎñÆ÷Ö¤Êé×·Ëİµ½¸ù CA Ö¤Êé£¬ĞÎ³ÉÒ»¸öÍêÕûµÄĞÅÈÎÁ´£¬È·±£Õû¸öÁ´ÊÇ¿ÉĞÅµÄ¡£
+
+Í¨¹ıÕâĞ©»úÖÆ£¬SSL/TLS Í¨ĞÅÄÜ¹»È·±£·şÎñÆ÷ºÍ¿Í»§¶ËÖ®¼äµÄÍ¨ĞÅÊÇ°²È«ºÍ¿ÉĞÅµÄ¡£Ï£ÍûÕâĞ©½âÊÍÄÜ°ïÖúÄã¸üºÃµØÀí½â·şÎñÆ÷µÄ CA Ö¤ÊéºÍ¿Í»§¶ËµÄ CA Ö¤ÊéÖ®¼äµÄ¹ØÏµ¡£Èç¹ûÓĞ¸ü¶à¾ßÌåµÄÎÊÌâ»òĞèÒª½øÒ»²½µÄ°ïÖú£¬Çë¸æËßÎÒ¡£
+
+
+
+### 14¡¢http »ù´¡ÈÏÖ¤
+
+HTTP Basic Authentication ÊÇÒ»ÖÖ¼òµ¥ÇÒ¹ã·ºÊ¹ÓÃµÄÈÏÖ¤»úÖÆ£¬ÓÃÓÚ±£»¤ HTTP ×ÊÔ´¡£ËüÍ¨¹ıÔÚ HTTP ÇëÇóÍ·ÖĞ´«µİÓÃ»§ÃûºÍÃÜÂëÀ´ÑéÖ¤ÓÃ»§Éí·İ¡£ÒÔÏÂÊÇ HTTP Basic Authentication ·½°¸µÄÏêÏ¸ËµÃ÷£º
+
+#### 1. Ô­Àí
+
+##### 1.1 ÇëÇóÁ÷³Ì
+
+1. **¿Í»§¶Ë·¢ÆğÇëÇó**£º
+   
+   - ¿Í»§¶ËÏò·şÎñÆ÷·¢ËÍÒ»¸ö HTTP ÇëÇó£¬³¢ÊÔ·ÃÎÊÊÜ±£»¤µÄ×ÊÔ´¡£
+   - ·şÎñÆ÷ÊÕµ½ÇëÇóºó£¬¼ì²éÊÇ·ñÌá¹©ÁËÈÏÖ¤ĞÅÏ¢¡£
+   
+2. **·şÎñÆ÷·µ»Ø 401 Unauthorized ÏìÓ¦**£º
+   
+   - Èç¹ûÇëÇóÖĞÃ»ÓĞÌá¹©ÈÏÖ¤ĞÅÏ¢£¬·şÎñÆ÷·µ»ØÒ»¸ö 401 Unauthorized ÏìÓ¦¡£
+   - 401 ÏìÓ¦ÖĞ°üº¬Ò»¸ö `WWW-Authenticate` Í·£¬Ö¸Ê¾¿Í»§¶ËĞèÒª½øĞĞ»ù±¾ÈÏÖ¤¡£
+   
+   ```http
+   HTTP/1.1 401 Unauthorized
+   WWW-Authenticate: Basic realm="Restricted Area"
+   Content-Type: text/html
+   Content-Length: 137
+   
+   <html>
+   <head>
+   <title>Unauthorized</title>
+   </head>
+   <body>
+   <h1>401 Unauthorized</h1>
+   <p>You are not authorized to access this resource.</p>
+   </body>
+   </html>
+   ```
+   
+3. **¿Í»§¶Ë·¢ËÍ´øÓĞÈÏÖ¤ĞÅÏ¢µÄÇëÇó**£º
+   - ¿Í»§¶ËÊÕµ½ 401 ÏìÓ¦ºó£¬ÌáÊ¾ÓÃ»§ÊäÈëÓÃ»§ÃûºÍÃÜÂë¡£
+   - ¿Í»§¶Ë½«ÓÃ»§ÃûºÍÃÜÂë±àÂëÎª Base64 ¸ñÊ½£¬²¢ÔÚºóĞøÇëÇóÖĞÍ¨¹ı `Authorization` Í··¢ËÍ¡£
+
+   ```http
+   GET /protected/resource HTTP/1.1
+   Host: example.com
+   Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+   ```
+
+   ÆäÖĞ£¬`dXNlcm5hbWU6cGFzc3dvcmQ=` ÊÇ `username:password` µÄ Base64 ±àÂë¡£
+
+4. **·şÎñÆ÷ÑéÖ¤ÈÏÖ¤ĞÅÏ¢**£º
+   - ·şÎñÆ÷½âÂë `Authorization` Í·ÖĞµÄ Base64 ×Ö·û´®£¬ÌáÈ¡ÓÃ»§ÃûºÍÃÜÂë¡£
+   - ·şÎñÆ÷ÑéÖ¤ÓÃ»§ÃûºÍÃÜÂëÊÇ·ñÕıÈ·¡£
+   - Èç¹ûÑéÖ¤³É¹¦£¬·şÎñÆ÷·µ»ØÇëÇóµÄ×ÊÔ´£»·ñÔò£¬·µ»Ø 401 Unauthorized ÏìÓ¦¡£
+
+#### 2. ¼¼ÊõÏ¸½Ú
+
+##### 2.1 `WWW-Authenticate` Í·
+
+- **¸ñÊ½**£º
+  ```http
+  WWW-Authenticate: Basic realm="realm-name"
+  ```
+- **×Ö¶Î**£º
+  - `Basic`£º±íÊ¾Ê¹ÓÃ»ù±¾ÈÏÖ¤·½°¸¡£
+  - `realm`£ºÒ»¸ö¿ÉÑ¡µÄ×Ö·û´®£¬ÓÃÓÚÃèÊöÊÜ±£»¤ÇøÓòµÄÃû³Æ¡£¿Í»§¶Ë¿ÉÒÔÊ¹ÓÃÕâ¸öĞÅÏ¢À´ÌáÊ¾ÓÃ»§ÊäÈëÕıÈ·µÄÆ¾¾İ¡£
+
+##### 2.2 `Authorization` Í·
+
+- **¸ñÊ½**£º
+  ```http
+  Authorization: Basic base64(username:password)
+  ```
+- **×Ö¶Î**£º
+  - `Basic`£º±íÊ¾Ê¹ÓÃ»ù±¾ÈÏÖ¤·½°¸¡£
+  - `base64(username:password)`£ºÓÃ»§ÃûºÍÃÜÂëÆ´½Ó³É `username:password` ×Ö·û´®£¬È»ºó½øĞĞ Base64 ±àÂë¡£
+
+#### 3. Ê¾Àı
+
+##### 3.1 ·şÎñÆ÷¶ËÊ¾Àı£¨Python Flask£©
+
+```python
+from flask import Flask, request, make_response
+
+app = Flask(__name__)
+
+def check_auth(username, password):
+    return username == 'admin' and password == 'secret'
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return make_response(
+        'Could not verify your access level for that URL.\n'
+        'You have to login with proper credentials', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'}
+    )
+
+@app.route('/protected')
+def protected():
+    auth = request.authorization
+    if not auth or not check_auth(auth.username, auth.password):
+        return authenticate()
+    return "You are logged in as %s" % auth.username
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+##### 3.2 ¿Í»§¶ËÊ¾Àı£¨curl£©
+
+```sh
+# µÚÒ»´ÎÇëÇó£¬Î´Ìá¹©ÈÏÖ¤ĞÅÏ¢
+curl -v http://localhost:5000/protected
+
+# Ìá¹©ÈÏÖ¤ĞÅÏ¢
+curl -v -u admin:secret http://localhost:5000/protected
+```
+
+#### 4. °²È«ĞÔ¿¼ÂÇ
+
+##### 4.1 Ã÷ÎÄ´«Êä
+
+- **ÎÊÌâ**£ºBase64 ±àÂë²»ÊÇ¼ÓÃÜ£¬Ö»ÊÇ¼òµ¥µÄ¶ş½øÖÆµ½ÎÄ±¾µÄ±àÂë·½Ê½¡£ÓÃ»§ÃûºÍÃÜÂëÔÚ´«Êä¹ı³ÌÖĞÊÇÃ÷ÎÄµÄ£¬ÈİÒ×±»½Ø»ñ¡£
+- **½â¾ö·½°¸**£ºÊ¹ÓÃ HTTPS£¨SSL/TLS£©À´¼ÓÃÜÕû¸öÍ¨ĞÅ¹ı³Ì£¬È·±£ÓÃ»§ÃûºÍÃÜÂëÔÚ´«Êä¹ı³ÌÖĞ²»±»ÇÔÈ¡¡£
+
+##### 4.2 »á»°¹ÜÀí
+
+- **ÎÊÌâ**£º»ù±¾ÈÏÖ¤Ã»ÓĞ»á»°¹ÜÀí»úÖÆ£¬Ã¿´ÎÇëÇó¶¼ĞèÒªÖØĞÂ·¢ËÍÈÏÖ¤ĞÅÏ¢¡£
+- **½â¾ö·½°¸**£º¿ÉÒÔ½áºÏÆäËûÈÏÖ¤»úÖÆ£¨Èç»á»° cookie£©À´¼õÉÙÆµ·±µÄÈÏÖ¤²Ù×÷¡£
+
+##### 4.3 ÓÃ»§ÌåÑé
+
+- **ÎÊÌâ**£º»ù±¾ÈÏÖ¤Í¨³£»áµ¯³öä¯ÀÀÆ÷µÄÄ¬ÈÏÈÏÖ¤¶Ô»°¿ò£¬ÓÃ»§ÌåÑé½Ï²î¡£
+- **½â¾ö·½°¸**£º¿ÉÒÔÊ¹ÓÃ×Ô¶¨ÒåµÄµÇÂ¼±íµ¥ºÍ JavaScript À´Ìá¹©¸üºÃµÄÓÃ»§ÌåÑé¡£
+
+##### 5. ÊÊÓÃ³¡¾°
+
+- **¼òµ¥Ó¦ÓÃ**£ºÊÊºÏĞ¡ĞÍÓ¦ÓÃ»òÄÚ²¿ÏµÍ³£¬¶Ô°²È«ĞÔÒªÇó²»¸ß¡£
+- **API ÈÏÖ¤**£º³£ÓÃÓÚ API ÈÏÖ¤£¬ÌØ±ğÊÇµ± API µ÷ÓÃÆµÂÊ²»¸ßÇÒ°²È«ĞÔÒªÇóÊÊÖĞÊ±¡£
+
+#### ×Ü½á
+
+HTTP Basic Authentication ÊÇÒ»ÖÖ¼òµ¥ÇÒÒ×ÓÚÊµÏÖµÄÈÏÖ¤»úÖÆ£¬Í¨¹ıÔÚ HTTP ÇëÇóÍ·ÖĞ´«µİ Base64 ±àÂëµÄÓÃ»§ÃûºÍÃÜÂëÀ´ÑéÖ¤ÓÃ»§Éí·İ¡£ËäÈ»ËüµÄ°²È«ĞÔ½ÏµÍ£¬µ«½áºÏ HTTPS ºÍÆäËû°²È«´ëÊ©£¬ÈÔÈ»¿ÉÒÔÂú×ãĞí¶àÓ¦ÓÃ³¡¾°µÄĞèÇó¡£Ï£ÍûÕâĞ©ĞÅÏ¢ÄÜ°ïÖúÄã¸üºÃµØÀí½âºÍÊ¹ÓÃ HTTP Basic Authentication¡£Èç¹ûÓĞ¸ü¶à¾ßÌåµÄÎÊÌâ»òĞèÒª½øÒ»²½µÄ°ïÖú£¬Çë¸æËßÎÒ¡£
+
+#### ×¢Òâ
+
+- `realm="Restricted Area"`£º±íÊ¾ÊÜ±£»¤ÇøÓòµÄÃû³ÆÊÇ "Restricted Area"¡£
+
+
+
+### 15¡¢http ÕªÒªÈÏÖ¤
+
+HTTP Digest Access Authentication ÊÇÒ»ÖÖ¸ü°²È«µÄÈÏÖ¤»úÖÆ£¬ÓÃÓÚ±£»¤ HTTP ×ÊÔ´¡£Óë Basic Authentication ²»Í¬£¬Digest Authentication Ê¹ÓÃ¹şÏ£º¯ÊıÀ´±£»¤ÓÃ»§µÄÆ¾¾İ£¬´Ó¶ø±ÜÃâÔÚ´«Êä¹ı³ÌÖĞ±©Â¶Ã÷ÎÄµÄÓÃ»§ÃûºÍÃÜÂë¡£ÒÔÏÂÊÇ HTTP Digest Access Authentication ·½°¸µÄÏêÏ¸ËµÃ÷£º
+
+#### 1. Ô­Àí
+
+##### 1.1 ÇëÇóÁ÷³Ì
+
+1. **¿Í»§¶Ë·¢ÆğÇëÇó**£º
+   
+   - ¿Í»§¶ËÏò·şÎñÆ÷·¢ËÍÒ»¸ö HTTP ÇëÇó£¬³¢ÊÔ·ÃÎÊÊÜ±£»¤µÄ×ÊÔ´¡£
+   - ·şÎñÆ÷ÊÕµ½ÇëÇóºó£¬¼ì²éÊÇ·ñÌá¹©ÁËÈÏÖ¤ĞÅÏ¢¡£
+   
+2. **·şÎñÆ÷·µ»Ø 401 Unauthorized ÏìÓ¦**£º
+   - Èç¹ûÇëÇóÖĞÃ»ÓĞÌá¹©ÈÏÖ¤ĞÅÏ¢£¬·şÎñÆ÷·µ»ØÒ»¸ö 401 Unauthorized ÏìÓ¦¡£
+   - 401 ÏìÓ¦ÖĞ°üº¬Ò»¸ö `WWW-Authenticate` Í·£¬Ö¸Ê¾¿Í»§¶ËĞèÒª½øĞĞÕªÒªÈÏÖ¤¡£
+
+   ```http
+   HTTP/1.1 401 Unauthorized
+   WWW-Authenticate: Digest realm="Restricted Area", qop="auth", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", opaque="5ccc069c403ebaf9f0171e9517f40e41"
+   Content-Type: text/html
+   Content-Length: 137
+   
+   <html>
+   <head>
+   <title>Unauthorized</title>
+   </head>
+   <body>
+   <h1>401 Unauthorized</h1>
+   <p>You are not authorized to access this resource.</p>
+   </body>
+   </html>
+   ```
+
+3. **¿Í»§¶Ë¼ÆËãÏìÓ¦Öµ**£º
+   - ¿Í»§¶ËÊÕµ½ 401 ÏìÓ¦ºó£¬ÌáÊ¾ÓÃ»§ÊäÈëÓÃ»§ÃûºÍÃÜÂë¡£
+   - ¿Í»§¶ËÊ¹ÓÃ·şÎñÆ÷Ìá¹©µÄ²ÎÊı£¨Èç `nonce`¡¢`qop` µÈ£©ºÍÓÃ»§µÄÆ¾¾İ¼ÆËãÒ»¸ö¹şÏ£Öµ£¨³ÆÎª `response`£©¡£
+
+4. **¿Í»§¶Ë·¢ËÍ´øÓĞÈÏÖ¤ĞÅÏ¢µÄÇëÇó**£º
+   - ¿Í»§¶ËÔÚºóĞøÇëÇóÖĞÍ¨¹ı `Authorization` Í··¢ËÍ¼ÆËãµÃµ½µÄ `response` Öµ¡£
+
+   ```http
+   GET /protected/resource HTTP/1.1
+   Host: example.com
+   Authorization: Digest username="user", realm="Restricted Area", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", uri="/protected/resource", response="6629fae49393a05397450978507c4ef1", opaque="5ccc069c403ebaf9f0171e9517f40e41", qop=auth, nc=00000001, cnonce="0a4f113b"
+   ```
+
+5. **·şÎñÆ÷ÑéÖ¤ÏìÓ¦Öµ**£º
+   - ·şÎñÆ÷Ê¹ÓÃÏàÍ¬µÄ²ÎÊıºÍÓÃ»§µÄÆ¾¾İÖØĞÂ¼ÆËã `response` Öµ¡£
+   - ·şÎñÆ÷±È½Ï¿Í»§¶Ë·¢ËÍµÄ `response` ÖµºÍ×Ô¼º¼ÆËãµÄ `response` Öµ£¬Èç¹ûÆ¥Åä£¬ÔòÑéÖ¤³É¹¦¡£
+   - Èç¹ûÑéÖ¤³É¹¦£¬·şÎñÆ÷·µ»ØÇëÇóµÄ×ÊÔ´£»·ñÔò£¬·µ»Ø 401 Unauthorized ÏìÓ¦¡£
+
+#### 2. ¼¼ÊõÏ¸½Ú
+
+##### 2.1 `WWW-Authenticate` Í·
+
+- **¸ñÊ½**£º
+  ```http
+  WWW-Authenticate: Digest realm="realm-name", qop="auth", nonce="nonce-value", opaque="opaque-value"
+  ```
+- **×Ö¶Î**£º
+  - `Digest`£º±íÊ¾Ê¹ÓÃÕªÒªÈÏÖ¤·½°¸¡£
+  - `realm`£ºÒ»¸ö×Ö·û´®£¬ÓÃÓÚÃèÊöÊÜ±£»¤ÇøÓòµÄÃû³Æ¡£¿Í»§¶Ë¿ÉÒÔÊ¹ÓÃÕâ¸öĞÅÏ¢À´ÌáÊ¾ÓÃ»§ÊäÈëÕıÈ·µÄÆ¾¾İ¡£
+  - `qop`£ºÖÊÁ¿±£»¤£¨Quality of Protection£©£¬¿ÉÒÔÊÇ `auth`£¨ÈÏÖ¤£©»ò `auth-int`£¨ÈÏÖ¤ºÍÍêÕûĞÔ±£»¤£©¡£
+  - `nonce`£ºÒ»¸öÓÉ·şÎñÆ÷Éú³ÉµÄËæ»úÖµ£¬ÓÃÓÚ·ÀÖ¹ÖØ·Å¹¥»÷¡£
+  - `opaque`£ºÒ»¸ö²»Í¸Ã÷µÄ×Ö·û´®£¬ÓÉ·şÎñÆ÷Éú³É£¬¿Í»§¶Ë±ØĞëÔ­Ñù·µ»Ø¡£
+
+##### 2.2 `Authorization` Í·
+
+- **¸ñÊ½**£º
+  ```http
+  Authorization: Digest username="username", realm="realm-name", nonce="nonce-value", uri="request-uri", response="response-value", opaque="opaque-value", qop=qop-value, nc=nonce-count, cnonce="client-nonce"
+  ```
+- **×Ö¶Î**£º
+  
+  - `username`£ºÓÃ»§µÄÓÃ»§Ãû¡£
+  - `realm`£ºÊÜ±£»¤ÇøÓòµÄÃû³Æ¡£
+  - `nonce`£º·şÎñÆ÷Éú³ÉµÄËæ»úÖµ¡£
+  - `uri`£ºÇëÇóµÄ URI¡£
+  - `response`£º¿Í»§¶Ë¼ÆËãµÄ¹şÏ£Öµ¡£
+  - `opaque`£º²»Í¸Ã÷µÄ×Ö·û´®£¬ÓÉ·şÎñÆ÷Éú³É¡£
+  - `qop`£ºÖÊÁ¿±£»¤£¬¿ÉÒÔÊÇ `auth` »ò `auth-int`¡£
+  - `nc`£ºnonce ¼ÆÊıÆ÷£¬±íÊ¾Ê¹ÓÃ¸Ã `nonce` µÄ´ÎÊı¡£
+  - `cnonce`£º¿Í»§¶ËÉú³ÉµÄËæ»úÖµ£¬ÓÃÓÚÔö¼Ó¹şÏ£ÖµµÄÎ¨Ò»ĞÔ¡£
+
+#### 3. ÏìÓ¦Öµ¼ÆËã
+
+ÏìÓ¦Öµ `response` ÊÇÍ¨¹ıÒÔÏÂ²½Öè¼ÆËãµÄ£º
+
+1. **¼ÆËã `HA1`**£º
+   ```plaintext
+   HA1 = MD5(username:realm:password)
+   ```
+
+2. **¼ÆËã `HA2`**£º
+   - Èç¹û `qop` Îª `auth`£º
+     ```plaintext
+     HA2 = MD5(method:uri)
+     ```
+   - Èç¹û `qop` Îª `auth-int`£º
+     ```plaintext
+     HA2 = MD5(method:uri:MD5(entity-body))
+     ```
+
+3. **¼ÆËã `response`**£º
+   
+   - Èç¹û `qop` Îª `auth` »ò `auth-int`£º
+     ```plaintext
+     response = MD5(HA1:nonce:nc:cnonce:qop:HA2)
+     ```
+   - Èç¹û `qop` Î´Ö¸¶¨£º
+     ```plaintext
+     response = MD5(HA1:nonce:HA2)
+     ```
+
+#### 4. Ê¾Àı
+
+##### 4.1 ·şÎñÆ÷¶ËÊ¾Àı£¨Python Flask£©
+
+##### 4.2 ¿Í»§¶ËÊ¾Àı£¨curl£©
+
+#### 5. °²È«ĞÔ¿¼ÂÇ
+
+- **·ÀÖ¹ÖØ·Å¹¥»÷**£º`nonce` ÖµÓÉ·şÎñÆ÷Éú³É£¬Ã¿´ÎÇëÇó¶¼²»Í¬£¬·ÀÖ¹¹¥»÷ÕßÖØ·Å¾ÉµÄÇëÇó¡£
+- **¹şÏ£±£»¤**£ºÓÃ»§µÄÆ¾¾İÔÚ´«Êä¹ı³ÌÖĞÒÔ¹şÏ£ÖµµÄĞÎÊ½´æÔÚ£¬¶ø²»ÊÇÃ÷ÎÄ£¬Ôö¼ÓÁË°²È«ĞÔ¡£
+- **»á»°¹ÜÀí**£ºDigest Authentication Ã»ÓĞÄÚÖÃµÄ»á»°¹ÜÀí»úÖÆ£¬Ã¿´ÎÇëÇó¶¼ĞèÒªÖØĞÂ¼ÆËã `response` Öµ¡£¿ÉÒÔ½áºÏÆäËû»úÖÆ£¨Èç»á»° cookie£©À´¼õÉÙÆµ·±µÄÈÏÖ¤²Ù×÷¡£
+
+#### 6. ÊÊÓÃ³¡¾°
+
+- **°²È«ĞÔÒªÇó½Ï¸ß**£ºÊÊºÏĞèÒª½Ï¸ß°²È«ĞÔµÄÓ¦ÓÃ£¬ÓÈÆäÊÇÔÚ²»ÄÜÊ¹ÓÃ HTTPS µÄÇé¿öÏÂ¡£
+- **API ÈÏÖ¤**£º³£ÓÃÓÚ API ÈÏÖ¤£¬ÌØ±ğÊÇµ± API µ÷ÓÃÆµÂÊ½Ï¸ßÇÒ°²È«ĞÔÒªÇó½Ï¸ßÊ±¡£
+
+#### ×Ü½á
+
+HTTP Digest Access Authentication ÊÇÒ»ÖÖ¸ü°²È«µÄÈÏÖ¤»úÖÆ£¬Í¨¹ıÊ¹ÓÃ¹şÏ£º¯ÊıÀ´±£»¤ÓÃ»§µÄÆ¾¾İ£¬±ÜÃâÔÚ´«Êä¹ı³ÌÖĞ±©Â¶Ã÷ÎÄµÄÓÃ»§ÃûºÍÃÜÂë¡£ËäÈ»ËüµÄÊµÏÖ±È Basic Authentication ¸ü¸´ÔÓ£¬µ«Ìá¹©ÁË¸ü¸ßµÄ°²È«ĞÔ¡£Ï£ÍûÕâĞ©ĞÅÏ¢ÄÜ°ïÖúÄã¸üºÃµØÀí½âºÍÊ¹ÓÃ HTTP Digest Access Authentication¡£Èç¹ûÓĞ¸ü¶à¾ßÌåµÄÎÊÌâ»òĞèÒª½øÒ»²½µÄ°ïÖú£¬Çë¸æËßÎÒ¡£
+
+ÔÚ HTTP Digest Access Authentication ÖĞ£¬`nc`£¨nonce ¼ÆÊıÆ÷£©ÊÇÒ»¸öÖØÒªµÄ²ÎÊı£¬ÓÃÓÚ·ÀÖ¹ÖØ·Å¹¥»÷¡£`nc` ±íÊ¾¿Í»§¶ËÊ¹ÓÃÌØ¶¨ `nonce` ÖµµÄ´ÎÊı¡£ÏÂÃæÊÇ `nc` µÄÈ·¶¨·½·¨ºÍ×÷ÓÃµÄÏêÏ¸½âÊÍ£º
+
+
+
+### 16¡¢http ÕªÒªÈÏÖ¤ ncµÄ×÷ÓÃ
+
+#### 1. `nc` µÄ×÷ÓÃ
+
+- **·ÀÖ¹ÖØ·Å¹¥»÷**£º`nc` ¼ÆÊıÆ÷È·±£Ã¿¸ö `nonce` ÖµÖ»ÄÜ±»Ê¹ÓÃÒ»´Î»òÓĞÏŞ´Î£¬´Ó¶ø·ÀÖ¹¹¥»÷ÕßÖØ·Å¾ÉµÄÈÏÖ¤ĞÅÏ¢¡£
+- **Ôö¼ÓÎ¨Ò»ĞÔ**£ºÃ¿´ÎÇëÇóµÄ `nc` Öµ¶¼²»Í¬£¬Ôö¼ÓÁË¹şÏ£ÖµµÄÎ¨Ò»ĞÔ£¬Ìá¸ßÁË°²È«ĞÔ¡£
+
+#### 2. `nc` µÄÈ·¶¨·½·¨
+
+1. **³õÊ¼»¯**£º
+   - µ±¿Í»§¶ËµÚÒ»´ÎÊÕµ½·şÎñÆ÷µÄ `WWW-Authenticate` ÏìÓ¦Ê±£¬`nc` µÄ³õÊ¼ÖµÎª `00000001`£¨°ËÎ»Ê®Áù½øÖÆÊı£©¡£
+
+2. **µİÔö**£º
+   - Ã¿´Î¿Í»§¶ËÊ¹ÓÃÏàÍ¬µÄ `nonce` Öµ·¢ËÍÇëÇóÊ±£¬`nc` µÄÖµµİÔö 1¡£
+   - ÀıÈç£¬µÚÒ»´ÎÇëÇóÊ± `nc` Îª `00000001`£¬µÚ¶ş´ÎÇëÇóÊ± `nc` Îª `00000002`£¬ÒÀ´ËÀàÍÆ¡£
+
+3. **¸ñÊ½**£º
+   - `nc` Öµ±ØĞëÊÇ°ËÎ»Ê®Áù½øÖÆÊı£¬²»×ã°ËÎ»Ê±Ç°Ãæ²¹Áã¡£
+
+#### 3. ¿Í»§¶ËºÍ·şÎñÆ÷µÄ´¦Àí
+
+##### 3.1 ¿Í»§¶Ë´¦Àí
+
+- **´æ´¢ `nonce` ºÍ `nc`**£º
+  - ¿Í»§¶ËĞèÒª´æ´¢Ã¿¸ö `nonce` Öµ¼°Æä¶ÔÓ¦µÄ `nc` ¼ÆÊıÆ÷¡£
+  - Í¨³££¬¿Í»§¶Ë»áÔÚ±¾µØ»º´æÖĞÎ¬»¤Ò»¸ö×Öµä£¬¼üÎª `nonce`£¬ÖµÎª `nc`¡£
+
+- **Éú³É `nc`**£º
+  - Ã¿´Î·¢ËÍÇëÇóÊ±£¬¿Í»§¶Ë´Ó»º´æÖĞ»ñÈ¡ `nonce` ¶ÔÓ¦µÄ `nc` Öµ£¬µİÔö 1£¬È»ºó½«Æä×ª»»Îª°ËÎ»Ê®Áù½øÖÆÊı¡£
+
+##### 3.2 ·şÎñÆ÷´¦Àí
+
+- **ÑéÖ¤ `nc`**£º
+  - ·şÎñÆ÷ÔÚÑéÖ¤ `response` ÖµÊ±£¬»á¼ì²é `nc` ÊÇ·ñºÏÀí¡£
+  - ·şÎñÆ÷¿ÉÒÔ¼ÇÂ¼Ã¿¸ö `nonce` µÄÊ¹ÓÃ´ÎÊı£¬È·±£ `nc` ÖµÊÇµİÔöµÄ¡£
+  - Èç¹û `nc` Öµ²»µİÔö»ò³¬³öÄ³¸öãĞÖµ£¬·şÎñÆ÷¿ÉÒÔ¾Ü¾øÇëÇó£¬ÒªÇó¿Í»§¶ËÖØĞÂ»ñÈ¡ĞÂµÄ `nonce`¡£
+
+### 17¡¢http ÕªÒªÈÏÖ¤ realm
+
+ÔÚ HTTP Digest Access Authentication ÖĞ£¬`realm` ²ÎÊıÊÇÒ»¸ö·Ç³£ÖØÒªµÄ×é³É²¿·Ö£¬ÓÃÓÚ±êÊ¶ÊÜ±£»¤ÇøÓòµÄÃû³Æ¡£`realm` µÄ×÷ÓÃÖ÷ÒªÓĞÒÔÏÂ¼¸¸ö·½Ãæ£º
+
+#### 1. ÃèÊöÊÜ±£»¤ÇøÓò
+
+- **×÷ÓÃ**£º`realm` ²ÎÊıÌá¹©ÁËÒ»¸ö×Ö·û´®£¬ÓÃÓÚÃèÊöÊÜ±£»¤×ÊÔ´µÄÇøÓò»ò·¶Î§¡£ÕâÓĞÖúÓÚ¿Í»§¶ËºÍÓÃ»§Àí½âËûÃÇÕıÔÚ·ÃÎÊµÄ×ÊÔ´ÊôÓÚÄÄ¸öÌØ¶¨µÄ±£»¤Óò¡£
+- **Ê¾Àı**£º`realm="Restricted Area"` ±íÊ¾ÊÜ±£»¤µÄ×ÊÔ´ÊôÓÚ¡°ÊÜÏŞÇøÓò¡±¡£
+
+#### 2. Çø·Ö²»Í¬µÄÈÏÖ¤Óò
+
+- **×÷ÓÃ**£º`realm` ²ÎÊı¿ÉÒÔ°ïÖú¿Í»§¶ËÇø·Ö²»Í¬µÄÈÏÖ¤Óò¡£Èç¹ûÒ»¸ö¿Í»§¶ËĞèÒª·ÃÎÊ¶à¸öÊÜ±£»¤µÄ×ÊÔ´£¬Ã¿¸ö×ÊÔ´¿ÉÄÜÓĞ²»Í¬µÄ `realm` Öµ£¬¿Í»§¶Ë¿ÉÒÔ¸ù¾İ `realm` ÖµÀ´Ñ¡ÔñºÏÊÊµÄÆ¾¾İ¡£
+- **Ê¾Àı**£º¼ÙÉèÒ»¸öÍøÕ¾ÓĞÁ½¸öÊÜ±£»¤µÄÇøÓò£¬Ò»¸öÊÇ¡°¹ÜÀíÔ±ÇøÓò¡±£¬ÁíÒ»¸öÊÇ¡°ÓÃ»§ÇøÓò¡±¡£ÕâÁ½¸öÇøÓò¿ÉÒÔ·Ö±ğÉèÖÃÎª `realm="Admin Area"` ºÍ `realm="User Area"`¡£
+
+#### 3. ÌáÊ¾ÓÃ»§ÊäÈëÆ¾¾İ
+
+- **×÷ÓÃ**£º`realm` ²ÎÊı¿ÉÒÔ×÷ÎªÌáÊ¾ĞÅÏ¢£¬°ïÖúÓÃ»§ÊäÈëÕıÈ·µÄÆ¾¾İ¡£ä¯ÀÀÆ÷ÔÚÏÔÊ¾ÈÏÖ¤¶Ô»°¿òÊ±£¬Í¨³£»áÏÔÊ¾ `realm` µÄÖµ£¬ÒÔ±ãÓÃ»§ÖªµÀËûÃÇÕıÔÚÎªÄÄ¸öÇøÓòÊäÈëÓÃ»§ÃûºÍÃÜÂë¡£
+- **Ê¾Àı**£ºµ±ÓÃ»§¿´µ½ÈÏÖ¤¶Ô»°¿òÖĞÏÔÊ¾¡°Restricted Area¡±Ê±£¬ËûÃÇ¿ÉÒÔÖªµÀÕâÊÇÎªÁË·ÃÎÊÊÜÏŞÇøÓòµÄ×ÊÔ´¡£
+
+#### 4. Éú³É `HA1` ¹şÏ£Öµ
+
+- **×÷ÓÃ**£º`realm` ²ÎÊıÔÚÉú³É `HA1` ¹şÏ£ÖµÊ±ÊÇ±ØĞèµÄ¡£`HA1` ÊÇÍ¨¹ıÒÔÏÂ¹«Ê½¼ÆËãµÄ£º
+  ```plaintext
+  HA1 = MD5(username:realm:password)
+  ```
+- **Ê¾Àı**£ºÈç¹û `username` Îª `admin`£¬`realm` Îª `Restricted Area`£¬`password` Îª `secret`£¬Ôò `HA1` µÄ¼ÆËãÈçÏÂ£º
+  ```plaintext
+  HA1 = MD5("admin:Restricted Area:secret")
+  ```
+
+#### 5. °²È«ĞÔ¿¼ÂÇ
+
+- **×÷ÓÃ**£º`realm` ²ÎÊıËäÈ»²»ÊÇÖ±½ÓÓÃÓÚ¼ÓÃÜ»ò¹şÏ££¬µ«ËüÔÚÈÏÖ¤¹ı³ÌÖĞÆğµ½ÁË¸¨Öú×÷ÓÃ£¬°ïÖúÈ·±£ÈÏÖ¤µÄ×¼È·ĞÔºÍ°²È«ĞÔ¡£
+- **Ê¾Àı**£ºÍ¨¹ı²»Í¬µÄ `realm` Öµ£¬¿ÉÒÔ·ÀÖ¹ÓÃ»§ÔÚ²»Í¬µÄ±£»¤ÓòÖĞÊ¹ÓÃÏàÍ¬µÄÆ¾¾İ£¬´Ó¶øÌá¸ß°²È«ĞÔ¡£
+
+#### 
+
+#### 18¡¢httpÕªÒªÈÏÖ¤µÄ nonce ºÍ opaque µÄÒìÍ¬µã
+
+ÔÚ HTTP ÕªÒªÈÏÖ¤£¨HTTP Digest Authentication£©ÖĞ£¬`nonce` ºÍ `opaque` ¶¼ÊÇÓÉ·şÎñÆ÷Éú³ÉµÄ²»Í¸Ã÷×Ö·û´®£¬ÓÃÓÚÔöÇ¿ÈÏÖ¤µÄ°²È«ĞÔ¡£ËüÃÇÔÚ¹¦ÄÜºÍÊ¹ÓÃÉÏÓĞÒ»Ğ©ÏàËÆÖ®´¦£¬µ«Ò²ÓĞÒ»Ğ©ÖØÒªµÄÇø±ğ¡£ÒÔÏÂÊÇ¶Ô `nonce` ºÍ `opaque` µÄÒìÍ¬µãµÄÏêÏ¸½âÊÍ£º
+
+#### ÏàÍ¬µã
+
+1. **ÔöÇ¿°²È«ĞÔ**£º
+   - Á½Õß¶¼ÊÇÓÉ·şÎñÆ÷Éú³ÉµÄËæ»ú×Ö·û´®£¬ÓÃÓÚÔö¼Ó¹¥»÷ÕßÆÆ½âÈÏÖ¤ĞÅÏ¢µÄÄÑ¶È¡£
+   - ËüÃÇ¶¼¿ÉÒÔ°üº¬Ê±¼ä´Á»òÆäËûÎ¨Ò»±êÊ¶·û£¬Ê¹µÃÃ¿´ÎÈÏÖ¤ÇëÇó¶¼¾ßÓĞÎ¨Ò»ĞÔ£¬´Ó¶ø·ÀÖ¹ÖØ·Å¹¥»÷¡£
+
+2. **·ÀÖ¹ÖØ·Å¹¥»÷**£º
+   - Í¨¹ı°üº¬Ëæ»úÖµºÍÊ±¼ä´Á£¬`nonce` ºÍ `opaque` ¶¼ÓĞÖúÓÚÈ·±£Ã¿´ÎÈÏÖ¤ÇëÇóµÄÎ¨Ò»ĞÔ£¬·ÀÖ¹¹¥»÷ÕßÍ¨¹ıÖØ·Å¾ÉµÄÈÏÖ¤ÇëÇóÀ´»ñÈ¡·ÃÎÊÈ¨ÏŞ¡£
+
+3. **²»Í¸Ã÷ĞÔ**£º
+   - ¿Í»§¶Ë²»ĞèÒªÀí½â `nonce` ºÍ `opaque` µÄ¾ßÌåÄÚÈİ£¬Ö»Ğè½«Æä°üº¬ÔÚÈÏÖ¤ÇëÇóÖĞ¼´¿É¡£
+
+#### ²»Í¬µã
+
+1. **Éú³ÉÊ±»úºÍÆµÂÊ**£º
+   - **`nonce`**£ºÍ¨³£ÔÚÃ¿´Î·şÎñÆ÷·¢ËÍ `401 Unauthorized` ÏìÓ¦Ê±Éú³ÉÒ»¸öĞÂµÄ `nonce`¡£`nonce` ÊÇÒ»´ÎĞÔµÄ£¬¿Í»§¶ËÔÚÃ¿´ÎĞÂµÄÈÏÖ¤³¢ÊÔÖĞ¶¼ĞèÒªÊ¹ÓÃĞÂµÄ `nonce`¡£
+   - **`opaque`**£º`opaque` Í¨³£ÔÚ·şÎñÆ÷Æô¶¯Ê±»òÄ³¸öÌØ¶¨µÄÊ±¼ä¼ä¸ôÄÚÉú³ÉÒ»´Î£¬²¢ÔÚ¶à´ÎÈÏÖ¤ÇëÇóÖĞ±£³Ö²»±ä¡£`opaque` ²»ĞèÒªÃ¿´Î¶¼ÖØĞÂÉú³É¡£
+
+2. **ÓÃÍ¾**£º
+   - **`nonce`**£ºÖ÷ÒªÓÃÓÚ·ÀÖ¹ÖØ·Å¹¥»÷¡£¿Í»§¶ËÔÚÃ¿´Î·¢ËÍÈÏÖ¤ÇëÇóÊ±¶¼ĞèÒªÊ¹ÓÃ·şÎñÆ÷Ìá¹©µÄ `nonce`£¬²¢ÇÒ `nonce` Í¨³£°üº¬Ò»¸ö¼ÆÊıÆ÷£¨`nc`£©ºÍ¿Í»§¶ËÉú³ÉµÄ `cnonce`£¬ÒÔÈ·±£Ã¿´ÎÇëÇóµÄÎ¨Ò»ĞÔ¡£
+   - **`opaque`**£ºÖ÷ÒªÓÃÓÚÑéÖ¤¿Í»§¶ËºÍ·şÎñÆ÷µÄÒ»ÖÂĞÔ¡£·şÎñÆ÷¿ÉÒÔÍ¨¹ıÑéÖ¤ `opaque` À´È·±£¿Í»§¶ËÊ¹ÓÃµÄÊÇ×îĞÂµÄÈÏÖ¤ĞÅÏ¢¡£`opaque` Ò²¿ÉÒÔ°üº¬Ò»Ğ©·şÎñÆ÷ÌØ¶¨µÄĞÅÏ¢£¬Ê¹ÆäÄÑÒÔ±»Ô¤²â»òÖØÓÃ¡£
+
+3. **°üº¬ÔÚÇëÇóÖĞµÄÎ»ÖÃ**£º
+   - **`nonce`**£º¿Í»§¶ËÔÚ `Authorization` Í·ÖĞ°üº¬ `nonce`£¬²¢¸½´øÆäËûÈÏÖ¤²ÎÊı£¨Èç `username`¡¢`response`¡¢`cnonce`¡¢`nc` µÈ£©¡£
+   - **`opaque`**£º¿Í»§¶ËÔÚ `Authorization` Í·ÖĞ°üº¬ `opaque`£¬µ«Í¨³£²»²ÎÓëÊµ¼ÊµÄ¹şÏ£¼ÆËã£¬Ö»ÊÇ×÷ÎªÑéÖ¤µÄÒ»²¿·Ö¡£
+
+#### Ê¾Àı
+
+##### ·şÎñÆ÷¶ËÉú³É `nonce` ºÍ `opaque`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <openssl/md5.h>
+
+#define PORT 8080
+#define MAX_CLIENTS 10
+#define BUFFER_SIZE 1024
+
+// ¼ÆËã MD5 ¹şÏ£Öµ
+void md5(const unsigned char *input, size_t length, unsigned char output[16]) {
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, input, length);
+    MD5_Final(output, &ctx);
+}
+
+// ½« MD5 ¹şÏ£Öµ×ª»»ÎªÊ®Áù½øÖÆ×Ö·û´®
+char *md5_to_hex(const unsigned char *digest) {
+    char *hex = malloc(33);
+    for (int i = 0; i < 16; i++) {
+        sprintf(hex + i * 2, "%02x", digest[i]);
+    }
+    hex[32] = '\0';
+    return hex;
+}
+
+// Éú³É nonce ºÍ opaque
+void generate_nonce_and_opaque(char *nonce, char *opaque) {
+    snprintf(nonce, 33, "%lx", (unsigned long)rand());
+    snprintf(opaque, 33, "%lx", (unsigned long)time(NULL));
+}
+
+// ½âÎö WWW-Authenticate Í·
+void parse_www_authenticate(const char *header, char *realm, char *nonce, char *opaque) {
+    const char *start, *end;
+    start = strstr(header, "realm=\"");
+    end = strstr(start, "\"");
+    strncpy(realm, start + 7, end - start - 7);
+    realm[end - start - 7] = '\0';
+
+    start = strstr(header, "nonce=\"");
+    end = strstr(start, "\"");
+    strncpy(nonce, start + 7, end - start - 7);
+    nonce[end - start - 7] = '\0';
+
+    start = strstr(header, "opaque=\"");
+    end = strstr(start, "\"");
+    strncpy(opaque, start + 8, end - start - 8);
+    opaque[end - start - 8] = '\0';
+}
+
+// Éú³ÉÏìÓ¦Öµ
+char *generate_response(const char *username, const char *realm, const char *password, const char *nonce, const char *uri, const char *cnonce, const char *nc, const char *qop) {
+    char ha1[33], ha2[33], response[33];
+    char ha1_input[100], ha2_input[100], response_input[100];
+
+    snprintf(ha1_input, sizeof(ha1_input), "%s:%s:%s", username, realm, password);
+    unsigned char ha1_digest[16];
+    md5((const unsigned char *)ha1_input, strlen(ha1_input), ha1_digest);
+    strcpy(ha1, md5_to_hex(ha1_digest));
+
+    snprintf(ha2_input, sizeof(ha2_input), "GET:%s", uri);
+    unsigned char ha2_digest[16];
+    md5((const unsigned char *)ha2_input, strlen(ha2_input), ha2_digest);
+    strcpy(ha2, md5_to_hex(ha2_digest));
+
+    snprintf(response_input, sizeof(response_input), "%s:%s:%s:%s:%s:%s", ha1, nonce, nc, cnonce, qop, ha2);
+    unsigned char response_digest[16];
+    md5((const unsigned char *)response_input, strlen(response_input), response_digest);
+    strcpy(response, md5_to_hex(response_digest));
+
+    free(ha1);
+    free(ha2);
+
+    return response;
+}
+
+// ´¦Àí¿Í»§¶ËÇëÇó
+void handle_client(int client_socket) {
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_received;
+    char *request_line, *method, *uri, *version;
+    char *auth_header, *response_header;
+    char realm[100], nonce[100], opaque[100];
+    char username[100], password[100];
+    char cnonce[100], nc[100], qop[100];
+    char *response_value;
+
+    // Éú³É nonce ºÍ opaque
+    generate_nonce_and_opaque(nonce, opaque);
+
+    // ¶ÁÈ¡ÇëÇó
+    bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+    if (bytes_received <= 0) {
+        close(client_socket);
+        return;
+    }
+
+    buffer[bytes_received] = '\0';
+    request_line = strtok(buffer, "\r\n");
+    method = strtok(request_line, " ");
+    uri = strtok(NULL, " ");
+    version = strtok(NULL, " ");
+
+    // ¼ì²éÈÏÖ¤Í·
+    auth_header = strstr(buffer, "Authorization: Digest ");
+    if (auth_header) {
+        auth_header += 20;  // Ìø¹ı "Authorization: Digest "
+        sscanf(auth_header, "username=\"%[^\",]\", realm=\"%[^\",]\", nonce=\"%[^\",]\", uri=\"%[^\",]\", response=\"%[^\",]\", opaque=\"%[^\",]\", qop=\"%[^\",]\", nc=\"%[^\",]\", cnonce=\"%[^\"]\"",
+               username, realm, nonce, uri, response_value, opaque, qop, nc, cnonce);
+
+        // ÑéÖ¤ÓÃ»§Æ¾¾İ
+        if (strcmp(username, "admin") == 0 && strcmp(password, "secret") == 0) {
+            char expected_response[33];
+            strcpy(expected_response, generate_response(username, realm, password, nonce, uri, cnonce, nc, qop));
+
+            if (strcmp(response_value, expected_response) == 0) {
+                response_header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nAccess granted";
+            } else {
+                response_header = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Digest realm=\"Restricted Area\", qop=\"auth\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"\r\n\r\nAccess denied";
+            }
+        } else {
+            response_header = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Digest realm=\"Restricted Area\", qop=\"auth\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"\r\n\r\nAccess denied";
+        }
+    } else {
+        response_header = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Digest realm=\"Restricted Area\", qop=\"auth\", nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"\r\n\r\nAccess denied";
+    }
+
+    // ·¢ËÍÏìÓ¦
+    send(client_socket, response_header, strlen(response_header), 0);
+    close(client_socket);
+}
+
+int main() {
+    int server_socket, client_socket;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t addr_len = sizeof(client_addr);
+
+    // ´´½¨ socket
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // °ó¶¨ socket
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        perror("Bind failed");
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+
+    // ¼àÌıÁ¬½Ó
+    if (listen(server_socket, MAX_CLIENTS) < 0) {
+        perror("Listen failed");
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server listening on port %d\n", PORT);
+
+    while (1) {
+        client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &addr_len);
+        if (client_socket < 0) {
+            perror("Accept failed");
+            continue;
+        }
+
+        handle_client(client_socket);
+    }
+
+    close(server_socket);
+    return 0;
+}
+```
+
+#### ×Ü½á
+
+- **`nonce`**£ºÖ÷ÒªÓÃÓÚ·ÀÖ¹ÖØ·Å¹¥»÷£¬Ã¿´ÎÈÏÖ¤ÇëÇó¶¼ĞèÒªÊ¹ÓÃĞÂµÄ `nonce`¡£
+- **`opaque`**£ºÖ÷ÒªÓÃÓÚÑéÖ¤¿Í»§¶ËºÍ·şÎñÆ÷µÄÒ»ÖÂĞÔ£¬Í¨³£ÔÚ·şÎñÆ÷Æô¶¯Ê±»òÄ³¸öÌØ¶¨µÄÊ±¼ä¼ä¸ôÄÚÉú³ÉÒ»´Î£¬²¢ÔÚ¶à´ÎÈÏÖ¤ÇëÇóÖĞ±£³Ö²»±ä¡£
+
+Í¨¹ıºÏÀíÊ¹ÓÃ `nonce` ºÍ `opaque`£¬¿ÉÒÔÏÔÖøÔöÇ¿ HTTP ÕªÒªÈÏÖ¤µÄ°²È«ĞÔ¡£Ï£ÍûÕâĞ©½âÊÍÄÜ°ïÖúÄã¸üºÃµØÀí½â `nonce` ºÍ `opaque` µÄ×÷ÓÃºÍÇø±ğ¡£Èç¹ûÓĞ¸ü¶à¾ßÌåµÄÎÊÌâ»òĞèÒª½øÒ»²½µÄ°ïÖú£¬Çë¸æËßÎÒ¡£
