@@ -33,6 +33,8 @@
 //#define HTTP_HEAD_DATA_MAX_SIZE 1024
 #define HTTP_PAYLOAD_BUF_SIZE 512   //http净荷
 #define HTTP_USER_BUF_SIZE (TCP_USER_BUF_SIZE * 2)  //用户缓存长度
+#define HTTP_USER_BUF_A_BLOCK_SIZE (HTTP_USER_BUF_SIZE / 2) //在逻辑上把 http 缓存分为A、B两个块
+
 #define HTTP_METHOD_STRING_SIZE 32      //请求方法
 #define HTTP_URL_STRING_SZIE 256        //资源请求定位 最多字 符个数，256 可能有点小了...
 #define HTTP_VERSION_STRING_SIZE 32     //http版本
@@ -383,131 +385,147 @@ Connection: keep-alive
 //同步：找到 http 头部第一行位置；然后解析
 static int __http_message_first_line_parse(httpUser_obj_t *user, int *endPos)
 {
-    if(user == NULL)return RET_FAILD;
+    if(user == NULL || endPos == NULL)return RET_FAILD;
+    if(user->buf== NULL &&  user->bufLen < 0)
+    {
+        LOG_ALARM("user->buf 或者 user->bufLen不符合条件");
+        return RET_FAILD;
+    }
     
     int step;
     int i;
     int num;
-    int len, lenVersion, lenMethod;
-    int posStart;
-    int posMethod, posVersion, posEnter;
+    int len, lenMethod;    
+    int lenVersion;
+    int posMethod, posVersion;
     char *find, *find2;
     int pos;
     char *p;
+    int ret;
+
+    int seek;
+    //char *bufPoniter;
     //int bufLen;
 
     
     char line[HTTP_USER_BUF_SIZE + 8];
     char buf[HTTP_USER_BUF_SIZE + 8];
-    memcpy(buf, user->buf, user->bufLen);   //注意：user->buf 中可能包含字符串结束符号 '\0'，所以 ...
-    
+    //bufPoniter = buf;
+    memcpy(buf, user->buf, user->bufLen);   
     buf[user->bufLen] = '\0';
+    //bufLen = strlen(buf);
 
-    LOG_SHOW("__http_message_first_line_parse len:%d buf:【%s】\n", strlen(buf), buf);
-    
+  
     //参考 GET /index.html HTTP/1.1  
-    //三个步骤完成，才认为第一行数据有效
-
-    posStart = 0;
-    
-    while(1)
-    {
-        step = 0;
-        if(posStart >= user->bufLen)break;
-        //1、找到换行标志
-        find = strstr(buf + posStart, "\n");  
-        
-        if(buf[posStart] == '\n')   //换行符前面没有数据
+    //两种特殊情况： '\n' 在开头；缓存里面有 '\0' ，导致字符串被分割
+    seek = 0;
+    ret = RET_FAILD;
+    //while(1)
+    //{
+        while(1)
         {
-            posStart += 1;
-            //posEnter = posStart;
-            continue;
-        }
-        
-        if(find != NULL )
-        {
-            len = find - buf + 1;
-            
-            
-            memcpy(line, buf + posStart, len);
-            line[len] = '\0';
-            posStart += len;
-            posEnter = len - 1;
-            
-            step = 1;            
-            
-            
-        }
-        else
-        {
-            *endPos = user->bufLen - 1;
-            //*endPos = bufLen - 1;
-            return RET_FAILD;  
-        }
-        
-
-        //2、请求方法 的匹配
-        if(step == 1)   //上一步成功
-        {
-            num = (int)(sizeof(http_requst_method) / sizeof(const char *));
-            for(i = 0; i < num; i++)
+            //LOG_SHOW("--->seek:%d buf:【%s】\n", seek, buf + seek);
+            if(seek >= user->bufLen) //seek是下一次要操作的字节
             {
-                find = strstr(line, http_requst_method[i]);
+                *endPos = user->bufLen;
+                break;
+            }
+            
+            if(buf[seek] == '\n' || buf[seek] == '\0')   //如果第一个字符是  '\n' ，则跳过
+            {
+                seek += 1;
+                continue;
+            }
+            
+            //三个步骤完成，才认为第一行数据有效
+            step = 0;
+            //1、找到换行标志
+            find = strstr(buf + seek, "\n");  
+            if(find != NULL )
+            {
+                *find = '\0';
+                strcpy(line, buf + seek);
+                seek += strlen(buf + seek); 
+                step = 1;            
+            }
+            else
+            {
+                seek += strlen(buf + seek);
+                
+                continue; 
+            }
+            
+
+            //2、请求方法 的匹配
+            if(step == 1)   //上一步成功
+            {
+                num = (int)(sizeof(http_requst_method) / sizeof(const char *));
+                for(i = 0; i < num; i++)
+                {
+                    find = strstr(line, http_requst_method[i]);
+                    if(find != NULL)
+                    {                 
+                        lenMethod = strlen(http_requst_method[i]);
+                        strncpy(user->head.method, http_requst_method[i], HTTP_METHOD_STRING_SIZE);
+                        posMethod = find - line;   //位置
+                        
+                        step = 2;   //步骤标明
+                        break;
+                    }
+                }
+
+            }
+              
+            //3、"HTTP/1.1" 匹配（或者其他）
+            if(step == 2)
+            {
+                find = strstr(line, HTTP_HEAD_FIND_KEYWORD);
+                find2 = strstr(line, HTTP_HEAD_FIND_KEYWORD_B);
+                if(find == NULL)find = find2;
                 if(find != NULL)
-                {                 
-                    lenMethod = strlen(http_requst_method[i]);
-                    strncpy(user->head.method, http_requst_method[i], HTTP_METHOD_STRING_SIZE);
-                    posMethod = find - line;   //位置
+                {
+                    lenVersion = strlen(HTTP_HEAD_FIND_KEYWORD);    //HTTP/1.1 和 http/1.1 一样长度
+                    //strncpy(user->head.version, HTTP_HEAD_FIND_KEYWORD, lenVersion);
+                    strncpy(user->head.version, find, lenVersion);
+                    user->head.version[lenVersion] = '\0';
+
+                    //LOG_SHOW("显示: find:【%s】 len:%d\n", find, strlen(HTTP_HEAD_FIND_KEYWORD));
                     
-                    step = 2;   //步骤标明
+                    posVersion = find - line;   //位置
+                    step = 3;
+                }
+            }
+
+            //4、位置（最后一步）
+            if(step == 3)
+            {
+                if(posMethod < posVersion   &&  posVersion < seek) 
+                {            
+                    //解析 url
+                    pos = posMethod  + lenMethod + 1;
+                    len = posVersion - pos - 1;
+                    if(len > 0)
+                    {
+                        strncpy(user->head.url, line + pos, len);
+                        p = user->head.url;                    
+                        strpro_clean_space(&p);   //去除两边空格
+                        
+                    }
+                    
+
+                    //结束的位置
+                    *endPos = seek;
+
+                    //LOG_INFO("method:%s url:%s version:%s", user->head.method, user->head.url, user->head.version);
+                    ret = RET_OK;
                     break;
                 }
             }
-
         }
-          
-        //3、"HTTP/1.1" 匹配（或者其他）
-        if(step == 2)
-        {
-            find = strstr(line, HTTP_HEAD_FIND_KEYWORD);
-            find2 = strstr(line, HTTP_HEAD_FIND_KEYWORD_B);
-            if(find == NULL)find = find2;
-            if(find != NULL)
-            {
-                lenVersion = strlen(HTTP_HEAD_FIND_KEYWORD);    //HTTP/1.1 和 http/1.1 一样长度
-                strncpy(user->head.version, HTTP_HEAD_FIND_KEYWORD, lenVersion);
+    //}
 
-                posVersion = find - line;   //位置
-                step = 3;
-            }
-        }
-
-        //4、位置（最后一步）
-        if(step == 3)
-        {
-            if(posMethod < posVersion   &&  posVersion < posEnter) 
-            {            
-                //解析 url
-                pos = posMethod  + lenMethod + 1;
-                len = posVersion - pos - 1;
-                if(len > 0)
-                {
-                    strncpy(user->head.url, line + pos, len);
-                    p = user->head.url;                    
-                    strpro_clean_space(&p);   //去除两边空格
-                    
-                }
-                
-
-                //结束的位置
-                *endPos = posEnter;
-
-                //LOG_INFO("method:%s url:%s version:%s", user->head.method, user->head.url, user->head.version);
-                return RET_OK;
-            }
-        }
-    }
-    return RET_FAILD;     
+    //*endPos = posEnter;
+    return ret ;     
 }
 
 
@@ -516,73 +534,75 @@ static int __http_message_first_line_parse(httpUser_obj_t *user, int *endPos)
 // 参数 endPos 表示处理过的数据的 最后位置
 static int __http_message_head_parse(httpUser_obj_t *user, int *endPos)
 {
-    if(user == NULL || endPos == NULL)return RET_FAILD;
-    
-    char *find;
-    int findPos, newStartPos;
-    //int step;
+    int i;
+    int exist;
+    int pos;
+    int ret;
+    int mark;
+    int markPos;
     //int len;
 
-    int ret;
+    if(user == NULL || endPos == NULL)return RET_FAILD;
     char buf[HTTP_USER_BUF_SIZE + 8];   //http 用户缓存长度
-    
-    memcpy(buf, user->buf, user->bufLen);
-    buf[user->bufLen] = '\0';
 
-    //str = buf;
+    exist = 0;
     ret = RET_FAILD;
-    newStartPos = 0;
-    while(1)
-    {        
-        find = strstr(buf + newStartPos, "\n");
-        if(find == NULL)break;
-        
-        findPos = find - buf;
-        newStartPos = findPos + 1;
-
-        //找到http  头部和 负荷 的分界位置
-        if((newStartPos <= user->bufLen && buf[newStartPos] == '\n'))
+    mark = 0;
+    for(i = 0; i < user->bufLen; i++)
+    {
+        if(user->buf[i] == '\0')    //如果遇到字符串结束符，则被打断
         {
-            *endPos = newStartPos;
-            ret = RET_OK;
-            break;
-        } 
-        
-        if((newStartPos + 1) <= user->bufLen  && buf[newStartPos] == '\r' && buf[newStartPos + 1] == '\n') 
-        {
-            *endPos = newStartPos + 1;
-            ret = RET_OK;
+            mark = 1;
+            markPos = i;
             break;
         }
+        else if(user->buf[i] == '\n')
+        { 
+            pos = i;
+            if(exist == 0)exist = 1;    //存在空行
         
-
-        //后面没有数据了
-        if(newStartPos >= user->bufLen)
-        {
-            *endPos = findPos;
-            break;
+            if( ((i + 1) < user->bufLen && user->buf[i + 1] == '\n') || 
+             ((i + 2) < user->bufLen && user->buf[i + 1] == '\r' && user->buf[i + 2] == '\n')  )
+             {
+                ret = RET_OK;
+                break;
+             }
         }
 
-        //后面还有数据，则进入下一个寻找 '\n' 的循环  
-        *endPos = findPos;
     }
 
-    if(findPos >= 1)
+    //解析
+    if(exist == 1)
     {
-        buf[findPos + 1] = '\0';
-
-        //先清空解析的内容
-        httphead_clear_head(user->head.parse);
+        memcpy(buf, user->buf, pos + 1);
+        buf[pos + 1] = '\0';
+        httphead_parse_head(user->head.parse, (const char *)buf);
         
-        
-        //解析
-        httphead_parse_head(user->head.parse, buf);
-        
-        //LOG_SHOW("标志 .................... 1\n");
-        httphead_show(user->head.parse);
-        //LOG_SHOW("标志 .................... 2\n");
     }
     
+    //确定结束位置
+    
+    if(mark == 1)
+    {
+        //*endPos = markPos;
+        //没有处理完，需要重入
+        user->bufLen -= markPos + 1;
+        memmove(user->buf, user->buf + markPos + 1, user->bufLen);
+        return __http_message_head_parse(user, endPos);   
+    }
+    else
+    {
+        if(exist == 1)
+        {
+            *endPos = pos;
+        }
+        else
+        {
+            *endPos = -1;
+        }
+    }
+
+    //LOG_SHOW("调试   mark:%d markPos:%d exist:%d pos:%d endpos:%d ret:%d\n", mark, markPos, exist, pos, *endPos, ret);
     return ret;
 }
 
@@ -743,7 +763,7 @@ int http_send_str(http_server_t *http, int userId, char *str)
 //http 报文头部处理
  int __http_head_pro(http_server_t *http, int userId)
 {
-    LOG_SHOW("__http_head_pro start ...\n");
+    //LOG_SHOW("__http_head_pro start ...\n");
     
     int exist;
     int authOk;
@@ -803,12 +823,12 @@ int http_send_str(http_server_t *http, int userId, char *str)
     
     if(exist == 1)
     {
-        httphead_show_line(line); 
+        //httphead_show_line(line); 
         
         //1.2 摘要认证（部分功能未实现，例如 opaque 更新策略）
         if(user->useDigestAuth == 1)
         {
-            LOG_SHOW("摘要认证 ...\n");
+            LOG_SHOW("摘要认证开始 ...\n");
             //user->auth.staus = digest_auth_status_wait_reply;   //测试用
             switch(user->auth.staus)    //状态机
             {
@@ -818,7 +838,7 @@ int http_send_str(http_server_t *http, int userId, char *str)
                 }break;
                 case digest_auth_status_wait_reply: //已经向客户端发送认证要求，等待回复
                 {
-                    LOG_SHOW("///////////////////////////////////\n");
+                    //LOG_SHOW("///////////////////////////////////\n");
                     step = 0;
                     //1.2.1 找到包含 "Digest" 的关键字
                     len = strlen(HTTP_DIGWST_AUTH_DIGEST);
@@ -834,7 +854,7 @@ int http_send_str(http_server_t *http, int userId, char *str)
                                 p1 = buf;
                                 strpro_clean_space(&p1);   //去空格
                                 keyvalue_append_set_str(line->keyvalue, p1, iter->value);   //新增键值对
-                                LOG_SHOW("新键值对 key:%s value:%s\n", p1, iter->value);
+                                //LOG_SHOW("新键值对 key:%s value:%s\n", p1, iter->value);
                                 
                                 step = 1;   //可以进入下一步
                             }
@@ -867,10 +887,11 @@ int http_send_str(http_server_t *http, int userId, char *str)
                                 step = 2;   //可以进入下一步
                     }
 
-                    //1.2.3 客户端上来的 nonce和 opaque 需要 和服务器本地 匹配
+                    //1.2.3 客户端上来的 nonce 需要 和服务器本地 匹配
                     if(step == 2)
                     {
-                        LOG_SHOW("客户端上来的 nonce:%s 本地:%s\n", data_nonce->value, user->auth.nonce);
+                        //LOG_SHOW("【摘要认证 1】 nonce 匹配\n");
+                        LOG_SHOW("  客户端上来的 nonce:%s 本地:%s\n", data_nonce->value, user->auth.nonce);
                         if(data_nonce != NULL)
                         {
                             if(data_nonce->value != NULL && data_nonce->valueEn == 1)
@@ -881,55 +902,34 @@ int http_send_str(http_server_t *http, int userId, char *str)
                                 
                                 if(strcmp(p1, user->auth.nonce) == 0)
                                 {
-                                    
-                                    //step = 3;
-                                    step = 4;   
+                                    step = 3;  
                                 }  
 
                             }  
                         }   
                     }
                     
-//                    if(step == 3)
-//                    {
-//                        if(data_opaque != NULL)
-//                        {
-//                            if(data_opaque->value != NULL && data_opaque->valueEn == 1)
-//                            {
-//                                strcpy(bufValue, data_opaque->value);
-//                                p1 = bufValue;
-//                                strpro_clean_by_ch(&p1, '"');    //去掉两边的双引号
-//                                
-//                                if(strcmp(p1, user->auth.opaque) == 0)
-//                                {
-//                                    
-//                                    step = 4;
-//                                }  
-//
-//                            }  
-//                        }   
-//                    }
-
-                    //if(step == 2)step = 4;  //测试用
-                    
                     //1.2.3 判断 nc 值是否符合要求（递增）
-                    if(step == 4)
+                    if(step == 3)
                     {
+                        //LOG_SHOW("【摘要认证 2】 nc 值自增\n");
                         if(data_nc != NULL)
                         {
                             int count = (unsigned long)(atoi(data_nc->value));
-                            LOG_SHOW("本地nc值:%d 报文nc值:%d\n", user->auth.nc, count);
+                            LOG_SHOW("  本地nc值:%d 报文nc值:%d\n", user->auth.nc, count);
                             if(count > user->auth.nc)   //需要验证上来的摘要认证内容 nc 在自增 
                             {
                                 user->auth.nc = count;
-                                step = 5;
+                                step = 4;
                             }  
                         }   
                     }
 
                     //1.2.5 摘要值计算
-                    if(step == 5)
+                    if(step == 4)
                     {
+                        //LOG_SHOW("【摘要认证 3】 response 的计算\n");
+                        
                         char * pszNonce = (char *)(data_nonce->value);
                         char * pszCNonce = (char *)(data_cnonce->value);
                         char * pszUser = (char *)(data_username->value);
@@ -948,7 +948,7 @@ int http_send_str(http_server_t *http, int userId, char *str)
                         //密码查找                         
                         keyvalue_get_value_by_str(http->account, pszUser, bufValue, BUF_VALUE_LEN);
                         char * pszPass = bufValue;                        
-                        LOG_INFO("用户名：%s 密码：%s\n", pszUser, pszPass);
+                        LOG_INFO("  用户名：%s 密码：%s\n", pszUser, pszPass);
                                                
                         char * pszAlg = "md5";
                         char szNonceCount[9];   //8 hex digits 
@@ -994,13 +994,12 @@ int http_send_str(http_server_t *http, int userId, char *str)
                         }
                     }
                     
-                    LOG_SHOW("step:%d\n", step);   
+                    LOG_SHOW("【摘要认证】 最终停下的步骤 %d\n", step);   
                     
                 }break;
             }
         }
-
-        
+       
         //1.3 基本认证
         else
         {   
@@ -1125,8 +1124,8 @@ int http_data_accept(http_server_t *http, int userId)
     //int tmp;
     int ret;
     //unsigned char localBuf[HTTP_USER_BUF_SIZE + 8] = {0};
-    //int len;
-    int pos;
+    int len;
+    //int pos;
     int endPos;
     
 
@@ -1136,27 +1135,27 @@ int http_data_accept(http_server_t *http, int userId)
     pthread_mutex_lock(&(tcpUser->mutex));  //注意 锁的范围 应该合理                                 
     if(tcpUser->bufReady == 1)
     {
-        
-        //因为 http user 缓存大小设计为 tcp user 的两倍，所以可以分为前后A、B两个块
-        //httpUser->bufLen  是之前剩余缓存的长度，新的数据放到后面
-        if(httpUser->bufLen > TCP_USER_BUF_SIZE)    //要保证新的数据有足够空间，那么剩余缓存的长度控制到 A 块以内
+        if(httpUser->bufLen > HTTP_USER_BUF_A_BLOCK_SIZE)    
         {
-            pos = TCP_USER_BUF_SIZE - httpUser->bufLen;
-            httpUser->bufLen = TCP_USER_BUF_SIZE;
-            memmove(httpUser->buf, httpUser->buf + pos, httpUser->bufLen);               
+//            pos = HTTP_USER_BUF_A_BLOCK_SIZE - httpUser->bufLen;
+//            httpUser->bufLen = HTTP_USER_BUF_A_BLOCK_SIZE;
+//            memmove(httpUser->buf, httpUser->buf + pos, httpUser->bufLen);    
+            LOG_ALARM("未处理处理的数据超过缓存容量，被阻塞....");
         }  
-        
-        memcpy(httpUser->buf + httpUser->bufLen, tcpUser->buf, tcpUser->bufLen);   
-
-        httpUser->bufLen += tcpUser->bufLen;               
-        tcpUser->bufReady = 0;
-
-        //tcpUser->bufLen = 0;  
+        else
+        {
+            memcpy(httpUser->buf + httpUser->bufLen, tcpUser->buf, tcpUser->bufLen);   
+            httpUser->bufLen += tcpUser->bufLen; 
+            httpUser->buf[httpUser->bufLen] = '\0'; //如果要使用字符串
+            tcpUser->bufReady = 0;
+        }
+ 
     }
     pthread_mutex_unlock(&(tcpUser->mutex));
 
-    LOG_SHOW("\n-------------------------------------\n");
-    LOG_SHOW("status:%d dataLen:%d \ndataIn:【%s】\n\n", httpUser->status, httpUser->bufLen, httpUser->buf);
+    LOG_SHOW("\n---------------------------------------------------http_data_accept\n");
+    LOG_SHOW("status:%d dataLen:%d dataIn:\n【%s】\n\n", httpUser->status, httpUser->bufLen, httpUser->buf);
+    
     
     //状态机
     switch(httpUser->status)   //状态变化？
@@ -1174,26 +1173,47 @@ int http_data_accept(http_server_t *http, int userId)
         {
             if(httpUser->bufLen > 0)    //说明有数据可用
             {
-                //printf("\n\n--------------- mark\n\n");
                 ret = __http_message_first_line_parse(httpUser, &endPos);
 
                 //LOG_SHOW("\nlen:%d\nbuf:%s\nret:%d endPos:%d\n\n", httpUser->bufLen, httpUser->buf, ret, endPos);
 
-                //去掉处理过的字符
-                httpUser->bufLen = httpUser->bufLen - endPos - 1;   //注：memmove 用于有重叠的内存块
-                memmove(httpUser->buf, httpUser->buf + endPos + 1, httpUser->bufLen);   
-                httpUser->buf[httpUser->bufLen] = '\0';     //可能要用到字符串 
+//                //去掉处理过的字符
+//                httpUser->bufLen = httpUser->bufLen - endPos - 1;   //注：memmove 用于有重叠的内存块
+//                memmove(httpUser->buf, httpUser->buf + endPos + 1, httpUser->bufLen);   
+//                httpUser->buf[httpUser->bufLen] = '\0';     //可能要用到字符串 
+
+                //去掉处理完成的字符
+                if(endPos >= 0) 
+                {
+                    if(endPos >= httpUser->bufLen - 1)endPos = httpUser->bufLen - 1;    //注意 endPos 不能超过缓存大小
+                    httpUser->bufLen = httpUser->bufLen - endPos - 1;   //注：memmove 用于有重叠的内存块
+                    memmove(httpUser->buf, httpUser->buf + endPos + 1, httpUser->bufLen);   
+                    httpUser->buf[httpUser->bufLen] = '\0';     //可能要用到字符串 
+
+                }
                 
                 if(ret == RET_OK)  //找到了头部    
                 {
-                    //len = tcpUser->bufLen - ret;
-                    //memcpy(localBuf, httpUser->buf + ret, len);
-                    //memcpy(httpUser->buf, localBuf, len);
-                    //tcpUser->bufLen = len;
-                
+                    LOG_SHOW("查找http第一行并解析 成功\n");
+                    
+                    httphead_clear_head(httpUser->head.parse);  //清空解析的内容
                     httpUser->status = http_status_recv_head;
-                    //预制初始值
                     http_data_accept(http, userId); //状态转移，然后重入
+                }
+                else    
+                {
+                    //本次处理完成，必须保证余下的数据大小为 （A、B块）一个块大小的 [三]分之一
+                    if(httpUser->bufLen > (HTTP_USER_BUF_A_BLOCK_SIZE / 3))
+                    {
+                        len = (HTTP_USER_BUF_A_BLOCK_SIZE / 3) - httpUser->bufLen;
+                        httpUser->bufLen = (HTTP_USER_BUF_A_BLOCK_SIZE / 3);   //注：memmove 用于有重叠的内存块
+                        memmove(httpUser->buf, httpUser->buf + len, httpUser->bufLen); 
+                        httpUser->buf[httpUser->bufLen] = '\0'; //如果要使用字符串
+
+                        LOG_ALARM("http_status_recv_head_find：原数据长度:%d 现在数据长度：%d\n", 
+                                    httpUser->bufLen + len, (HTTP_USER_BUF_A_BLOCK_SIZE / 3))
+                    }
+                    LOG_SHOW("查找http第一行并解析 失败\n");
                 }
                 
             }
@@ -1210,15 +1230,20 @@ int http_data_accept(http_server_t *http, int userId)
                 //LOG_SHOW("\nlen:%d\nbuf:%s\nret:%d endPos:%d\n\n", httpUser->bufLen, httpUser->buf, ret, endPos);
 
                 //去掉处理完成的字符
-                if(endPos >= httpUser->bufLen - 1)endPos = httpUser->bufLen - 1;    //注意 endPos 不能超过缓存大小
-                httpUser->bufLen = httpUser->bufLen - endPos - 1;   //注：memmove 用于有重叠的内存块
-                memmove(httpUser->buf, httpUser->buf + endPos + 1, httpUser->bufLen);   
-                httpUser->buf[httpUser->bufLen] = '\0';     //可能要用到字符串 
+                if(endPos >= 0)
+                {
+                    if(endPos >= httpUser->bufLen - 1)endPos = httpUser->bufLen - 1;    //注意 endPos 不能超过缓存大小
+                    httpUser->bufLen = httpUser->bufLen - endPos - 1;   //注：memmove 用于有重叠的内存块
+                    memmove(httpUser->buf, httpUser->buf + endPos + 1, httpUser->bufLen);   
+                    httpUser->buf[httpUser->bufLen] = '\0';     //可能要用到字符串 
 
+                }
 
                 httpUser->headByteCnt = httpUser->headByteCnt + endPos + 1;
                 if(ret == RET_FAILD)    //没有找到空行
                 {   
+                    LOG_SHOW("解析http头部 没有完成\n");
+                    
                     //如果处理的字数超过预定值，认为失败，需要回到 查找头部位置的状态
                     if(httpUser->headByteCnt >= HTTP_HEAD_BYTE_CNT_MAX_SIZE)
                     {
@@ -1226,11 +1251,15 @@ int http_data_accept(http_server_t *http, int userId)
                         httpUser->status = http_status_recv_head_find;
                         http_data_accept(http, userId); //状态转移      ，然后重入
                     }   
+
+                    
                 }
                 else if(ret == RET_OK)  //找到了空行    
                 {
-                  
-                    LOG_INFO("http 头部处理完毕 ...");
+                    LOG_SHOW("解析http头部 成功\n");
+                    httphead_show(httpUser->head.parse);
+                 
+                    //LOG_INFO("http 头部处理完毕 ...");
                     httpUser->status = http_status_head_pro;
                     http_data_accept(http, userId); //状态转移，然后重入
                 }
@@ -1434,48 +1463,68 @@ static int __http_client_msg_first_line_parse(http_client_t *client, int *endPos
     
     int step;
     int len;
-    int posStart;
-    int posEnter;
+    //int posStart;
+    //int posEnter;
     char *find, *lastFind;
     char *find2;
     int pos;
+
+    int seek;
+    int ret;
+    //int mark;
+    int bufLen;
 
     
     char line[HTTP_USER_BUF_SIZE + 8];
     char buf[HTTP_USER_BUF_SIZE + 8];
     memcpy(buf, client->buf, client->bufLen);
     buf[client->bufLen] = '\0';
-    
-    //参考 HTTP/1.1 200 OK 
-    //三个步骤完成，才认为第一行数据有效
 
-    posStart = 0;
+    bufLen = strlen(buf);
     
+   
+
+    //posStart = 0;
+    //*endPos = -1;
+    ret = RET_FAILD;
+    seek = 0;
     while(1)
     {
-        step = 0;
-        if(posStart >= client->bufLen)break;
+        //LOG_SHOW("---->seek:%d bufLen:%d\n", seek, bufLen);
+        
+        if(seek >= bufLen)break;
+
+        if(buf[seek] == '\n' || buf[seek] == '\0')
+        {
+            seek++;
+            //LOG_SHOW("换行 ...\n");
+            continue;
+        }
+
+        //参考 HTTP/1.1 200 OK 
+        //三个步骤完成，才认为第一行数据有效
         //1、找到换行标志
-        find = strstr(buf + posStart, "\n");       
+        step = 0;
+        find = strstr(buf + seek, "\n");       
         if(find != NULL)
         {
-            len = find - buf + 1;
-            memcpy(line, buf + posStart, len);
-            line[len] = '\0';
-            posStart += len;
-            posEnter = len - 1;
+            //LOG_SHOW("【seek:%d】 buf:【%s】\n", seek, buf + seek);
+            len = find - (buf + seek) + 1;
             
-            step = 1;
+            memcpy(line, buf + seek, len);
+            line[len] = '\0';
+            //LOG_SHOW("line:【%s】\n", line);
+            
+            
 
-            *endPos = posEnter;
+            seek = find - buf + 1; 
+            step = 1;
         }
         else
         {
-            *endPos = client->bufLen - 1;
-            return RET_FAILD;  
+            break; 
         }
         
-
         //2、找到最后一个 HTTP/1.1，并获取 version、code、reason
         if(step == 1)   //上一步成功
         {
@@ -1505,14 +1554,29 @@ static int __http_client_msg_first_line_parse(http_client_t *client, int *endPos
         {
             
             client->parse.code = atoi(client->parse.codeStr);
-            if(client->parse.code <= 0)break;
-                
-            LOG_SHOW("解析头部 version:%s code:%d reason:%s\n", client->parse.version, client->parse.code, client->parse.reason);
-            return RET_OK;
+            if(client->parse.code > 0)
+            {
+                LOG_SHOW("解析头部 version:%s code:%d reason:%s\n", client->parse.version, client->parse.code, client->parse.reason);
+                ret = RET_OK;
+                break;
+            }
         }
         
     }
-    return RET_FAILD; 
+
+    //如果还有数据没有处理，需要重入
+    if(ret != RET_OK && bufLen < client->bufLen)    
+    {
+        //LOG_SHOW("重入 ...bufLen:%d client->bufLen:%d\n", bufLen, client->bufLen);
+        client->bufLen -= bufLen + 1;
+        memmove(client->buf, client->buf + bufLen + 1, client->bufLen);
+        return __http_client_msg_first_line_parse(client, endPos);
+    }   
+
+    //设置 endPos
+    *endPos = seek - 1;
+    
+    return ret; 
 }
 
 //参考 __http_message_head_parse
@@ -1828,8 +1892,32 @@ static int __http_client_msg_recv_pro(http_client_t *client)
             httpmsg_client_digest_auth_append(&p, BUF_AUTH_SIZE - pos, &len, &(client->auth));
             pos += len;
 
+            //-------------------------------------测试
+//            bufAuth[pos] = '\0';
+//            tcp_client_send(client->tcp, bufAuth, pos);
+//
+//            system("sleep 2");
+//            char tmpStr[] = "test name: key:";
+//            tcp_client_send(client->tcp, tmpStr, strlen(tmpStr) );
+//
+//            system("sleep 2");
+//            //char tmpStr2[] = "value\n\n";
+//            int tmpCnt = 0;
+//            char tmpStr2[128] = {0};
+//            tmpStr2[tmpCnt++] = 'v';
+//            tmpStr2[tmpCnt++] = 'a';
+//            tmpStr2[tmpCnt++] = 'l';
+//            tmpStr2[tmpCnt++] = '\0';
+//            tmpStr2[tmpCnt++] = 'e';
+//            tmpStr2[tmpCnt++] = '\n';
+//            tmpStr2[tmpCnt++] = '\n';
+//            tmpStr2[tmpCnt] = '\0';
+//
+//            tcp_client_send(client->tcp, tmpStr2, tmpCnt );
+            //-------------------------------------
+            
             bufAuth[pos++] = '\n';
-            bufAuth[pos++] = '\0';
+            bufAuth[pos] = '\0';
             
             LOG_SHOW("发送认证测试 长度:%d 内容:%s\n", pos, bufAuth);
             tcp_client_send(client->tcp, bufAuth, pos);
@@ -1848,18 +1936,18 @@ static int __http_client_msg_recv_pro(http_client_t *client)
 
 
     //测试发送数据
-//    httpClient_msg_t *msg = httpClient_create();
-//
-//    httpmsg_client_head_init(msg, "GET", "/CWMP", "HTTP/1.1", client->useDigestAuth, &(client->auth));
-//    
-//    if(msg->keyvalueEn == 1)
-//    {
-//        keyvalue_append_set_str(msg->keyvalue, "Content-Type", "text/html");
-//        keyvalue_append_set_str(msg->keyvalue, "Content-Length", "137");     
-//    }
-//    httpmsg_client_send_msg(msg, client->tcp);
-//    
-//    httpCLient_destroy(msg);
+    httpClient_msg_t *msg = httpClient_create();
+
+    httpmsg_client_head_init(msg, "GET", "/CWMP", "HTTP/1.1", client->useDigestAuth, &(client->auth));
+    
+    if(msg->keyvalueEn == 1)
+    {
+        keyvalue_append_set_str(msg->keyvalue, "Content-Type", "text/html");
+        keyvalue_append_set_str(msg->keyvalue, "Content-Length", "137");     
+    }
+    httpmsg_client_send_msg(msg, client->tcp);
+    
+    httpCLient_destroy(msg);
  
     return RET_OK;
 }   
@@ -1902,8 +1990,8 @@ int http_client_accept(http_client_t *client)
     }
     pthread_mutex_unlock(&(tcp->mutex));
 
-    LOG_SHOW("\n-------------------------------------\n");
-    LOG_SHOW("status:%d dataLen:%d \ndataIn:【%s】\n\n", client->status, client->bufLen, client->buf);
+    LOG_SHOW("\n------------------------------------------http_client_accept\n");
+    LOG_SHOW("status:%d dataLen:%d dataIn:\n【%s】\n\n", client->status, client->bufLen, client->buf);
 
     //状态机
     switch(client->status)   //状态变化？
@@ -2110,5 +2198,47 @@ void http_client_test(char *ipv4, int port, char *targetIpv4, int targetPort)
 
 
 
+void http_other_test()
+{
+//    int endPos;
+//    int ret;
+//    httpUser_obj_t userObj;
+//    httpUser_obj_t *user = &userObj;
+//
+//    char *p = (char *)(user->buf);
+//    strcpy(p, "\n\nprotected/resource HTTP/1.1"
+//                        "GET /protected/resource HTTP/1.1\n"
+//                        "Host: example.com\n"
+//                        "\n\n\n");
+//    user->bufLen = strlen(p) + 1; 
+//    p[28] = '\0';
+//    
+//    ret = __http_message_first_line_parse(user, &endPos);
+//
+//
+//    LOG_SHOW("ret:%d endpos:%d %c%c%c\n", ret, endPos, p[endPos - 1], p[endPos], p[endPos + 1]);
+
+
+//    int endPos;
+//    int ret;
+//    int len;
+//    http_client_t clientObj;
+//    http_client_t *client = &clientObj;
+//
+//    char *p = (char *)(client->buf);
+//     
+//    strcpy(p,   "\nn\n\nokdfas HTTP/1.1 "
+//                "HTTP/1.1 401 unauth\n"
+//                "Host: example.com\n"
+//                "\n\n\n");
+//    len = strlen(p);
+//    client->bufLen = len;
+//    
+//    p[10] = '\0';
+//    
+//    ret = __http_client_msg_first_line_parse(client, &endPos);
+//
+//    LOG_SHOW("ret:%d endpos:%d len:%d %c%c%c\n", ret, endPos, p[endPos - 1], len, p[endPos], p[endPos + 1]);
+}
 
 

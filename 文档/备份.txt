@@ -1,0 +1,92 @@
+﻿# 备份
+
+#### 1、备份1
+
+```c
+
+
+//http 头部解析（除了第一行）
+//返回值 RET_OK：找到了空行               RET_FAILD：没找到空行
+// 参数 endPos 表示处理过的数据的 最后位置
+static int __http_message_head_parse(httpUser_obj_t *user, int *endPos)
+{
+    if(user == NULL || endPos == NULL)return RET_FAILD;
+    
+
+    char *find;
+    int findPos, newStartPos;
+    //int step;
+    //int len;
+    int i;
+    int cnt;
+    
+    int ret;
+    char buf[HTTP_USER_BUF_SIZE + 8];   //http 用户缓存长度
+    
+    memcpy(buf, user->buf, user->bufLen);
+    buf[user->bufLen] = '\0';
+
+//    //user->buf 之间可能会出现 '\0' ，所以要除掉 '\0' 
+//    cnt = 0;
+//    for(i = 0; i < user->bufLen; i++)
+//        if(user->buf[i] != '\0')
+//            buf[cnt++] = user->buf[i];
+//    buf[cnt] = '\0';
+    
+    
+
+    //str = buf;
+    ret = RET_FAILD;
+    newStartPos = 0;
+    while(1)
+    {        
+        find = strstr(buf + newStartPos, "\n");
+        if(find == NULL)break;
+         
+        findPos = find - buf;
+        newStartPos = findPos + 1;
+    
+        //找到http  头部和 负荷 的分界位置
+        if((newStartPos <= user->bufLen && buf[newStartPos] == '\n'))
+        {
+            *endPos = newStartPos;
+            ret = RET_OK;
+            break;
+        } 
+        
+        if((newStartPos + 1) <= user->bufLen  && buf[newStartPos] == '\r' && buf[newStartPos + 1] == '\n') 
+        {
+            *endPos = newStartPos + 1;
+            ret = RET_OK;
+            break;
+        }
+
+
+        //后面没有数据了
+        if(newStartPos >= user->bufLen)
+        {
+            *endPos = findPos;
+            break;
+        }
+    
+        //后面还有数据，则进入下一个寻找 '\n' 的循环  
+        *endPos = findPos;
+    }
+    
+    if(findPos >= 1)
+    {
+        buf[findPos + 1] = '\0';
+        
+        //解析
+        httphead_parse_head(user->head.parse, buf);
+        
+        //httphead_show(user->head.parse);
+    
+    }
+    
+    return ret;
+
+}
+
+```
+

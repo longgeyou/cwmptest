@@ -86,6 +86,7 @@ void test(int port)
 
 	//base64_test();
 	//serverauth_test();
+	http_other_test();
 
 }
 

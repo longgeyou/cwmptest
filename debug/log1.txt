@@ -1,39 +1,30 @@
 
 ======================log start=======================
-[info 0][Mon Oct 28 23:40:50 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:557 
+[info 0][Tue Oct 29 16:41:06 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:557 
 connect to [192.168.1.20:8080] OK
 http 客户端开启 start ......
 ---------------->POLL   IN
 
-【客户端 ip地址：192.168.1.20:8083 读取的字节：160byte】
-------------------------------------
-http/1.1 401 Unauthorized
-WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=f83a55554c51ad4bbacfa616797741ce, opaque=b1b53dbaaf3a6d2af022fa15f3e4798e
-
-
-------------------------------------
-
-
--------------------------------------
-status:0 dataLen:160 
-dataIn:【http/1.1 401 Unauthorized
-WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=f83a55554c51ad4bbacfa616797741ce, opaque=b1b53dbaaf3a6d2af022fa15f3e4798e
+------------------------------------------http_client_accept
+status:0 dataLen:160 dataIn:
+【http/1.1 401 Unauthorized
+WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=9cece655bd46f1b16405ec5e668d93f6, opaque=27f5590536307a48357877f35d26a39b
 
 】
 
 
--------------------------------------
-status:1 dataLen:160 
-dataIn:【http/1.1 401 Unauthorized
-WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=f83a55554c51ad4bbacfa616797741ce, opaque=b1b53dbaaf3a6d2af022fa15f3e4798e
+------------------------------------------http_client_accept
+status:1 dataLen:160 dataIn:
+【http/1.1 401 Unauthorized
+WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=9cece655bd46f1b16405ec5e668d93f6, opaque=27f5590536307a48357877f35d26a39b
 
 】
 
 解析头部 version:http/1.1 code:401 reason:Unauthorized
 
--------------------------------------
-status:2 dataLen:134 
-dataIn:【WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=f83a55554c51ad4bbacfa616797741ce, opaque=b1b53dbaaf3a6d2af022fa15f3e4798e
+------------------------------------------http_client_accept
+status:2 dataLen:134 dataIn:
+【WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=9cece655bd46f1b16405ec5e668d93f6, opaque=27f5590536307a48357877f35d26a39b
 
 】
 
@@ -43,21 +34,21 @@ num:1
 name:WWW-Authenticate
 key:Digest realm value:/cwmp 
 key:qop value:auth-int 
-key:nonce value:f83a55554c51ad4bbacfa616797741ce 
-key:opaque value:b1b53dbaaf3a6d2af022fa15f3e4798e 
-[info 1][Mon Oct 28 23:40:51 2024]file:protocol/session/http.c  fun:http_client_accept  line:1979 
+key:nonce value:9cece655bd46f1b16405ec5e668d93f6 
+key:opaque value:27f5590536307a48357877f35d26a39b 
+[info 1][Tue Oct 29 16:41:07 2024]file:protocol/session/http.c  fun:http_client_accept  line:2067 
 http 头部处理完毕 ...
 
--------------------------------------
-status:3 dataLen:1 
-dataIn:【】
+------------------------------------------http_client_accept
+status:3 dataLen:1 dataIn:
+【】
 
  客户端 http 报文接收处理
 需要摘要认证 ...
 计算摘要认证 ...
 计算摘要值所需参数：
-pszNonce:f83a55554c51ad4bbacfa616797741ce
-pszCNonce:8a8b15482
+pszNonce:9cece655bd46f1b16405ec5e668d93f6
+pszCNonce:9dbcfb68f
 pszUser:admin
 pszRealm:/cwmp
 pszPass:123456
@@ -66,13 +57,15 @@ szNonceCount:00000010
 pszMethod:GET
 pszQop:auth-int
 pszURI:/cwmp
-Response = a1aec7f795a7b68426f1bab3d5926143
-发送认证测试 长度:253 内容:GET /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=f83a55554c51ad4bbacfa616797741ce, uri="/cwmp", response="a1aec7f795a7b68426f1bab3d5926143", opaque=b1b53dbaaf3a6d2af022fa15f3e4798e, qop=auth-int, nc=10, cnonce="8a8b15482"
+Response = feb7166c7f54989a38c609bdae9f21cd
+发送认证测试 长度:252 内容:GET /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=9cece655bd46f1b16405ec5e668d93f6, uri="/cwmp", response="feb7166c7f54989a38c609bdae9f21cd", opaque=27f5590536307a48357877f35d26a39b, qop=auth-int, nc=10, cnonce="9dbcfb68f"
 
 
+计算摘要认证 ...
+Response = 3a9e099d90a6a85683cf0da4bfe70408
 
--------------------------------------
-status:1 dataLen:1 
-dataIn:【】
+------------------------------------------http_client_accept
+status:1 dataLen:1 dataIn:
+【】
 

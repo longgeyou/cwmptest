@@ -479,10 +479,10 @@ void *thread_tcp_client_transceiver(void *in)
             }                
             else if(client->bufLen > 0)
             {                    
-                 LOG_SHOW("\n【客户端 ip地址：%s:%d 读取的字节：%dbyte】\n"
-                           "------------------------------------\n"
-                           "%s\n------------------------------------\n\n",
-                           client->ipv4, client->port, client->bufLen, client->buf);  
+//                 LOG_SHOW("\n【客户端 ip地址：%s:%d 读取的字节：%dbyte】\n"
+//                           "------------------------------------\n"
+//                           "%s\n------------------------------------\n\n",
+//                           client->ipv4, client->port, client->bufLen, client->buf);  
                            
                 pthread_mutex_lock(&(client->mutex));          
                 client->bufReady = 1;
