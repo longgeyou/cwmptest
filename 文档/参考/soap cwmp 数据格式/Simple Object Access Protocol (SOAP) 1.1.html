@@ -1,0 +1,2239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<!-- saved from url=(0046)https://www.w3.org/TR/2000/NOTE-SOAP-20000508/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+    <title>Simple Object Access Protocol (SOAP) 1.1</title>
+    <link media="screen" href="./Simple Object Access Protocol (SOAP) 1.1_files/W3C-NOTE.css" type="text/css" rel="stylesheet">
+    <style type="text/css">
+      <!--
+      p.MsoNormal, li.MsoNormal, div.MsoNormal
+      {}
+      p.MsoCaption, li.MsoCaption, div.MsoCaption
+      {font-weight:bold}
+      p.MsoListBullet, li.MsoListBullet, div.MsoListBullet
+      {padding-top:0.25em;
+      padding-bottom:0.25em;}
+      p.MsoListNumber, li.MsoListNumber, div.MsoListNumber
+      {padding-top:0.25em;
+      padding-bottom:0.25em;}
+      p.MsoListBullet2, li.MsoListBullet2, div.MsoListBullet2
+      {padding-top:0.25em;
+      padding-bottom:0.25em;}
+      p.MsoListNumber2, li.MsoListNumber2, div.MsoListNumber2
+      {padding-top:0.25em;
+      padding-bottom:0.25em;}
+      p.MsoTitle, li.MsoTitle, div.MsoTitle
+      {}
+      p.MsoDDef, dd.MsoDDef, div.MsoDDef
+      {padding-bottom:0.25em;}
+      p.MsoDTerm, dt.MsoDTerm, div.MsoDTerm
+      {}
+      p.Preformatted, li.Preformatted, div.Preformatted
+      {margin-left:2em;
+      background:#80ffff;
+      font-family:"Courier New"}
+      p.Reference, li.Reference, div.Reference
+      {}
+      table.MsoNormal
+      {border-collapse:collapse;
+      background:#f5dcb3;
+      border-spacing:1pt;
+      border:solid black}
+      td.MsoNormal
+      {border: 1pt solid black;
+      padding: 0.2em}
+      p.TableText, li.TableText, div.TableText
+      {margin-top:0.2em;
+      margin-bottom:0.2em;
+      font-family:"Arial"}
+      p.TableHeader, li.TableHeader, div.TableHeader
+      {text-align:center;
+      font-family:"Arial";
+      font-weight:bold}
+      -->
+    </style>
+  </head>
+
+  <body lang="EN-US">
+    <div class="head">
+      <p><a href="https://www.w3.org/"><img height="48" alt="W3C" src="./Simple Object Access Protocol (SOAP) 1.1_files/w3c_home" width="72"></a></p>
+      <h1 class="MsoTitle">Simple Object Access Protocol (SOAP) 1.1 </h1>
+
+      <h2>W3C Note 08 May 2000</h2>
+
+      <dl>
+	<dt class="MsoDTerm">This version:</dt>
+	<dd><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508">http://www.w3.org/TR/2000/NOTE-SOAP-20000508</a> 
+	  
+	</dd><dt class="MsoDTerm">Latest version:</dt>
+	<dd><a href="https://www.w3.org/TR/SOAP">http://www.w3.org/TR/SOAP</a> 
+
+	</dd><dt class="MsoDTerm"><a name="_Toc478383537">Authors</a> (alphabetically):</dt> 
+	<dd><a href="mailto:dbox@develop.com">Don Box</a>, DevelopMentor<br>
+	  <a href="mailto:davide@us.ibm.com">David Ehnebuske</a>, IBM<br>
+	  <a href="mailto:gopalk@microsoft.com">Gopal Kakivaya</a>, Microsoft<br>
+	  <a href="mailto:andrewl@microsoft.com">Andrew Layman</a>, Microsoft<br>
+	  <a href="mailto:Noah_Mendelsohn@lotus.com">Noah Mendelsohn</a>, Lotus Development Corp.<br>
+	  <a href="mailto:frystyk@microsoft.com">Henrik Frystyk Nielsen</a>, Microsoft<br>
+	  <a href="mailto:satisht@microsoft.com">Satish Thatte</a>, Microsoft<br>
+	  <a href="mailto:dave@userland.com">Dave Winer</a>, UserLand Software, Inc.</dd>
+      </dl>
+
+      <p class="copyright">Copyright© 2000
+	<a href="http://www.develop.com/"><abbr title="DevelopMentor">DevelopMentor</abbr></a>, 
+      <a href="http://www.ibm.com/"><abbr title="IBM">International Business Machines Corporation</abbr></a>, 
+      <a href="http://www.lotus.com/"><abbr title="Lotus">Lotus Development Corporation</abbr></a>,
+      <a href="http://www.microsoft.com/"><abbr title="Microsoft">Microsoft</abbr></a>, 
+      <a href="http://www.userland.com/"><abbr title="Userland Software">UserLand Software</abbr></a></p>
+
+      <hr title="Separator from Header">
+    </div>
+
+    <h1><a name="_Ref477795601">Abstract</a></h1>
+
+    <p class="MsoNormal">SOAP is a lightweight protocol for exchange of
+      information in a decentralized, distributed environment. It is
+      an XML based protocol that consists of three parts: an envelope
+      that defines a framework for describing what is in a message and
+      how to process it, a set of encoding rules for expressing
+      instances of application-defined datatypes, and a convention for
+      representing remote procedure calls and responses. SOAP can
+      potentially be used in combination with a variety of other
+      protocols; however, the only bindings defined in this document
+      describe how to use SOAP in combination with HTTP and HTTP
+      Extension Framework.</p>
+
+    <h1><a name="_Ref477795600">Status</a></h1>
+
+    <p class="MsoNormal">This document is a submission to the <a href="https://www.w3.org/">World Wide Web Consortium</a> (see <a href="https://www.w3.org/Submission/2000/05/">Submission Request</a>, <a href="https://www.w3.org/Submission/2000/05/Comment">W3C Staff Comment</a>) to propose the
+      formation of a working group in the area of XML-based
+      protocols. Comments are welcome to the <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383537">authors</a> but you are encouraged to
+      share your views on the W3C's public mailing list <a href="mailto:xml-dist-app@w3.org">&lt;xml-dist-app@w3.org&gt;</a>
+      (see <a href="http://lists.w3.org/Archives/Public/xml-dist-app/">archives</a>).</p>
+
+    <p class="MsoNormal">This document is a NOTE made available by the
+      W3C for discussion only. Publication of this Note by W3C
+      indicates no endorsement by W3C or the W3C Team, or any W3C
+      Members. W3C has had no editorial control over the preparation
+      of this Note. This document is a work in progress and may be
+      updated, replaced, or rendered obsolete by other documents at
+      any time.</p>
+
+    <p class="MsoNormal">A list of current W3C technical documents can be
+      found at the <a href="https://www.w3.org/TR/">Technical Reports page</a>.</p>
+
+    <h1><a name="_Ref477795602">Table of Contents</a></h1>
+
+    <dl>
+      <dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383486">1. Introduction</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383487">1.1 Design Goals </a>
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383489">1.2 Notational Conventions</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383490">1.3 Examples of SOAP Messages</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383491">2. The SOAP Message Exchange Model</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383492">3. Relation to XML</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383494">4. SOAP Envelope</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">4.1.1 SOAP encodingStyle Attribute</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383496">4.1.2 Envelope Versioning Model</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383497">4.2 SOAP Header</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383498">4.2.1 Use of Header Attributes</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383499">4.2.2 SOAP actor Attribute</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383500">4.2.3 SOAP mustUnderstand Attribute</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383503">4.3 SOAP Body</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383504">4.3.1 Relationship between SOAP Header and Body</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">4.4 SOAP Fault</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383510">4.4.1 SOAP Fault Codes</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383512">5. SOAP Encoding</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383513">5.1 Rules for Encoding Types in XML</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383514">5.2 Simple Types</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383515">5.2.1 Strings</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383516">5.2.2 Enumerations</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383517">5.2.3 Array of Bytes</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383518">5.3 Polymorphic Accessor</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383519">5.4 Compound Types</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383520">5.4.1 Compound Values and References to Values</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383522">5.4.2 Arrays</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383523">5.4.2.1 PartiallyTransmitted Arrays</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383524">5.4.2.2 SparseArrays</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383521">5.4.3 Generic Compound Types</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383525">5.5 Default Values</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383501">5.6 SOAP root Attribute</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383526">6. Using SOAP in HTTP</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383527">6.1 SOAP HTTP Request</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383528">6.1.1 The SOAPAction HTTP Header Field</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383529">6.2 SOAP HTTP Response</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383530">6.3 The HTTP Extension Framework</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383531">6.4 SOAP HTTP Examples</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383532">7. Using SOAP for RPC</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383533">7.1 RPC and SOAP Body</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383534">7.2 RPC and SOAP Header</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383535">8. Security Considerations</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383536">9. References</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383539">A. SOAP Envelope Examples</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383540">A.1 Sample Encoding of Call Requests</a> 
+      </dt><dt class="MsoDTerm"><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383541">A.2 Sample Encoding of Response</a> </dt>
+    </dl>
+
+    <h1><a name="_Toc478383486">1. Introduction</a></h1>
+
+    <p class="MsoNormal">SOAP provides a simple and lightweight mechanism
+      for exchanging structured and typed information between peers in a
+      decentralized, distributed environment using XML. SOAP does not itself
+      define any application semantics such as a programming model or
+      implementation specific semantics; rather it defines a simple
+      mechanism for expressing application semantics by providing a modular
+      packaging model and encoding mechanisms for encoding data within
+      modules. This allows SOAP to be used in a large variety of systems
+      ranging from messaging systems to RPC.</p>
+
+    <p class="MsoNormal">SOAP consists of three parts:</p>
+
+    <ul>
+      <li class="MsoListBullet">The SOAP envelope (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383494">section 4</a>) construct defines an
+	overall framework for expressing <b>what</b> is in a message;
+	<b>who</b> should deal with it, and <b>whether</b> it is
+	optional or mandatory.</li>
+
+      <li class="MsoListBullet">The SOAP encoding rules (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383512">section 5</a>) defines a serialization
+	mechanism that can be used to exchange instances of
+	application-defined datatypes.</li>
+
+      <li class="MsoListBullet">The SOAP RPC representation (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383532">section 7</a>) defines a convention that
+	can be used to represent remote procedure calls and
+	responses.</li>
+    </ul>
+
+    <p class="MsoNormal">Although these parts are described together as
+      part of SOAP, they are functionally orthogonal. In particular,
+      the envelope and the encoding rules are defined in different
+      namespaces in order to promote simplicity through modularity.</p>
+
+    <p class="MsoNormal">In addition to the SOAP envelope, the SOAP
+      encoding rules and the SOAP RPC conventions, this specification
+      defines two protocol bindings that describe how a SOAP message
+      can be carried in HTTP <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2616">[5]</a> messages
+      either with or without the HTTP Extension Framework <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2774">[6]</a>.</p>
+
+    <h2><a name="_Toc478383487">1.1 Design Goals</a></h2>
+
+    <p class="MsoNormal">A major design goal for SOAP is 
+      simplicity and extensibility. This means that there are several features from 
+      traditional messaging systems and distributed object systems that are not part 
+      of the core SOAP specification. Such features include</p>
+
+    <ul>
+      <li class="MsoListBullet">Distributed garbage collection 
+	
+      </li><li class="MsoListBullet">Boxcarring or batching of messages 
+
+      </li><li class="MsoListBullet">Objects-by-reference (which 
+	requires distributed garbage collection) 
+	
+      </li><li class="MsoListBullet">Activation (which requires 
+	objects-by-reference) </li>
+    </ul>
+
+    <h2><a name="_Toc478383489">1.2 Notational Conventions</a></h2>
+
+    <p class="MsoNormal">The keywords "MUST", "MUST NOT", 
+      "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", 
+      and "OPTIONAL" in this document are to be interpreted as described in RFC-2119 
+      <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2119">[2]</a>.</p>
+
+    <p class="MsoNormal">The namespace prefixes "SOAP-ENV" and
+      "SOAP-ENC" used in this document are associated with the SOAP
+      namespaces "<a href="http://schemas.xmlsoap.org/soap/envelope/">http://schemas.xmlsoap.org/soap/envelope/</a>"
+      and "<a href="http://schemas.xmlsoap.org/soap/encoding/">http://schemas.xmlsoap.org/soap/encoding/</a>"
+      respectively.</p>
+
+    <p class="MsoNormal">Throughout this document, the namespace prefix
+      "xsi" is assumed to be associated with the URI "<a href="https://www.w3.org/1999/XMLSchema-instance">http://www.w3.org/1999/XMLSchema-instance</a>"
+      which is defined in the XML Schemas specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>. Similarly, the namespace prefix "xsd" is
+      assumed to be associated with the URI "<a href="https://www.w3.org/1999/XMLSchema">http://www.w3.org/1999/XMLSchema</a>"
+      which is defined in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS1">[10]</a>. The namespace
+      prefix "tns" is used to indicate whatever is the target
+      namespace of the current document. All other namespace prefixes
+      are samples only.</p>
+
+    <p class="MsoNormal">Namespace URIs of the general form 
+      "some-URI" represent some application-dependent or context-dependent URI <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2396">[4]</a>.</p>
+
+    <p class="MsoNormal">This specification uses the augmented
+      Backus-Naur Form (BNF) as described in RFC-2616 <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2616">[5]</a> for certain constructs.</p>
+
+    <h2><a name="_Toc478383490">1.3 Examples of SOAP Messages</a></h2>
+
+    <p class="MsoNormal">In this example, a GetLastTradePrice SOAP 
+      request is sent to a StockQuote service. The request takes a string parameter, 
+      ticker symbol, and returns a float in the SOAP response. The SOAP Envelope 
+      element is the top element of the XML document representing the SOAP message. 
+      XML namespaces are used to disambiguate SOAP identifiers from application 
+      specific identifiers. The example illustrates the HTTP bindings defined in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383526">section 
+	6</a>. It is worth noting that the rules governing XML payload format in SOAP 
+      are entirely independent of the fact that the payload is carried in HTTP.</p>
+
+    <p class="MsoNormal">More examples are available in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383539">Appendix A</a>.</p>
+
+    <p class="MsoCaption"><a name="_Ref477488396">Example 1</a> SOAP Message Embedded in HTTP Request</p>
+
+    <p class="Preformatted">POST /StockQuote HTTP/1.1<br>
+      Host: www.stockquoteserver.com<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      SOAPAction: "Some-URI"<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp;&nbsp;xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"<br>
+      &nbsp;&nbsp;SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;m:GetLastTradePrice xmlns:m="Some-URI"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;symbol&gt;DIS&lt;/symbol&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/m:GetLastTradePrice&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <p class="MsoNormal">Following is the response message 
+      containing the HTTP message with the SOAP message as the payload:</p>
+
+    <p class="MsoCaption"><a name="_Ref477488602">Example 2</a> SOAP Message Embedded in HTTP Response</p>
+
+    <p class="Preformatted">HTTP/1.1 200 OK<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp;&nbsp;xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"<br>
+      &nbsp;&nbsp;SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;m:GetLastTradePriceResponse xmlns:m="Some-URI"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;34.5&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/m:GetLastTradePriceResponse&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <h1><a name="_Toc478383491">2. The SOAP Message Exchange Model</a></h1>
+
+    <p class="MsoNormal">SOAP messages are fundamentally one-way 
+      transmissions from a sender to a receiver, but as illustrated above, SOAP 
+      messages are often combined to implement patterns such as request/response.</p>
+
+    <p class="MsoNormal">SOAP implementations can be optimized to 
+      exploit the unique characteristics of particular network systems. For example, 
+      the HTTP binding described in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383527">section 6</a> provides for SOAP response messages 
+      to be delivered as HTTP responses, using the same connection as the inbound 
+      request.</p>
+
+    <p class="MsoNormal">Regardless of the protocol to which SOAP 
+      is bound, messages are routed along a so-called "message path", which allows for 
+      processing at one or more intermediate nodes in addition to the ultimate 
+      destination.</p>
+
+    <p class="MsoNormal">A SOAP application receiving a SOAP 
+      message MUST process that message by performing the following actions in the 
+      order listed below:</p>
+
+    <ol>
+      <li class="MsoListNumber"><a name="_Ref477590609"></a>Identify all parts of the SOAP message intended for 
+	that application (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383499">section 4.2.2</a>) 
+	
+      </li><li class="MsoListNumber">Verify that all mandatory parts 
+	identified in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477590609">step 1</a> are supported by the application for 
+	this message (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383500">section 4.2.3</a>) and process them 
+	accordingly. If this is not the case then discard the message (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a>). The processor MAY ignore 
+	optional parts identified in step 1 without affecting the outcome of the 
+	processing. 
+	
+      </li><li class="MsoListNumber">If the SOAP application is not the 
+	ultimate destination of the message then remove all parts identified in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477590609">step 
+	  1</a> before forwarding the message. </li>
+    </ol>
+
+    <p class="MsoNormal">Processing a message or a part of a message
+      requires that the SOAP processor understands, among other
+      things, the exchange pattern being used (one way,
+      request/response, multicast, etc.), the role of the recipient in
+      that pattern, the employment (if any) of RPC mechanisms such as
+      the one documented in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383532">section 7</a>,
+      the representation or encoding of data, as well as other
+      semantics necessary for correct processing.</p>
+
+    <p class="MsoNormal">While attributes such as the SOAP encodingStyle
+      attribute (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">section 4.1.1</a>) can
+      be used to describe certain aspects of a message, this
+      specification does not mandate a particular means by which the
+      recipient makes such determinations in general. For example,
+      certain applications will understand that a particular
+      &lt;getStockPrice&gt; element signals an RPC request using the
+      conventions of <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383532">section 7</a>, while
+      another application may infer that all traffic directed to it is
+      encoded as one way messages.</p>
+
+    <h1><a name="_Toc478383492">3. Relation to XML</a></h1>
+
+    <p class="MsoNormal">All SOAP messages are encoded using XML 
+      (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XML">[7]</a> for more 
+      information on XML).</p>
+
+    <p class="MsoNormal">A SOAP application SHOULD include the 
+      proper SOAP namespace on all elements and attributes defined by SOAP in messages 
+      that it generates. A SOAP application MUST be able to process SOAP namespaces in 
+      messages that it receives. It MUST discard messages that have incorrect 
+      namespaces (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a>) and it MAY process SOAP messages 
+      without SOAP namespaces as though they had the correct SOAP namespaces.</p>
+
+    <p class="MsoNormal">SOAP defines two namespaces (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLNS">[8]</a> for more 
+      information on XML namespaces):</p>
+
+    <ul>
+      <li class="MsoListBullet">The SOAP envelope has the 
+	namespace identifier "<a href="http://schemas.xmlsoap.org/soap/envelope/">http://schemas.xmlsoap.org/soap/envelope/</a>" 
+	
+      </li><li class="MsoListBullet">The SOAP serialization has the 
+	namespace identifier "<a href="http://schemas.xmlsoap.org/soap/encoding/">http://schemas.xmlsoap.org/soap/encoding/</a>" 
+      </li>
+    </ul>
+
+    <p class="MsoNormal">A SOAP message MUST NOT contain a 
+      Document Type Declaration.&nbsp; A SOAP message MUST NOT contain Processing 
+      Instructions. <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XML">[7]</a></p>
+
+    <p class="MsoNormal">SOAP uses the local, unqualified "id" 
+      attribute of type "ID" to specify the unique identifier of an encoded element. 
+      SOAP uses the local, unqualified attribute "href" of type "uri-reference" to 
+      specify a reference to that value, in a manner conforming to the XML 
+      Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XML">[7]</a>, 
+      XML Schema Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>, and XML Linking Language Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLLINK">[9]</a>.</p>
+
+    <p class="MsoNormal">With the exception of the SOAP 
+      mustUnderstand attribute (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383500">section 4.2.3</a>) and the SOAP actor attribute 
+      (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383499">section 4.2.2</a>), it is generally permissible 
+      to have attributes and their values appear in XML instances or alternatively in 
+      schemas, with equal effect. That is, declaration in a DTD or schema with a 
+      default or fixed value is semantically equivalent to appearance in an 
+      instance.</p>
+
+    <h1><a name="_Toc478383494">4. SOAP Envelope</a></h1>
+
+    <p class="MsoNormal">A SOAP message is an XML document that 
+      consists of a mandatory SOAP envelope, an optional SOAP header, and a mandatory 
+      SOAP body. This XML document is referred to as a SOAP message for the rest of 
+      this specification. The namespace identifier for the elements and attributes 
+      defined in this section is "<a href="http://schemas.xmlsoap.org/soap/envelope/">http://schemas.xmlsoap.org/soap/envelope/</a>". A SOAP 
+      message contains the following:</p>
+
+    <ul>
+      <li class="MsoListBullet">The Envelope is the top element of 
+	the XML document representing the message. 
+	
+      </li><li class="MsoListBullet">The Header is a generic mechanism 
+	for adding features to a SOAP message in a decentralized manner without prior 
+	agreement between the communicating parties. SOAP defines a few attributes 
+	that can be used to indicate who should deal with a feature and whether it is 
+	optional or mandatory (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383497">section 4.2</a>) 
+	
+      </li><li class="MsoListBullet">The Body is a container for 
+	mandatory information intended for the ultimate recipient of the message (see 
+	<a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383503">section 4.3</a>). SOAP defines one element for 
+	the body, which is the Fault element used for reporting errors. </li>
+    </ul>
+
+    <p class="MsoNormal">The grammar rules are as follows: </p>
+
+    <ol>
+      <li class="MsoListNumber">Envelope 
+	<ul>
+	  <li class="MsoListBullet2">The element name is "Envelope". 
+
+	  </li><li class="MsoListBullet2">The element MUST be present in 
+	    a SOAP message 
+	    
+	  </li><li class="MsoListBullet2">The element MAY contain 
+	    namespace declarations as well as additional attributes. If present, such 
+	    additional attributes MUST be namespace-qualified. Similarly, the element 
+	    MAY contain additional sub elements. If present these elements MUST be 
+	    namespace-qualified and MUST follow the SOAP Body element. </li>
+	</ul>
+
+      </li><li class="MsoListNumber">Header (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383497">section 4.2</a>) 
+	<ul>
+	  <li class="MsoListBullet2">The element name is "Header". 
+	    
+	  </li><li class="MsoListBullet2">The element MAY be present in a 
+	    SOAP message. If present, the element MUST be the first immediate child 
+	    element of a SOAP Envelope element. 
+	    
+	  </li><li class="MsoListBullet2">The element MAY contain a set 
+	    of header entries each being an immediate child element of the SOAP Header 
+	    element. All immediate child elements of the SOAP Header element MUST be 
+	    namespace-qualified. </li>
+	</ul>
+
+      </li><li class="MsoListNumber">Body (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383503">section 4.3</a>) 
+	<ul>
+	  
+	  <li class="MsoListBullet2">The element name is "Body". 
+	    
+	  </li><li class="MsoListBullet2">The element MUST be present in 
+	    a SOAP message and MUST be an immediate child element of a SOAP Envelope 
+	    element. It MUST directly follow the SOAP Header element if present. 
+	    Otherwise it MUST be the first immediate child element of the SOAP Envelope 
+	    element. 
+	    
+	  </li><li class="MsoListBullet2">The element MAY contain a set 
+	    of body entries each being an immediate child element of the SOAP Body 
+	    element. Immediate child elements of the SOAP Body element MAY be 
+	    namespace-qualified. SOAP defines the SOAP Fault element, which is used to 
+	    indicate error messages (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a>). </li>
+	</ul>
+      </li>
+    </ol>
+
+    <h3><a name="_Toc478383495">4.1.1 SOAP encodingStyle Attribute</a></h3>
+
+    <p class="MsoNormal">The SOAP encodingStyle global attribute 
+      can be used to indicate the serialization rules used in a SOAP message. This 
+      attribute MAY appear on any element, and is scoped to that element's contents 
+      and all child elements not themselves containing such an attribute, much as an 
+      XML namespace declaration is scoped. There is no default encoding defined for a 
+      SOAP message.</p>
+
+    <p class="MsoNormal">The attribute value is an ordered list of 
+      one or more URIs identifying the serialization rule or rules that can be used to 
+      deserialize the SOAP message indicated in the order of most specific to least 
+      specific. Examples of values are</p>
+
+    <p class="Preformatted">"http://schemas.xmlsoap.org/soap/encoding/"<br>
+      "http://my.host/encoding/restricted&nbsp;http://my.host/encoding/"<br>
+      ""</p>
+
+    <p class="MsoNormal">The serialization rules defined by SOAP 
+      in section 5 are identified by the URI 
+      "<a href="http://schemas.xmlsoap.org/soap/encoding/">http://schemas.xmlsoap.org/soap/encoding/</a>". Messages using this particular 
+      serialization SHOULD indicate this using the SOAP encodingStyle attribute. In 
+      addition, all URIs syntactically beginning with 
+      "<a href="http://schemas.xmlsoap.org/soap/encoding/">http://schemas.xmlsoap.org/soap/encoding/</a>" indicate conformance with the SOAP 
+      encoding rules defined in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383512">section 5</a> (though with potentially tighter 
+      rules added).</p>
+
+    <p class="MsoNormal">A value of the zero-length URI ("") 
+      explicitly indicates that no claims are made for the encoding style of contained 
+      elements. This can be used to turn off any claims from containing elements.</p>
+
+    <h3><a name="_Toc478383496">4.1.2 Envelope Versionin</a>g Model</h3>
+
+    <p class="MsoNormal">SOAP does not define a traditional 
+      versioning model based on major and minor version numbers. A SOAP message MUST 
+      have an Envelope element associated with the 
+      "<a href="http://schemas.xmlsoap.org/soap/envelope/">http://schemas.xmlsoap.org/soap/envelope/</a>" namespace. If a message is received 
+      by a SOAP application in which the SOAP Envelope element is associated with a 
+      different namespace, the application MUST treat this as a version error and 
+      discard the message. If the message is received through a request/response 
+      protocol such as HTTP, the application MUST respond with a SOAP VersionMismatch 
+      faultcode message (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a>) using the SOAP 
+      "<a href="http://schemas.xmlsoap.org/soap/envelope/">http://schemas.xmlsoap.org/soap/envelope/</a>" namespace.</p>
+
+    <h2><a name="_Toc478383497">4.2 SOAP Header</a></h2>
+
+    <p class="MsoNormal">SOAP provides a flexible mechanism for 
+      extending a message in a decentralized and modular way without prior knowledge 
+      between the communicating parties. Typical examples of extensions that can be 
+      implemented as header entries are authentication, transaction management, 
+      payment etc.</p>
+
+    <p class="MsoNormal">The Header element is encoded as the 
+      first immediate child element of the SOAP Envelope XML element. All immediate 
+      child elements of the Header element are called header entries.</p>
+
+    <p class="MsoNormal">The encoding rules for header entries are 
+      as follows: </p>
+
+    <ol>
+      <li class="MsoListNumber">A header entry is identified by 
+	its fully qualified element name, which consists of the namespace URI and the 
+	local name. All immediate child elements of the SOAP Header element MUST be 
+	namespace-qualified. 
+	
+      </li><li class="MsoListNumber">The SOAP encodingStyle attribute 
+	MAY be used to indicate the encoding style used for the header entries (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">section 4.1.1</a>). 
+	
+      </li><li class="MsoListNumber">The SOAP mustUnderstand attribute 
+	(see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383500">section 4.2.3</a>) and SOAP actor attribute 
+	(see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383499">section 4.2.2</a>) MAY be used to indicate how 
+	to process the entry and by whom (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383498">section 4.2.1</a>). 
+      </li></ol>
+
+    <h3><a name="_Toc478383498">4.2.1 Use of Header Attributes</a></h3>
+
+    <p class="MsoNormal">The SOAP Header attributes defined in 
+      this section determine how a recipient of a SOAP message should process the 
+      message as described in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383491">section 2</a>. A SOAP application generating a 
+      SOAP message SHOULD only use the SOAP Header attributes on immediate child 
+      elements of the SOAP Header element. The recipient of a SOAP message MUST ignore 
+      all SOAP Header attributes that are not applied to an immediate child element of 
+      the SOAP Header element.</p>
+
+    <p class="MsoNormal">An example is a header with an element 
+      identifier of "Transaction", a "mustUnderstand" value of "1", and a value of 5. 
+      This would be encoded as follows:</p>
+
+    <p class="Preformatted">&lt;SOAP-ENV:Header&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;t:Transaction<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xmlns:t="some-URI" SOAP-ENV:mustUnderstand="1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5<br>
+      &nbsp;&nbsp;&nbsp;&lt;/t:Transaction&gt;<br>
+      &lt;/SOAP-ENV:Header&gt;</p>
+
+    <h3><a name="_Toc478383499">4.2.2 SOAP actor Attribute</a></h3>
+
+    <p class="MsoNormal">A SOAP message travels from the 
+      originator to the ultimate destination, potentially by passing through a set of 
+      SOAP intermediaries along the message path. A SOAP intermediary is an 
+      application that is capable of both receiving and forwarding SOAP messages. Both 
+      intermediaries as well as the ultimate destination are identified by a URI.</p>
+
+    <p class="MsoNormal">Not all parts of a SOAP message may be 
+      intended for the ultimate destination of the SOAP message but, instead, may be 
+      intended for one or more of the intermediaries on the message path. The role of 
+      a recipient of a header element is similar to that of accepting a contract in 
+      that it cannot be extended beyond the recipient. That is, a recipient receiving 
+      a header element MUST NOT forward that header element to the next application in 
+      the SOAP message path. The recipient MAY insert a similar header element but in 
+      that case, the contract is between that application and the recipient of that 
+      header element.</p>
+
+    <p class="MsoNormal">The SOAP actor global attribute can be 
+      used to indicate the recipient of a header element. The value of the SOAP actor 
+      attribute is a URI. The special URI "<a href="http://schemas.xmlsoap.org/soap/actor/next">http://schemas.xmlsoap.org/soap/actor/next</a>" 
+      indicates that the header element is intended for the very first SOAP 
+      application that processes the message. This is similar to the hop-by-hop scope 
+      model represented by the Connection header field in HTTP.</p>
+
+    <p class="MsoNormal">Omitting the SOAP actor attribute 
+      indicates that the recipient is the ultimate destination of the SOAP 
+      message.</p>
+
+    <p class="MsoNormal">This attribute MUST appear in the SOAP 
+      message instance in order to be effective (see section <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383492">3</a> and <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383498">4.2.1</a>).</p>
+
+    <h3><a name="_Toc478383500">4.2.3 SOAP mustUnderstand Attribute</a></h3>
+
+    <p class="MsoNormal">The SOAP mustUnderstand global attribute 
+      can be used to indicate whether a header entry is mandatory or optional for the 
+      recipient to process. The recipient of a header entry is defined by the SOAP 
+      actor attribute (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383499">section 4.2.2</a>). The value of the 
+      mustUnderstand attribute is either "1" or "0". The absence of the SOAP 
+      mustUnderstand attribute is semantically equivalent to its presence with the 
+      value "0".</p>
+
+    <p class="MsoNormal">If a header element is tagged with a SOAP 
+      mustUnderstand attribute with a value of "1", the recipient of that header entry 
+      either MUST obey the semantics (as conveyed by the fully qualified name of the 
+      element) and process correctly to those semantics, or MUST fail processing the 
+      message (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a>).</p>
+
+    <p class="MsoNormal">The SOAP mustUnderstand attribute allows 
+      for robust evolution. Elements tagged with the SOAP mustUnderstand attribute 
+      with a value of "1" MUST be presumed to somehow modify the semantics of their 
+      parent or peer elements. Tagging elements in this manner assures that this 
+      change in semantics will not be silently (and, presumably, erroneously) ignored 
+      by those who may not fully understand it.</p>
+
+    <p class="MsoNormal">This attribute MUST appear in the 
+      instance in order to be effective (see section <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383492">3</a> and <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383498">4.2.1</a>).</p>
+
+    <h2><a name="_Toc478383503"></a>4.3 SOAP Body</h2>
+
+    <p class="MsoNormal">The SOAP Body element provides a simple 
+      mechanism for exchanging mandatory information intended for the ultimate 
+      recipient of the message. Typical uses of the Body element include marshalling 
+      RPC calls and error reporting.</p>
+
+    <p class="MsoNormal">The Body element is encoded as an 
+      immediate child element of the SOAP Envelope XML element. If a Header element is 
+      present then the Body element MUST immediately follow the Header element, 
+      otherwise it MUST be the first immediate child element of the Envelope 
+      element.</p>
+
+    <p class="MsoNormal">All immediate child elements of the Body 
+      element are called body entries and each body entry is encoded as an independent 
+      element within the SOAP Body element.</p>
+
+    <p class="MsoNormal">The encoding rules for body entries are 
+      as follows: </p>
+
+    <ol>
+      <li class="MsoListNumber">A body entry is identified by its 
+	fully qualified element name, which consists of the namespace URI and the 
+	local name. Immediate child elements of the SOAP Body element MAY be 
+	namespace-qualified. 
+	
+      </li><li class="MsoListNumber">The SOAP encodingStyle attribute 
+	MAY be used to indicate the encoding style used for the body entries (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">section 4.1.1</a>). </li></ol>
+    <p class="MsoNormal">SOAP defines one body entry, which is the 
+      Fault entry used for reporting errors (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a>).</p>
+
+    <h3><a name="_Toc478383504">4.3.1 Relationship between SOAP Header and Body</a></h3>
+
+    <p class="MsoNormal">While the Header and Body are defined as 
+      independent elements, they are in fact related. The relationship between a body 
+      entry and a header entry is as follows: A body entry is semantically equivalent 
+      to a header entry intended for the default actor and with a SOAP mustUnderstand 
+      attribute with a value of "1". The default actor is indicated by not using the 
+      actor attribute (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383499">section 4.2.2</a>).</p>
+
+    <h2><a name="_Toc478383507">4.4 SOAP Fault</a></h2>
+
+    <p class="MsoNormal">The SOAP Fault element is used to carry 
+      error and/or status information within a SOAP message. If present, the SOAP 
+      Fault element MUST appear as a body entry and MUST NOT appear more than once 
+      within a Body element.</p>
+
+    <p class="MsoNormal">The SOAP Fault element defines the 
+      following four subelements: </p>
+
+    <dl>
+      <dt class="MsoDTerm">faultcode 
+
+      </dt><dd class="MsoDDef">The faultcode element is intended for 
+	use by software to provide an algorithmic mechanism for identifying the fault. 
+	The faultcode MUST be present in a SOAP Fault element and the faultcode value 
+	MUST be a qualified name as defined in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLNS">[8]</a>, section 3. SOAP defines a small set of SOAP 
+	fault codes covering basic SOAP faults (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383510">section 4.4.1</a>) 
+
+      </dd><dt class="MsoDTerm">faultstring 
+
+      </dt><dd class="MsoDDef">The faultstring element is intended to 
+	provide a human readable explanation of the fault and is not intended for 
+	algorithmic processing. The faultstring element is similar to the 
+	'Reason-Phrase' defined by HTTP (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2616">[5]</a>, <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383527">section 6.1</a>). It MUST be present in a SOAP 
+	Fault element and SHOULD provide at least some information explaining the 
+	nature of the fault. 
+
+      </dd><dt class="MsoDTerm">faultactor 
+
+      </dt><dd class="MsoDDef">The faultactor element is intended to 
+	provide information about who caused the fault to happen within the message 
+	path (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383491">section 2</a>). It is similar to the SOAP actor 
+	attribute (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383499">section 4.2.2</a>) but instead of indicating 
+	the destination of the header entry, it indicates the source of the fault. The 
+	value of the faultactor attribute is a URI identifying the source. 
+	Applications that do not act as the ultimate destination of the SOAP message 
+	MUST include the faultactor element in a SOAP Fault element. The ultimate 
+	destination of a message MAY use the faultactor element to indicate explicitly 
+	that it generated the fault (see also the <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477488700">detail element below</a>). 
+
+      </dd><dt class="MsoDTerm"><a name="_Ref477488700">detail</a> 
+
+      </dt><dd class="MsoDDef">The detail element is intended for 
+	carrying application specific error information related to the Body element. 
+	It MUST be present if the contents of the Body element could not be 
+	successfully processed. It MUST NOT be used to carry information about error 
+	information belonging to header entries. Detailed error information belonging 
+	to header entries MUST be carried within header entries.<br>
+	<br>
+	The absence of the detail element 
+	in the Fault element indicates that the fault is not related to processing of 
+	the Body element. This can be used to distinguish whether the Body element was 
+	processed or not in case of a fault situation.<br>
+	<br>
+	All immediate child elements of the detail element are 
+	called detail entries and each detail entry is encoded as an independent 
+	element within the detail element.<br>
+	<br>
+	The encoding rules for detail entries are as follows (see 
+	also <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477795996">example 10</a>): 
+	<ol>
+	  <li class="MsoListNumber">A detail entry is identified by 
+	    its fully qualified element name, which consists of the namespace URI and 
+	    the local name. Immediate child elements of the detail element MAY be 
+	    namespace-qualified. 
+	    
+	  </li><li class="MsoListNumber">The SOAP encodingStyle attribute 
+	    MAY be used to indicate the encoding style used for the detail entries (see 
+	    <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">section 4.1.1</a>). </li></ol></dd>
+    </dl>
+
+    <p class="MsoNormal">Other Fault subelements MAY be present, 
+      provided they are namespace-qualified.</p>
+
+    <h3><a name="_Toc478383510">4.4.1 SOAP 
+	Fault Codes</a></h3>
+
+    <p class="MsoNormal">The faultcode values defined in this 
+      section MUST be used in the faultcode element when describing faults defined by 
+      this specification. The namespace identifier for these faultcode values is 
+      "<a href="http://schemas.xmlsoap.org/soap/envelope/">http://schemas.xmlsoap.org/soap/envelope/</a>". Use of this space is recommended 
+      (but not required) in the specification of methods defined outside of the 
+      present specification. </p>
+
+    <p class="MsoNormal">The default SOAP faultcode values are 
+      defined in an extensible manner that allows for new SOAP faultcode values to be 
+      defined while maintaining backwards compatibility with existing faultcode 
+      values. The mechanism used is very similar to the 1xx, 2xx, 3xx etc basic status 
+      classes classes defined in HTTP (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2616">[5]</a> section 10). However, instead of integers, they 
+      are defined as XML qualified names (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLNS">[8]</a> <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383492">section 3</a>). The character "." (dot) is used 
+      as a separator of faultcode values indicating that what is to the left of the 
+      dot is a more generic fault code value than the value to the right. Example</p>
+
+    <p class="Preformatted">Client.Authentication</p>
+
+    <p class="MsoNormal">The set of faultcode values defined in 
+      this document is:</p>
+
+    <div align="center">
+      <table class="MsoNormal">
+	<tbody><tr>
+	  <td class="MsoNormal">
+	    <p class="TableHeader">Name </p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableHeader">Meaning </p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">VersionMismatch</p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">The processing party found an 
+	      invalid namespace for the SOAP Envelope element (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383496">section 4.1.2</a>)</p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">MustUnderstand</p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">An immediate child element of the 
+	      SOAP Header element that was either not understood or not obeyed by the 
+	      processing party contained a SOAP mustUnderstand attribute with a value of 
+	      "1" (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383500">section 4.2.3</a>)</p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">Client</p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">The Client class of errors indicate 
+	      that the message was incorrectly formed or did not contain the appropriate 
+	      information in order to succeed. For example, the message could lack the 
+	      proper authentication or payment information. It is generally an 
+	      indication that the message should not be resent without change. See also 
+	      <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a> for a description of the 
+	      SOAP Fault detail sub-element.</p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">Server</p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">The Server class of errors indicate 
+	      that the message could not be processed for reasons not directly 
+	      attributable to the contents of the message itself but rather to the 
+	      processing of the message. For example, processing could include 
+	      communicating with an upstream processor, which didn't respond. The 
+	      message may succeed at a later point in time. See also <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a> for a description of the 
+	      SOAP Fault detail sub-element.</p>
+	  </td>
+	</tr>
+      </tbody></table>
+    </div>
+
+    <h1><a name="_Toc478383512">5. SOAP Encoding</a></h1>
+
+    <p class="MsoNormal">The SOAP encoding style is based on a 
+      simple type system that is a generalization of the common features found in type 
+      systems in programming languages, databases and semi-structured data. A type 
+      either is a simple (scalar) type or is a compound type constructed as a 
+      composite of several parts, each with a type. This is described in more detail 
+      below. This section defines rules for serialization of a graph of typed objects. 
+      It operates on two levels. First, given a schema in any notation consistent with 
+      the type system described, a schema for an XML grammar may be constructed. 
+      Second, given a type-system schema and a particular graph of values conforming to 
+      that schema, an XML instance may be constructed. In reverse, given an XML 
+      instance produced in accordance with these rules, and given also the original 
+      schema, a copy of the original value graph may be constructed.</p>
+
+    <p class="MsoNormal">The namespace identifier for the elements 
+      and attributes defined in this section is 
+      "<a href="http://schemas.xmlsoap.org/soap/encoding/">http://schemas.xmlsoap.org/soap/encoding/</a>". The encoding samples shown assume 
+      all namespace declarations are at a higher element level.</p>
+
+    <p class="MsoNormal">Use of the data model and encoding style
+      described in this section is encouraged but not required; other
+      data models and encodings can be used in conjunction with SOAP
+      (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">section 4.1.1</a>).</p>
+
+    <h2><a name="_Toc478383513">5.1 Rules for Encoding Types in XML</a></h2>
+
+    <p class="MsoNormal">XML allows very flexible encoding of data. SOAP
+      defines a narrower set of rules for encoding. This section
+      defines the encoding rules at a high level, and the next section
+      describes the encoding rules for specific types when they
+      require more detail. The encodings described in this section can
+      be used in conjunction with the mapping of RPC calls and
+      responses specified in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383532">Section
+      7</a>.</p>
+
+    <p class="MsoNormal">To describe encoding, the following 
+      terminology is used:</p>
+
+    <ol>
+      <li class="MsoListNumber">A "value" is a string, the name of 
+	a measurement (number, date, enumeration, etc.) or a composite of several such 
+	primitive values. All values are of specific types. 
+	
+      </li><li class="MsoListNumber">A "simple value" is one without 
+	named parts. Examples of simple values are particular strings, integers, 
+	enumerated values etc. 
+	
+      </li><li class="MsoListNumber">A "compound value" is an aggregate 
+	of relations to other values. Examples of Compound Values are particular 
+	purchase orders, stock reports, street addresses, etc. 
+	
+      </li><li class="MsoListNumber">Within a compound value, each 
+	related value is potentially distinguished by a role name, ordinal or both. 
+	This is called its "accessor." Examples of compound values include particular 
+	Purchase Orders, Stock Reports etc. Arrays are also compound values. It is 
+	possible to have compound values with several accessors each named the same, 
+	as for example, RDF does. 
+	
+      </li><li class="MsoListNumber">An "array" is a compound value in 
+	which ordinal position serves as the only distinction among member values. 
+	
+      </li><li class="MsoListNumber">A "struct" is a compound value in 
+	which accessor name is the only distinction among member values, and no 
+	accessor has the same name as any other. 
+	
+      </li><li class="MsoListNumber">A "simple type" is a class of 
+	simple values. Examples of simple types are the classes called "string," 
+	"integer," enumeration classes, etc. 
+	
+      </li><li class="MsoListNumber">A "compound type" is a class of 
+	compound values. An example of a compound type is the class of purchase order 
+	values sharing the same accessors (shipTo, totalCost, etc.) though with 
+	potentially different values (and perhaps further constrained by limits on 
+	certain values). 
+	
+      </li><li class="MsoListNumber">Within a compound type, if an 
+	accessor has a name that is distinct within that type but is not distinct with 
+	respect to other types, that is, the name plus the type together are needed to 
+	make a unique identification, the name is called "locally scoped." If however 
+	the name is based in part on a Uniform Resource Identifier, directly or 
+	indirectly, such that the name alone is sufficient to uniquely identify the 
+	accessor irrespective of the type within which it appears, the name is called 
+	"universally scoped." 
+	
+      </li><li class="MsoListNumber">Given the information in the 
+	schema relative to which a graph of values is serialized, it is possible to 
+	determine that some values can only be related by a single instance of an 
+	accessor. For others, it is not possible to make this determination. If only 
+	one accessor can reference it, a value is considered "single-reference". If 
+	referenced by more than one, actually or potentially, it is "multi-reference." 
+	Note that it is possible for a certain value to be considered 
+	"single-reference" relative to one schema and "multi-reference" relative to 
+	another. 
+	
+      </li><li class="MsoListNumber">Syntactically, an element may be 
+	"independent" or "embedded." An independent element is any element appearing 
+	at the top level of a serialization. All others are embedded elements. </li>
+    </ol>
+
+    <p class="MsoNormal">Although it is possible to use the 
+      xsi:type attribute such that a graph of values is self-describing both in its 
+      structure and the types of its values, the serialization rules permit that the 
+      types of values MAY be determinate only by reference to a schema. Such schemas 
+      MAY be in the notation described by "XML Schema Part 1: Structures" <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS1">[10]</a> and "XML 
+      Schema Part 2: Datatypes" <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a> or MAY be in any other notation. Note also that, 
+      while the serialization rules apply to compound types other than arrays and 
+      structs, many schemas will contain only struct and array types.</p>
+
+    <p class="MsoNormal">The rules for serialization are as 
+      follows: </p>
+
+    <ol>
+      <li class="MsoListNumber"><a name="_Ref4777957001"></a>All values are represented as element content. A 
+	multi-reference value MUST be represented as the content of an independent 
+	element. A single-reference value SHOULD not be (but MAY be). 
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957005"></a>For each
+	element containing a value, the type of the value MUST be
+	represented by at least one of the following conditions: (a)
+	the containing element instance contains an xsi:type
+	attribute, (b) the containing element instance is itself
+	contained within an element containing a (possibly defaulted)
+	SOAP-ENC:arrayType attribute or (c) or the name of the element
+	bears a definite relation to the type, that type then
+	determinable from a schema.
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957006"></a>A simple value is represented as character data, that 
+	is, without any subelements. Every simple value must have a type that is either listed 
+	in the XML Schemas Specification, part 2 <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a> or whose source type is listed therein (see 
+	also <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383514">section 5.2</a>). 
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957007"></a>A Compound Value is encoded as a sequence of elements, 
+	each accessor represented by an embedded element whose name corresponds to the 
+	name of the accessor. Accessors whose names are local to their containing 
+	types have unqualified element names; all others have qualified names (see 
+	also <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383519">section 5.4</a>). 
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957009"></a>A multi-reference simple or compound value is encoded 
+	as an independent element containing a local, unqualified attribute named "id" 
+	and of type "ID" per the XML Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XML">[7]</a>. Each accessor to this value is an empty element 
+	having a local, unqualified attribute named "href" and of type "uri-reference" 
+	per the XML Schema Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>, with a "href" attribute value of a URI 
+	fragment identifier referencing the corresponding independent element. 
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957109"></a>Strings and byte arrays are represented as 
+	multi-reference simple types, but special rules allow them to be represented 
+	efficiently for common cases (see also section <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383515">5.2.1</a> and <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383517">5.2.3</a>). An accessor to a string or 
+	byte-array value MAY have an attribute named "id" and of type "ID" per the XML 
+	Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XML">[7]</a>. 
+	If so, all other accessors to the same value are encoded as empty elements 
+	having a local, unqualified attribute named "href" and of type "uri-reference" 
+	per the XML Schema Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>, with a "href" attribute value of a URI 
+	fragment identifier referencing the single element containing the value. 
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957101"></a>It is permissible to encode several references to a 
+	value as though these were references to several distinct values, but only 
+	when from context it is known that the meaning of the XML instance is 
+	unaltered. 
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957010"></a>Arrays are
+	compound values (see also <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383522">section
+	5.4.2</a>). SOAP arrays are defined as having a type of
+	"SOAP-ENC:Array" or a type derived there from.<br>
+	<br>
+	SOAP arrays have one or more dimensions (rank) whose members
+	are distinguished by ordinal position. An array value is
+	represented as a series of elements reflecting the array, with
+	members appearing in ascending ordinal sequence. For
+	multi-dimensional arrays the dimension on the right side
+	varies most rapidly. Each member element is named as an
+	independent element (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref4777957005">rule
+	2</a>).<br>
+	<br>
+	SOAP arrays can be single-reference or multi-reference values,
+	and consequently may be represented as the content of either
+	an embedded or independent element.<br>
+	<br>
+	SOAP arrays MUST contain a "SOAP-ENC:arrayType"
+	attribute whose value specifies the type of the contained
+	elements as well as the dimension(s) of the array. The value
+	of the "SOAP-ENC:arrayType" attribute is defined as
+	follows:<br>
+	<br>
+	<div class="Preformatted">
+	  arrayTypeValue&nbsp;= atype asize<br>
+	  atype&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= QName *( rank )<br>
+	  rank&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= "[" *( "," ) "]"<br>
+	  asize&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= "[" #length "]"<br>
+	  length&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 1*DIGIT<br>
+	</div>
+	<br>
+	The "atype" construct is the type name of the
+	contained elements expressed as a QName as would appear in the
+	"type" attribute of an XML Schema element
+	declaration and acts as a type constraint (meaning that all
+	values of contained elements are asserted to conform to the
+	indicated type; that is, the type cited in SOAP-ENC:arrayType
+	must be the type or a supertype of every array member). In the
+	case of arrays of arrays or "jagged arrays", the
+	type component is encoded as the "innermost" type
+	name followed by a rank construct for each level of nested
+	arrays starting from 1. Multi-dimensional arrays are encoded using
+	a comma for each dimension starting from 1.<br>
+	<br>
+	The "asize" construct contains a comma separated
+	list of zero, one, or more integers indicating the lengths of
+	each dimension of the array. A value of zero integers
+	indicates that no particular quantity is asserted but that the
+	size may be determined by inspection of the actual
+	members.<br>
+	<br>
+	For example, an array with 5 members of type array of integers
+	would have an arrayTypeValue value of "int[][5]" of
+	which the atype value is "int[]" and the asize value
+	is "[5]". Likewise, an array with 3 members of type
+	two-dimensional arrays of integers would have an
+	arrayTypeValue value of "int[,][3]" of which the
+	atype value is "int[,]" and the asize value is
+	"[3]".<br>
+	<br>
+	A SOAP array member MAY contain a "SOAP-ENC:offset"
+	attribute indicating the offset position of that item in the
+	enclosing array. This can be used to indicate the offset
+	position of a partially represented array (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383523">section 5.4.2.1</a>). Likewise, an array
+	member MAY contain a "SOAP-ENC:position" attribute
+	indicating the position of that item in the enclosing
+	array. This can be used to describe members of sparse arrays (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383524">section 5.4.2.2</a>). The value of the
+	"SOAP-ENC:offset" and the
+	"SOAP-ENC:position" attribute is defined as
+	follows:<br>
+	<br>
+	<div class="Preformatted">
+	  arrayPoint&nbsp;= "[" #length "]"<br>
+	</div>
+	<br>
+	with offsets and positions based at 0.
+	
+      </li><li class="MsoListNumber"><a name="_Ref4777957012"></a>A NULL value or a default value MAY be represented by 
+	omission of the accessor element. A NULL value MAY also be indicated by an 
+	accessor element containing the attribute xsi:null with value '1' or possibly 
+	other application-dependent attributes and values. </li>
+    </ol>
+
+    <p class="MsoNormal">Note that <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref4777957005">rule 2</a> allows 
+      independent elements and also elements representing the members of arrays to 
+      have names which are not identical to the type of the contained value.</p>
+
+    <h2><a name="_Toc478383514">5.2 Simple Types</a></h2>
+
+    <p class="MsoNormal">For simple types, SOAP adopts all the 
+      types found in the section "Built-in datatypes" of the "XML Schema Part 2: 
+      Datatypes" Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>, both the value and lexical spaces. Examples 
+      include:</p>
+
+    <div align="center">
+      <table class="MsoNormal">
+	<tbody><tr>
+	  <td class="MsoNormal">
+	    <p class="TableHeader">Type </p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableHeader">Example </p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">int</p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">58502 </p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">float</p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">314159265358979E+1</p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">negativeInteger </p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">-32768</p>
+	  </td>
+	</tr>
+	<tr>
+	  <td class="MsoNormal">
+	    <p class="TableText">string</p>
+	  </td>
+	  <td class="MsoNormal">
+	    <p class="TableText">Louis "Satchmo" 
+	      Armstrong</p>
+	  </td>
+	</tr>
+      </tbody></table>
+    </div>
+
+    <p class="MsoNormal">The datatypes declared in the XML Schema 
+      specification may be used directly in element schemas. Types derived from 
+      these may also be used. An example of a schema fragment and corresponding 
+      instance data with elements of these types is: </p>
+
+    <p class="preformatted">&lt;element name="age" type="int"/&gt;<br>
+      &lt;element name="height" type="float"/&gt;<br>
+      &lt;element name="displacement" type="negativeInteger"/&gt;<br>
+      &lt;element name="color"&gt;<br>
+      &nbsp;&nbsp;&lt;simpleType base="xsd:string"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;enumeration value="Green"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;enumeration value="Blue"/&gt;<br>
+      &nbsp;&nbsp;&lt;/simpleType&gt;<br>
+      &lt;/element&gt;<br>
+      <br>
+      &lt;age&gt;45&lt;/age&gt;<br>
+      &lt;height&gt;5.9&lt;/height&gt;<br>
+      &lt;displacement&gt;-450&lt;/displacement&gt;<br>
+      &lt;color&gt;Blue&lt;/color&gt;&nbsp;</p>
+
+    <p class="MsoNormal">All simple values MUST be encoded as the 
+      content of elements whose type is either defined in "XML Schema Part 2: 
+      Datatypes" Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>, or is based on a type found there by using the 
+      mechanisms provided in the XML Schema specification.</p>
+
+    <p class="MsoNormal">If a simple value is encoded as an 
+      independent element or member of a heterogenous array it is convenient to have 
+      an element declaration corresponding to the datatype. Because the "XML Schema 
+      Part 2: Datatypes" Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a> includes type definitions but does not include 
+      corresponding element declarations, the SOAP-ENC schema and namespace declares 
+      an element for every simple datatype. These MAY be used.</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:int id="int1"&gt;45&lt;/SOAP-ENC:int&gt;</p>
+
+    <h3><a name="_Toc478383515">5.2.1 Strings</a></h3>
+
+    <p class="MsoNormal">The datatype "string" is defined in "XML 
+      Schema Part 2: Datatypes" Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>. Note that this is not identical to the type 
+      called "string" in many database or programming languages, and in particular may 
+      forbid some characters those languages would permit. (Those values must be 
+      represented by using some datatype other than xsd:string.)</p>
+
+    <p class="MsoNormal">A string MAY be encoded as a 
+      single-reference or a multi-reference value. </p>
+
+    <p class="MsoNormal">The containing element of the string 
+      value MAY have an "id" attribute. Additional accessor elements MAY then have 
+      matching "href" attributes.</p>
+
+    <p class="MsoNormal">For example, two accessors to the same 
+      string could appear, as follows:</p>
+
+    <p class="preformatted">&lt;greeting&nbsp;id="String-0"&gt;Hello&lt;/greeting&gt;<br>
+      &lt;salutation&nbsp;href="#String-0"/&gt;</p>
+
+    <p class="MsoNormal">However, if the fact that both accessors 
+      reference the same instance of the string (or subtype of string) is immaterial, they may be encoded as 
+      two single-reference values as follows:</p>
+
+    <p class="preformatted">&lt;greeting&gt;Hello&lt;/greeting&gt;<br>
+      &lt;salutation&gt;Hello&lt;/salutation&gt;</p>
+
+    <p class="MsoNormal">Schema fragments for these examples could 
+      appear similar to the following:</p>
+
+    <p class="preformatted">&lt;element name="greeting" type="SOAP-ENC:string"/&gt;<br>
+      &lt;element name="salutation" type="SOAP-ENC:string"/&gt;</p>
+
+    <p class="MsoNormal">(In this example, the type 
+      SOAP-ENC:string is used as the element's type as a convenient way to declare an 
+      element whose datatype is "xsd:string" and which also allows an "id" and "href" 
+      attribute. See the SOAP Encoding schema for the exact definition. Schemas MAY 
+      use these declarations from the SOAP Encoding schema but are not required 
+      to.)</p>
+
+    <h3><a name="_Toc478383516">5.2.2 Enumerations</a></h3>
+
+    <p class="MsoNormal">The "XML Schema Part 2: Datatypes" 
+      Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a> defines a mechanism called "enumeration." 
+      The SOAP data model adopts this mechanism directly. However, because 
+      programming and other languages often define enumeration somewhat differently, 
+      we spell-out the concept in more detail here and describe how a value that is a 
+      member of an enumerated list of possible values is to be encoded. 
+      Specifically, it is encoded as the name of the value.</p>
+
+    <p class="MsoNormal">"Enumeration" as a concept indicates a 
+      set of distinct names. A specific enumeration is a specific list of distinct 
+      values appropriate to the base type. For example the set of color names 
+      ("Green", "Blue", "Brown") could be defined as an enumeration based on the 
+      string built-in type. The values ("1", "3", "5") are a possible enumeration 
+      based on integer, and so on. "XML Schema Part 2: Datatypes" <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a> supports 
+      enumerations for all of the simple types except for boolean. The language of 
+      "XML Schema Part 1: Structures" Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS1">[10]</a> can be 
+      used to define enumeration types. If a schema is generated from another notation 
+      in which no specific base type is applicable, use "string". In the 
+      following schema example "EyeColor" is defined as a string with the possible 
+      values of "Green", "Blue", or "Brown" enumerated, and instance data is shown 
+      accordingly.</p>
+
+    <p class="preformatted">&lt;element name="EyeColor" type="tns:EyeColor"/&gt;<br>
+      &lt;simpleType name="EyeColor" base="xsd:string"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;enumeration value="Green"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;enumeration value="Blue"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;enumeration value="Brown"/&gt;<br>
+      &lt;/simpleType&gt;</p>
+
+    <p class="preformatted">&lt;Person&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;Name&gt;Henry Ford&lt;/Name&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;Age&gt;32&lt;/Age&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;EyeColor&gt;Brown&lt;/EyeColor&gt;<br>
+      &lt;/Person&gt;</p>
+
+    <h3><a name="_Toc478383517">5.2.3 Array of Bytes</a></h3>
+
+    <p class="MsoNormal">An array of bytes MAY be encoded as a 
+      single-reference or a multi-reference value. The rules for an array of bytes are 
+      similar to those for a string.</p>
+
+    <p class="MsoNormal">In particular, the containing element of 
+      the array of bytes value MAY have an "id" attribute. Additional accessor 
+      elements MAY then have matching "href" attributes.</p>
+
+    <p class="MsoNormal">The recommended representation of an 
+      opaque array of bytes is the 'base64' encoding defined in XML Schemas <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS1">[10]</a><a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>, which uses 
+      the base64 encoding algorithm defined in 2045 <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2045">[13]</a>. However, the line length 
+      restrictions that normally apply to base64 data in MIME do not apply in SOAP. A 
+      "SOAP-ENC:base64" subtype is supplied for use with SOAP.</p>
+
+    <p class="preformatted">&lt;picture xsi:type="SOAP-ENC:base64"&gt;<br>
+      &nbsp;&nbsp;&nbsp;aG93IG5vDyBicm73biBjb3cNCg==<br>
+      &lt;/picture&gt;</p>
+
+    <h2><a name="_Toc478383518">5.3 Polymorphic Accessor</a> </h2>
+
+    <p class="MsoNormal">Many languages allow accessors that can 
+      polymorphically access values of several types, each type being available at run 
+      time. A polymorphic accessor instance MUST contain an "xsi:type" attribute that 
+      describes the type of the actual value.</p>
+
+    <p class="MsoNormal">For example, a polymorphic accessor named 
+      "cost" with a value of type "xsd:float" would be encoded as follows:</p>
+
+    <p class="preformatted">&lt;cost xsi:type="xsd:float"&gt;29.95&lt;/cost&gt;</p>
+
+    <p class="MsoNormal">as contrasted with a cost accessor whose 
+      value's type is invariant, as follows:</p>
+
+    <p class="preformatted">&lt;cost&gt;29.95&lt;/cost&gt;</p>
+
+    <h2><a name="_Toc478383519">5.4 Compound types</a></h2>
+
+    <p class="MsoNormal">SOAP defines types corresponding to the 
+      following structural patterns often found in programming languages: </p>
+
+    <dl>
+      <dt class="MsoDTerm">Struct</dt>
+      <dd class="MsoDDef">A "struct" is a compound value in which 
+	accessor name is the only distinction among member values, and no accessor has 
+	the same name as any other.</dd>
+
+      <dt class="MsoDTerm">Array</dt>
+      <dd class="MsoDDef">An "array" is a compound value in which 
+	ordinal position serves as the only distinction among member values.</dd>
+    </dl>
+
+    <p class="MsoNormal">SOAP also permits serialization of data 
+      that is neither a Struct nor an Array, for example data such as is found in a 
+      Directed-Labeled-Graph Data Model in which a single node has many distinct 
+      accessors, some of which occur more than once. SOAP serialization does not 
+      require that the underlying data model make an ordering distinction among 
+      accessors, but if such an order exists, the accessors MUST be encoded in that 
+      sequence.</p>
+
+    <h3><a name="_Toc478383520">5.4.1 Compound Values, Structs and References to Values</a></h3>
+
+    <p class="MsoNormal">The members of a Compound Value are 
+      encoded as accessor elements. When accessors are distinguished by their name (as 
+      for example in a struct), the accessor name is used as the element name. 
+      Accessors whose names are local to their containing types have unqualified 
+      element names; all others have qualified names.</p>
+
+    <p class="MsoNormal">The following is an example of a struct 
+      of type "Book":</p>
+
+    <p class="preformatted">&lt;e:Book&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;author&gt;Henry Ford&lt;/author&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;preface&gt;Prefatory text&lt;/preface&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;intro&gt;This is a book.&lt;/intro&gt;<br>
+      &lt;/e:Book&gt;</p>
+
+    <p class="MsoNormal">And this is a schema fragment describing 
+      the above structure:</p>
+
+    <p class="preformatted">&lt;element name="Book"&gt;<br>
+      &lt;complexType&gt;<br>
+      &nbsp;&nbsp;&lt;element name="author" type="xsd:string"/&gt;<br>
+      &nbsp;&nbsp;&lt;element name="preface" type="xsd:string"/&gt;<br>
+      &nbsp;&nbsp; &lt;element name="intro" type="xsd:string"/&gt;<br>
+      &lt;/complexType&gt;<br>
+      &lt;/e:Book&gt;</p>
+
+    <p class="MsoNormal">Below is an example of a type with both 
+      simple and complex members. It shows two levels of referencing. Note that the 
+      "href" attribute of the "Author" accessor element is a reference to the value 
+      whose "id" attribute matches. A similar construction appears for the 
+      "Address".</p>
+
+    <p class="preformatted">&lt;e:Book&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;title&gt;My Life and Work&lt;/title&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;author&nbsp;href="#Person-1"/&gt;<br>
+      &lt;/e:Book&gt;<br>
+      &lt;e:Person&nbsp;id="Person-1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;name&gt;Henry Ford&lt;/name&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;address&nbsp;href="#Address-2"/&gt;<br>
+      &lt;/e:Person&gt;<br>
+      &lt;e:Address&nbsp;id="Address-2"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;email&gt;mailto:henryford@hotmail.com&lt;/email&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;web&gt;http://www.henryford.com&lt;/web&gt;<br>
+      &lt;/e:Address&gt;</p>
+
+    <p class="MsoNormal">The form above is appropriate when the 
+      "Person" value and the "Address" value are multi-reference. If these were 
+      instead both single-reference, they SHOULD be embedded, as follows:</p>
+
+    <p class="preformatted">&lt;e:Book&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;title&gt;My Life and Work&lt;/title&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;author&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;name&gt;Henry Ford&lt;/name&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;address&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;email&gt;mailto:henryford@hotmail.com&lt;/email&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;web&gt;http://www.henryford.com&lt;/web&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/address&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/author&gt;<br>
+      &lt;/e:Book&gt;</p>
+
+    <p class="MsoNormal">If instead there existed a restriction 
+      that no two persons can have the same address in a given instance and that an 
+      address can be either a Street-address or an Electronic-address, a Book with two 
+      authors would be encoded as follows:</p>
+
+    <p class="preformatted">&lt;e:Book&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;title&gt;My Life and Work&lt;/title&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;firstauthor&nbsp;href="#Person-1"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;secondauthor&nbsp;href="#Person-2"/&gt;<br>
+      &lt;/e:Book&gt;<br>
+      &lt;e:Person&nbsp;id="Person-1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;name&gt;Henry Ford&lt;/name&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;address xsi:type="m:Electronic-address"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;email&gt;mailto:henryford@hotmail.com&lt;/email&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;web&gt;http://www.henryford.com&lt;/web&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/address&gt;<br>
+      &lt;/e:Person&gt;<br>
+      &lt;e:Person&nbsp;id="Person-2"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;name&gt;Samuel Crowther&lt;/name&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;address xsi:type="n:Street-address"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;street&gt;Martin Luther King Rd&lt;/street&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;city&gt;Raleigh&lt;/city&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;state&gt;North Carolina&lt;/state&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/address&gt;<br>
+      &lt;/e:Person&gt;</p>
+
+    <p class="MsoNormal">Serializations can contain references to 
+      values not in the same resource:</p>
+
+    <p class="preformatted">&lt;e:Book&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;title&gt;Paradise Lost&lt;/title&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;firstauthor&nbsp;href="http://www.dartmouth.edu/~milton/"/&gt;<br>
+      &lt;/e:Book&gt;</p>
+
+    <p class="MsoNormal">And this is a schema fragment describing 
+      the above structures:</p>
+
+    <p class="preformatted">&lt;element name="Book" type="tns:Book"/&gt;<br>
+      &lt;complexType name="Book"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;!-- Either the following group must occur or else the<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;href attribute must appear, but not both. --&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;sequence minOccurs="0" maxOccurs="1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="title" type="xsd:string"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="firstauthor" type="tns:Person"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="secondauthor" type="tns:Person"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/sequence&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;attribute name="href" type="uriReference"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;attribute name="id" type="ID"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;anyAttribute namespace="##other"/&gt;<br>
+      &lt;/complexType&gt;<br>
+      <br>
+      &lt;element name="Person" base="tns:Person"/&gt;<br>
+      &lt;complexType name="Person"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;!-- Either the following group must occur or else the<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;href attribute must appear, but not both. --&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;sequence minOccurs="0" maxOccurs="1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="name" type="xsd:string"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="address" type="tns:Address"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/sequence&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;attribute name="href" type="uriReference"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;attribute name="id" type="ID"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;anyAttribute namespace="##other"/&gt;<br>
+      &lt;/complexType&gt;<br>
+      <br>
+      &lt;element name="Address" base="tns:Address"/&gt;<br>
+      &lt;complexType name="Address"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;!-- Either the following group must occur or else the<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;href attribute must appear, but not both. --&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;sequence minOccurs="0" maxOccurs="1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="street" type="xsd:string"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="city" type="xsd:string"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="state" type="xsd:string"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/sequence&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;attribute name="href" type="uriReference"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;attribute name="id" type="ID"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;anyAttribute namespace="##other"/&gt;<br>
+      &lt;/complexType&gt;<br>
+    </p>
+
+    <h3><a name="_Toc478383522">5.4.2 Arrays</a> </h3>
+
+    <p class="MsoNormal">SOAP arrays are defined as having a type of
+      "SOAP-ENC:Array" or a type derived there from (see
+      also <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref4777957010">rule 8</a>). Arrays are
+      represented as element values, with no specific constraint on
+      the name of the containing element (just as values generally do
+      not constrain the name of their containing element). </p>
+
+    <p class="MsoNormal">Arrays can contain elements which 
+      themselves can be of any type, including nested arrays. New types formed by 
+      restrictions of SOAP-ENC:Array can also be created to represent, for example, 
+      arrays limited to integers or arrays of some user-defined enumeration. </p>
+
+    <p class="MsoNormal">The representation of the value of an 
+      array is an ordered sequence of elements constituting the items of the array. 
+      Within an array value, element names are not significant for distinguishing 
+      accessors. Elements may have any name. In practice, elements will frequently be 
+      named so that their declaration in a schema suggests or determines their type. 
+      As with compound types generally, if the value of an item in the array is a 
+      single-reference value, the item contains its value. Otherwise, the item 
+      references its value via an "href" attribute.</p>
+
+    <p class="MsoNormal">The following example is a schema 
+      fragment and an array containing integer array members. </p>
+
+    <p class="preformatted">&lt;element name="myFavoriteNumbers"<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type="SOAP-ENC:Array"/&gt;<br>
+      <br>
+      &lt;myFavoriteNumbers<br>
+      &nbsp;&nbsp;SOAP-ENC:arrayType="xsd:int[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;number&gt;3&lt;/number&gt; <br>
+      &nbsp;&nbsp;&nbsp;&lt;number&gt;4&lt;/number&gt; <br>
+      &lt;/myFavoriteNumbers&gt;</p>
+
+    <p class="MsoNormal">In that example, the array "myFavoriteNumbers"
+      contains several members each of which is a value of type
+      SOAP-ENC:int. This can be determined by inspection of the
+      SOAP-ENC:arrayType attribute. Note that the SOAP-ENC:Array type
+      allows unqualified element names without restriction. These
+      convey no type information, so when used they must either have
+      an xsi:type attribute or the containing element must have a
+      SOAP-ENC:arrayType attribute. Naturally, types derived from
+      SOAP-ENC:Array may declare local elements, with type
+      information.</p>
+
+    <p class="MsoNormal">As previously noted, the SOAP-ENC schema 
+      contains declarations of elements with names corresponding to each simple type 
+      in the "XML Schema Part 2: Datatypes" Specification <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[11]</a>. It also contains a 
+      declaration for "Array". Using these, we might write</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array SOAP-ENC:arrayType="xsd:int[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENC:int&gt;3&lt;/SOAP-ENC:int&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENC:int&gt;4&lt;/SOAP-ENC:int&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <p class="MsoNormal">Arrays can contain instances of any 
+      subtype of the specified arrayType. That is, the members may be of any type that 
+      is substitutable for the type specified in the arrayType attribute, according to 
+      whatever substitutability rules are expressed in the schema. So, for example, an 
+      array of integers can contain any type derived from integer (for example "int" 
+      or any user-defined derivation of integer). Similarly, an array of "address" 
+      might contain a restricted or extended type such as "internationalAddress". 
+      Because the supplied SOAP-ENC:Array type admits members of any type, arbitrary 
+      mixtures of types can be contained unless specifically limited by use of the 
+      arrayType attribute.</p>
+
+    <p class="MsoNormal">Types of member elements can be specified 
+      using the xsi:type attribute in the instance, or by declarations in the schema 
+      of the member elements, as the following two arrays demonstrate respectively. 
+    </p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array SOAP-ENC:arrayType="xsd:ur-type[4]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;thing xsi:type="xsd:int"&gt;12345&lt;/thing&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;thing xsi:type="xsd:decimal"&gt;6.789&lt;/thing&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;thing xsi:type="xsd:string"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of Mans First Disobedience, and the Fruit<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of that Forbidden Tree, whose mortal tast<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Brought Death into the World, and all our woe,<br>
+      &nbsp;&nbsp;&nbsp;&lt;/thing&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;thing xsi:type="xsd:uriReference"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;http://www.dartmouth.edu/~milton/reading_room/<br>
+      &nbsp;&nbsp;&nbsp;&lt;/thing&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array SOAP-ENC:arrayType="xsd:ur-type[4]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENC:int&gt;12345&lt;/SOAP-ENC:int&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENC:decimal&gt;6.789&lt;/SOAP-ENC:decimal&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;xsd:string&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of Mans First Disobedience, and the Fruit<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Of that Forbidden Tree, whose mortal tast<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Brought Death into the World, and all our woe,<br>
+      &nbsp;&nbsp;&nbsp;&lt;/xsd:string&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENC:uriReference&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;http://www.dartmouth.edu/~milton/reading_room/<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENC:uriReference &gt; <br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <p class="MsoNormal">Array values may be structs or other 
+      compound values. For example an array of "xyz:Order" structs :</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array SOAP-ENC:arrayType="xyz:Order[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Apple&lt;/Product&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.56&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Peach&lt;/Product&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.48&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <p class="MsoNormal">Arrays may have other arrays as member 
+      values. The following is an example of an array of two arrays, each of which is 
+      an array of strings.</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array&nbsp;SOAP-ENC:arrayType="xsd:string[][2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&nbsp;href="#array-1"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&nbsp;href="#array-2"/&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;<br>
+      &lt;SOAP-ENC:Array&nbsp;id="array-1"&nbsp;SOAP-ENC:arrayType="xsd:string[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r1c1&lt;/item&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r1c2&lt;/item&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r1c3&lt;/item&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;<br>
+      &lt;SOAP-ENC:Array&nbsp;id="array-2"&nbsp;SOAP-ENC:arrayType="xsd:string[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r2c1&lt;/item&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r2c2&lt;/item&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <p class="MsoNormal">The element containing an array value 
+      does not need to be named "SOAP-ENC:Array". It may have any name, provided that 
+      the type of the element is either SOAP-ENC:Array or is derived from 
+      SOAP-ENC:Array by restriction. For example, the following is a fragment of a 
+      schema and a conforming instance array.</p>
+
+    <p class="preformatted">&lt;simpleType name="phoneNumber" base="string"/&gt;<br>
+      <br>
+      &lt;element name="ArrayOfPhoneNumbers"&gt;<br>
+      &nbsp;&nbsp;&lt;complexType base="SOAP-ENC:Array"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="phoneNumber" type="tns:phoneNumber" maxOccurs="unbounded"/&gt;<br>
+      &nbsp;&nbsp;&lt;/complexType&gt;<br>
+      &nbsp;&nbsp;&lt;anyAttribute/&gt;<br>
+      &lt;/element&gt;</p>
+
+    <p class="preformatted">&lt;xyz:ArrayOfPhoneNumbers SOAP-ENC:arrayType="xyz:phoneNumber[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;phoneNumber&gt;206-555-1212&lt;/phoneNumber&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;phoneNumber&gt;1-888-123-4567&lt;/phoneNumber&gt;<br>
+      &lt;/xyz:ArrayOfPhoneNumbers&gt;</p>
+
+    <p class="MsoNormal">Arrays may be multi-dimensional. In this 
+      case, more than one size will appear within the asize part of the arrayType attribute:</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array SOAP-ENC:arrayType="xsd:string[2,3]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r1c1&lt;/item&gt; <br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r1c2&lt;/item&gt; <br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r1c3&lt;/item&gt; <br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r2c1&lt;/item&gt; <br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r2c2&lt;/item&gt; <br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;r2c3&lt;/item&gt; <br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <p class="MsoNormal">While the examples above have shown 
+      arrays encoded as independent elements, array values MAY also appear embedded 
+      and SHOULD do so when they are known to be single reference.</p>
+
+    <p class="MsoNormal">The following is an example of a schema 
+      fragment and an array of phone numbers embedded in a struct of type "Person" and 
+      accessed through the accessor "phone-numbers":</p>
+
+    <p class="preformatted">&lt;simpleType name="phoneNumber" 
+      base="string"/&gt;<br>
+      <br>
+      &lt;element name="ArrayOfPhoneNumbers"&gt;<br>
+      &nbsp;&nbsp;&lt;complexType base="SOAP-ENC:Array"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="phoneNumber" type="tns:phoneNumber" maxOccurs="unbounded"/&gt;<br>
+      &nbsp;&nbsp;&lt;/complexType&gt;<br>
+      &nbsp;&nbsp;&lt;anyAttribute/&gt;<br>
+      &lt;/element&gt;<br>
+      <br>
+      &lt;element name="Person"&gt;<br>
+      &nbsp;&nbsp;&lt;complexType&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="name" type="string"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;element name="phoneNumbers" type="tns:ArrayOfPhoneNumbers"/&gt;<br>
+      &nbsp;&nbsp;&lt;/complexType&gt;<br>
+      &lt;/element&gt;</p>
+
+    <p class="preformatted">&lt;xyz:Person&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;name&gt;John Hancock&lt;/name&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;phoneNumbers SOAP-ENC:arrayType="xyz:phoneNumber[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;phoneNumber&gt;206-555-1212&lt;/phoneNumber&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;phoneNumber&gt;1-888-123-4567&lt;/phoneNumber&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/phoneNumbers&gt;<br>
+      &lt;/xyz:Person&gt;</p>
+
+    <p class="MsoNormal">Here is another example of a 
+      single-reference array value encoded as an embedded element whose containing 
+      element name is the accessor name:</p>
+
+    <p class="preformatted">&lt;xyz:PurchaseOrder&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;CustomerName&gt;Henry Ford&lt;/CustomerName&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;ShipTo&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Street&gt;5th Ave&lt;/Street&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;City&gt;New York&lt;/City&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;State&gt;NY&lt;/State&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Zip&gt;10010&lt;/Zip&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/ShipTo&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;PurchaseLineItems&nbsp;SOAP-ENC:arrayType="Order[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Apple&lt;/Product&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.56&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Peach&lt;/Product&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.48&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/PurchaseLineItems&gt;<br>
+      &lt;/xyz:PurchaseOrder&gt;</p>
+
+    <h4><a name="_Toc478383523">5.4.2.1 Partially Transmitted Arrays</a></h4>
+
+    <p class="MsoNormal">SOAP provides support for partially 
+      transmitted arrays, known as "varying" arrays in some contexts <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#XMLS2">[12]</a>. A partially transmitted 
+      array indicates in an "SOAP-ENC:offset" attribute the zero-origin offset of the 
+      first element transmitted. If omitted, the offset is taken as zero.</p>
+
+    <p class="MsoNormal">The following is an example of an array 
+      of size five that transmits only the third and fourth element counting from zero:</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array&nbsp;SOAP-ENC:arrayType="xsd:string[5]"&nbsp;SOAP-ENC:offset="[2]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;The third element&lt;/item&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item&gt;The fourth element&lt;/item&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <h4><a name="_Toc478383524">5.4.2.2 Sparse Arrays</a></h4>
+
+    <p class="MsoNormal">SOAP provides support for sparse arrays.  Each
+      element representing a member value contains a
+      "SOAP-ENC:position" attribute that indicates its position within
+      the array. The following is an example of a sparse array of
+      two-dimensional arrays of strings. The size is 4 but only
+      position 2 is used:</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array SOAP-ENC:arrayType="xsd:string[,][4]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENC:Array href="#array-1" SOAP-ENC:position="[2]"/&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;<br>
+      &lt;SOAP-ENC:Array&nbsp;id="array-1" SOAP-ENC:arrayType="xsd:string[10,10]"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item SOAP-ENC:position="[2,2]"&gt;Third row, third col&lt;/item&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;item SOAP-ENC:position="[7,2]"&gt;Eighth row, third col&lt;/item&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <p class="MsoNormal">If the only reference to array-1 occurs 
+      in the enclosing array, this example could also have been encoded as 
+      follows:</p>
+
+    <p class="preformatted">&lt;SOAP-ENC:Array SOAP-ENC:arrayType="xsd:string[,][4]"&gt;<br>
+      &nbsp;&nbsp;&lt;SOAP-ENC:Array&nbsp;SOAP-ENC:position="[2]" SOAP-ENC:arrayType="xsd:string[10,10]&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;item SOAP-ENC:position="[2,2]"&gt;Third row, third col&lt;/item&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;item SOAP-ENC:position="[7,2]"&gt;Eighth row, third col&lt;/item&gt;<br>
+      &nbsp;&nbsp;&lt;/SOAP-ENC:Array&gt;<br>
+      &lt;/SOAP-ENC:Array&gt;</p>
+
+    <h4><a name="_Toc478383521">5.4.3 Generic Compound Types</a></h4>
+
+    <p class="MsoNormal">The encoding rules just cited are not 
+      limited to those cases where the accessor names are known in advance. If 
+      accessor names are known only by inspection of the immediate values to be 
+      encoded, the same rules apply, namely that the accessor is encoded as an element 
+      whose name matches the name of the accessor, and the accessor either contains or 
+      references its value. Accessors containing values whose types cannot be 
+      determined in advance MUST always contain an appropriate xsi:type attribute 
+      giving the type of the value.</p>
+
+    <p class="MsoNormal">Similarly, the rules cited are sufficient 
+      to allow serialization of compound types having a mixture of accessors 
+      distinguished by name and accessors distinguished by both name and ordinal 
+      position. (That is, having some accessors repeated.) This does not require that 
+      any schema actually contain such types, but rather says that if a type-model 
+      schema does have such types, a corresponding XML syntactic schema and instance 
+      may be generated.</p>
+
+     <p class="preformatted">&lt;xyz:PurchaseOrder&gt;<br>
+       &nbsp;&nbsp;&nbsp;&lt;CustomerName&gt;Henry Ford&lt;/CustomerName&gt;<br>
+       &nbsp;&nbsp;&nbsp;&lt;ShipTo&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Street&gt;5th Ave&lt;/Street&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;City&gt;New York&lt;/City&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;State&gt;NY&lt;/State&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Zip&gt;10010&lt;/Zip&gt;<br>
+       &nbsp;&nbsp;&nbsp;&lt;/ShipTo&gt;<br>
+       &nbsp;&nbsp;&nbsp;&lt;PurchaseLineItems&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Apple&lt;/Product&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.56&lt;/Price&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Peach&lt;/Product&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.48&lt;/Price&gt;<br>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+       &nbsp;&nbsp;&nbsp;&lt;/PurchaseLineItems&gt;<br>
+       &lt;/xyz:PurchaseOrder&gt;</p>
+
+    <p class="MsoNormal">Similarly, it is valid to serialize a compound
+    value that structurally resembles an arrray but is not of type (or
+    subtype) SOAP-ENC:Array. For example:</p>
+
+    <p class="preformatted">&lt;PurchaseLineItems&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Apple&lt;/Product&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.56&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;Order&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Product&gt;Peach&lt;/Product&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;1.48&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&lt;/Order&gt;<br>
+      &lt;/PurchaseLineItems&gt;</p>
+
+    <h2><a name="_Toc478383525">5.5 Default Values</a></h2>
+
+    <p class="MsoNormal">An omitted accessor element implies 
+      either a default value or that no value is known. The specifics depend on the 
+      accessor, method, and its context. For example, an omitted accessor typically 
+      implies a Null value for polymorphic accessors (with the exact meaning of Null 
+      accessor-dependent). Likewise, an omitted Boolean accessor typically implies 
+      either a False value or that no value is known, and an omitted numeric accessor 
+      typically implies either that the value is zero or that no value is known.</p>
+
+    <h2><a name="_Toc478383501">5.6 SOAP root Attribute</a></h2>
+
+    <p class="MsoNormal">The SOAP root attribute can be used to 
+      label serialization roots that are not true roots of an object graph so that the 
+      object graph can be deserialized. The attribute can have one of two values, 
+      either "1" or "0". True roots of an object graph have the implied attribute 
+      value of "1". Serialization roots that are not true roots can be labeled as 
+      serialization roots with an attribute value of "1" An element can explicitly be 
+      labeled as not being a serialization root with a value of "0".</p>
+
+    <p class="MsoNormal">The SOAP root attribute MAY appear on any 
+      subelement within the SOAP Header and SOAP Body elements. The attribute does not 
+      have a default value.</p>
+
+    <h1><a name="_Toc478383526">6. Using SOAP in HTTP</a></h1>
+
+    <p class="MsoNormal">This section describes how to use SOAP 
+      within HTTP with or without using the HTTP Extension Framework. Binding SOAP to 
+      HTTP provides the advantage of being able to use the formalism and decentralized 
+      flexibility of SOAP with the rich feature set of HTTP. Carrying SOAP in HTTP 
+      does not mean that SOAP overrides existing semantics of HTTP but rather that the 
+      semantics of SOAP over HTTP maps naturally to HTTP semantics.</p>
+
+    <p class="MsoNormal">SOAP naturally follows the HTTP 
+      request/response message model providing SOAP request parameters in a HTTP 
+      request and SOAP response parameters in a HTTP response. Note, however, that 
+      SOAP intermediaries are NOT the same as HTTP intermediaries. That is, an HTTP 
+      intermediary addressed with the HTTP Connection header field cannot be expected 
+      to inspect or process the SOAP entity body carried in the HTTP request.</p>
+
+    <p class="MsoNormal">HTTP applications MUST use the media type 
+      "text/xml" according to RFC 2376 <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2376">[3]</a> when including SOAP entity bodies in HTTP 
+      messages.</p>
+
+    <h2><a name="_Toc478383527">6.1 SOAP HTTP Request</a></h2>
+
+    <p class="MsoNormal">Although SOAP might be used in 
+      combination with a variety of HTTP request methods, this binding only defines 
+      SOAP within HTTP POST requests (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383532">section 7</a> for how to use SOAP for RPC and <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383530">section 
+	6.3</a> for how to use the HTTP Extension Framework).</p>
+
+    <h3><a name="_Toc478383528">6.1.1 The SOAPAction HTTP Header Field</a></h3>
+
+    <p class="MsoNormal">The SOAPAction HTTP request header field 
+      can be used to indicate the intent of the SOAP HTTP request. The value is a URI 
+      identifying the intent. SOAP places no restrictions on the format or specificity 
+      of the URI or that it is resolvable. An HTTP client MUST use this header field 
+      when issuing a SOAP HTTP Request.</p>
+
+    <p class="Preformatted">soapaction&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;"SOAPAction" ":" [ &lt;"&gt; URI-reference &lt;"&gt; ]<br>
+      URI-reference&nbsp;=&nbsp;&lt;as defined in RFC 2396 <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2396">[4]</a>&gt;</p>
+
+    <p class="MsoNormal">The presence and content of the 
+      SOAPAction header field can be used by servers such as firewalls to 
+      appropriately filter SOAP request messages in HTTP. The header field value of 
+      empty string ("") means that the intent of the SOAP message is provided by the 
+      HTTP Request-URI. No value means that there is no indication of the intent of 
+      the message.</p>
+
+    <p class="MsoNormal">Examples:</p>
+
+    <p class="Preformatted">SOAPAction: "http://electrocommerce.org/abc#MyMessage"<br>
+      SOAPAction: "myapp.sdl"<br>
+      SOAPAction: ""<br>
+      SOAPAction:</p>
+
+    <h2><a name="_Toc478383529">6.2 SOAP HTTP Response</a></h2>
+
+    <p class="MsoNormal">SOAP HTTP follows the semantics of the 
+      HTTP Status codes for communicating status information in HTTP. For example, a 
+      2xx status code indicates that the client's request including the SOAP component 
+      was successfully received, understood, and accepted etc.</p>
+
+    <p class="MsoNormal">In case of a SOAP error while processing 
+      the request, the SOAP HTTP server MUST issue an HTTP 500 "Internal Server Error" 
+      response and include a SOAP message in the response containing a SOAP Fault 
+      element (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section 4.4</a>) indicating the SOAP processing 
+      error. </p>
+
+    <h2><a name="_Toc478383530">6.3 The HTTP Extension Framework</a></h2>
+
+    <p class="MsoNormal">A SOAP message MAY be used together with 
+      the HTTP Extension Framework <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2774">[6]</a> in order to identify the presence and intent of 
+      a SOAP HTTP request.</p>
+
+    <p class="MsoNormal">Whether to use the Extension Framework or 
+      plain HTTP is a question of policy and capability of the communicating parties. 
+      Clients can force the use of the HTTP Extension Framework by using a mandatory 
+      extension declaration and the "M-" HTTP method name prefix. Servers can force 
+      the use of the HTTP Extension Framework by using the 510 "Not Extended" HTTP 
+      status code. That is, using one extra round trip, either party can detect the 
+      policy of the other party and act accordingly. </p>
+
+    <p class="MsoNormal">The extension identifier used to identify 
+      SOAP using the Extension Framework is</p>
+
+    <p class="Preformatted">http://schemas.xmlsoap.org/soap/envelope/</p>
+
+    <h2><a name="_Toc478383531">6.4 SOAP HTTP Examples</a></h2>
+
+    <p class="MsoCaption"><a name="_Ref477795881">Example 3</a> SOAP HTTP Using POST</p>
+
+    <p class="Preformatted">POST /StockQuote HTTP/1.1<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      SOAPAction: "http://electrocommerce.org/abc#MyMessage"<br>
+      <br>
+      &lt;SOAP-ENV:Envelope...<br>
+      <br>
+      HTTP/1.1 200 OK<br>
+      Content-Type: 
+      text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      <br>
+      &lt;SOAP-ENV:Envelope...</p>
+
+    <p class="MsoCaption"><a name="_Ref477795961">Example 4</a> SOAP Using HTTP Extension Framework</p>
+
+    <p class="Preformatted">M-POST /StockQuote HTTP/1.1<br>
+      Man: "http://schemas.xmlsoap.org/soap/envelope/"; ns=NNNN<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      NNNN-SOAPAction: "http://electrocommerce.org/abc#MyMessage"<br>
+      <br>
+      &lt;SOAP-ENV:Envelope...<br>
+      <br>
+      HTTP/1.1 200 OK<br>
+      Ext:<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      <br>
+      &lt;SOAP-ENV:Envelope...</p>
+
+    <h1><a name="_Toc478383532">7. Using SOAP for RPC</a></h1>
+
+    <p class="MsoNormal">One of the design goals of SOAP is to
+      encapsulate and exchange RPC calls using the extensibility and
+      flexibility of XML. This section defines a uniform
+      representation of remote procedure calls and responses.
+
+    </p><p class="MsoNormal">Although it is anticipated that this
+      representation is likely to be used in combination with the
+      encoding style defined in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383512">section 5</a> other
+      representations are possible. The SOAP encodingStyle attribute
+      (see section <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">4.3.2</a>) can be used to
+      indicate the encoding style of the method call and or the response
+      using the representation described in this section.</p>
+
+    <p class="MsoNormal">Using SOAP for RPC is orthogonal to the SOAP
+      protocol binding (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383526">section
+      6</a>). In the case of using HTTP as the protocol binding, an
+      RPC call maps naturally to an HTTP request and an RPC response
+      maps to an HTTP response. However, using SOAP for RPC is not
+      limited to the HTTP protocol binding.</p>
+
+    <p class="MsoNormal">To make a method call, the following information is needed:</p>
+
+    <ul>
+      <li class="MsoListBullet">The URI of the target object</li>
+
+      <li class="MsoListBullet">A method name</li>
+
+      <li class="MsoListBullet">An optional method signature</li>
+
+      <li class="MsoListBullet">The parameters to the method</li> 
+
+      <li class="MsoListBullet">Optional header data</li>
+
+    </ul>
+
+    <p class="MsoNormal">SOAP relies on the protocol binding to provide
+      a mechanism for carrying the URI. For example, for HTTP the
+      request URI indicates the resource that the invocation is being
+      made against. Other than it be a valid URI, SOAP places no
+      restriction on the form of an address (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#RFC2396">[4]</a> for more information on URIs).</p>
+
+    <h2><a name="_Toc478383533">7.1 RPC and SOAP Body</a></h2>
+
+    <p class="MsoNormal">RPC method calls and responses are both carried
+      in the SOAP Body element (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383503">section
+      4.3</a>) using the following representation:</p>
+
+    <ul>
+      <li class="MsoListBullet">A method invocation is modelled as a
+	struct.</li>
+
+      <li class="MsoListBullet">The method invocation is viewed as a single struct 
+	containing an accessor for each [in] or [in/out] parameter. The struct is both 
+	named and typed identically to the method name.</li>
+
+      <li class="MsoListBullet">Each [in] or [in/out] parameter 
+	is viewed as an accessor, with a name corresponding to the name of the 
+	parameter and type corresponding to the type of the parameter. These appear in 
+	the same order as in the method signature.</li>
+
+      <li class="MsoListBullet">A method response is modelled as a
+	struct.
+
+      </li><li class="MsoListBullet">The method response is viewed as a
+	single struct containing an accessor for the return value and
+	each [out] or [in/out] parameter. The first accessor is the
+	return value followed by the parameters in the same order as
+	in the method signature.</li>
+
+      <li class="MsoListBullet">Each parameter accessor has a name
+	corresponding to the name of the parameter and type
+	corresponding to the type of the parameter. The name of the
+	return value accessor is not significant. Likewise, the name
+	of the struct is not significant. However, a convention is to
+	name it after the method name with the string "Response"
+	appended.</li>
+
+      <li class="MsoListBullet">A method fault is encoded using the SOAP
+	Fault element (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507">section
+	4.4</a>). If a protocol binding adds additional rules for
+	fault expression, those also MUST be followed.</li>
+    </ul>
+
+    <p class="MsoNormal">As noted above, method and response structs can
+      be encoded according to the rules in <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383512">section 5</a>, or other encodings can be
+      specified using the encodingStyle attribute (see <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383495">section 4.1.1</a>).</p>
+
+    <p class="MsoNormal">Applications MAY process requests with 
+      missing parameters but also MAY return a fault.</p>
+
+    <p class="MsoNormal">Because a result indicates success and a fault indicates 
+      failure, it is an error for the method response to contain both a result and a 
+      fault.</p>
+
+    <h2><a name="_Toc478383534">7.2 RPC and SOAP Header</a></h2>
+
+    <p class="MsoNormal">Additional information relevant to the 
+      encoding of a method request but not part of the formal method signature MAY be 
+      expressed in the RPC encoding. If so, it MUST be expressed as a subelement 
+      of the SOAP Header element. </p>
+
+    <p class="MsoNormal">An example of the use of the header element is the passing of 
+      a transaction ID along with a message. Since the transaction ID is not part of 
+      the signature and is typically held in an infrastructure component rather than 
+      application code, there is no direct way to pass the necessary information with 
+      the call. By adding an entry to the headers and giving it a fixed name, the 
+      transaction manager on the receiving side can extract the transaction ID and use 
+      it without affecting the coding of remote procedure calls.</p>
+
+    <h1><a name="_Toc478383535">8. Security Considerations</a></h1>
+
+    <p class="MsoNormal">Not described in this document are 
+      methods for integrity and privacy protection. Such issues will be addressed more 
+      fully in a future version(s) of this document.</p>
+
+    <h1><a name="_Toc478383536">9. References</a></h1>
+
+    <p class="Reference">[1] S. Bradner, "The Internet Standards 
+      Process -- Revision 3", <a href="http://www.normos.org/ietf/rfc/rfc2026.txt" name="RFC2026">RFC2026</a>, Harvard University, October 
+      1996</p>
+
+    <p class="Reference">[2] S. Bradner, "Key words for use in 
+      RFCs to Indicate Requirement Levels",
+      <a href="http://www.normos.org/ietf/rfc/rfc2119.txt" name="RFC2119">RFC 2119</a>,
+      Harvard University, March 1997</p>
+
+    <p class="Reference">[3] E. Whitehead, M. Murata, "XML Media 
+      Types", <a href="http://www.normos.org/ietf/rfc/rfc2376.txt" name="RFC2376">RFC2376</a>, UC Irvine, Fuji Xerox Info. Systems, July 
+      1998</p>
+
+    <p class="Reference">[4] T. Berners-Lee, R. Fielding, L. 
+      Masinter, "Uniform Resource Identifiers (URI): Generic Syntax",
+      <a href="http://www.normos.org/ietf/rfc/rfc2396.txt" name="RFC2396">RFC 2396</a>,
+      MIT/LCS, U.C. Irvine, Xerox Corporation, August 1998.</p>
+
+    <p class="Reference">[5] R. Fielding, J. Gettys, J. C. Mogul, 
+      H. Frystyk, T. Berners-Lee, "Hypertext Transfer Protocol -- HTTP/1.1",
+      <a href="http://www.normos.org/ietf/rfc/rfc2616.txt" name="RFC2616">RFC 2616</a>,
+      U.C. Irvine, DEC W3C/MIT, DEC, W3C/MIT, W3C/MIT, January 1997</p>
+
+    <p class="Reference">[6] H. Nielsen, P. Leach, S. Lawrence, 
+      "An HTTP Extension Framework",
+      <a href="http://www.normos.org/ietf/rfc/rfc2774.txt" name="RFC2774">RFC 2774</a>,
+      Microsoft, Microsoft, Agranat Systems</p>
+
+    <p class="Reference">[7] W3C Recommendation
+      "<a href="https://www.w3.org/TR/REC-xml" name="XML">The XML Specification</a>"</p>
+
+    <p class="Reference">[8] W3C Recommendation
+      "<a href="https://www.w3.org/TR/REC-xml-names/" name="XMLNS">Namespaces in XML</a>"</p>
+
+    <p class="Reference">[9] W3C Working Draft
+      "<a href="https://www.w3.org/TR/xlink/" name="XMLLINK">XML Linking Language</a>". This is work in progress.</p>
+
+    <p class="Reference">[10] W3C Working Draft
+      "<a href="https://www.w3.org/TR/xmlschema-1/" name="XMLS1">XML Schema Part 1: Structures</a>". This is work in progress. </p>
+
+    <p class="Reference">[11] W3C Working Draft
+      "<a href="https://www.w3.org/TR/xmlschema-2/" name="XMLS2">XML Schema Part 2: Datatypes</a>". This is work in progress.</p>
+
+    <p class="Reference">[12] Transfer Syntax NDR, in
+      "<a href="http://www.opengroup.org/public/pubs/catalog/c706.htm" name="DCE">DCE 1.1: Remote Procedure Call</a>"</p>
+
+    <p class="Reference">[13] N. Freed, N. Borenstein, 
+      "Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet 
+      Message Bodies", <a href="http://www.normos.org/ietf/rfc/rfc2045.txt" name="RFC2045">RFC2045</a>, Innosoft, First Virtual, November 
+      1996</p>
+
+    <h1><a name="_Toc478383539">A. SOAP Envelope Examples</a></h1>
+
+    <h2><a name="_Toc478383540">A.1 Sample Encoding of Call Requests</a></h2>
+
+    <p class="MsoCaption"><a name="_Ref477795991">Example 5</a> 
+      Similar to <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477488396">Example 1</a> but with a Mandatory Header</p>
+
+    <p class="Preformatted">POST /StockQuote HTTP/1.1<br>
+      Host: www.stockquoteserver.com<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      SOAPAction: "Some-URI"<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp;&nbsp;xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"<br>
+      &nbsp;&nbsp;SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Header&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;t:Transaction<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xmlns:t="some-URI"<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SOAP-ENV:mustUnderstand="1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/t:Transaction&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Header&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;m:GetLastTradePrice xmlns:m="Some-URI"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;symbol&gt;DEF&lt;/symbol&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/m:GetLastTradePrice&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <p class="MsoCaption"><a name="_Ref477795992">Example 6</a>
+      Similar to <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477488396">Example 1</a> but with multiple request parameters</p>
+
+    <p class="Preformatted">POST /StockQuote HTTP/1.1<br>
+      Host: www.stockquoteserver.com<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      SOAPAction: "Some-URI"<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp;&nbsp;xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"<br>
+      &nbsp;&nbsp;SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;m:GetLastTradePriceDetailed<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xmlns:m="Some-URI"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Symbol&gt;DEF&lt;/Symbol&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Company&gt;DEF Corp&lt;/Company&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;34.1&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/m:GetLastTradePriceDetailed&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <h2><a name="_Toc478383541">A.2 Sample Encoding of Response</a></h2>
+
+    <p class="MsoCaption"><a name="_Ref477795993">Example 7</a>
+      Similar to <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477488602">Example 2</a> but with a Mandatory Header</p>
+
+    <p class="Preformatted">HTTP/1.1 200 OK<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp;&nbsp;xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"<br>
+      &nbsp;&nbsp;SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Header&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;t:Transaction<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xmlns:t="some-URI"<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xsi:type="xsd:int"&nbsp;mustUnderstand="1"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/t:Transaction&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Header&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;m:GetLastTradePriceResponse<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xmlns:m="Some-URI"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;Price&gt;34.5&lt;/Price&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/m:GetLastTradePriceResponse&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <p class="MsoCaption"><a name="_Ref477795994">Example 8</a>
+      Similar to <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477488602">Example 2</a> but with a Struct</p>
+
+    <p class="Preformatted">HTTP/1.1 200 OK<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp; xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"<br>
+      &nbsp; SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;m:GetLastTradePriceResponse<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xmlns:m="Some-URI"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;PriceAndVolume&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;LastTradePrice&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;34.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/LastTradePrice&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;DayVolume&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10000<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/DayVolume&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/PriceAndVolume&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/m:GetLastTradePriceResponse&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <p class="MsoCaption"><a name="_Ref477795995">Example 9</a>
+      Similar to <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477488602">Example 2</a> but Failing to honor Mandatory Header</p>
+
+    <p class="Preformatted">HTTP/1.1 500 Internal Server Error<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp;&nbsp;xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Fault&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;faultcode&gt;SOAP-ENV:MustUnderstand&lt;/faultcode&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;faultstring&gt;SOAP Must Understand Error&lt;/faultstring&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Fault&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <p class="MsoCaption"><a name="_Ref477795996">Example 10</a>
+      Similar to <a href="https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Ref477488602">Example 2</a> but Failing to handle Body</p>
+
+    <p class="Preformatted">HTTP/1.1 500 Internal Server Error<br>
+      Content-Type: text/xml; charset="utf-8"<br>
+      Content-Length: nnnn<br>
+      <br>
+      &lt;SOAP-ENV:Envelope<br>
+      &nbsp;&nbsp;xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Body&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;SOAP-ENV:Fault&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;faultcode&gt;SOAP-ENV:Server&lt;/faultcode&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;faultstring&gt;Server Error&lt;/faultstring&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;detail&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;e:myfaultdetails xmlns:e="Some-URI"&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;message&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;My application didn't work<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/message&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;errorcode&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1001<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/errorcode&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/e:myfaultdetails&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/detail&gt;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Fault&gt;<br>
+      &nbsp;&nbsp;&nbsp;&lt;/SOAP-ENV:Body&gt;<br>
+      &lt;/SOAP-ENV:Envelope&gt;</p>
+
+    <hr>
+
+  <script type="text/javascript" async="" src="./Simple Object Access Protocol (SOAP) 1.1_files/matomo.js.&#19979;&#36733;"></script><script src="./Simple Object Access Protocol (SOAP) 1.1_files/fixup.js.&#19979;&#36733;"></script>
+
+
+</body></html>

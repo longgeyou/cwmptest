@@ -1,0 +1,10 @@
+
+
+网址：
+
+
+https://schemas.xmlsoap.org/soap/envelope/
+
+
+
+https://cwmp-data-models.broadband-forum.org/cwmp-1-0.xsd

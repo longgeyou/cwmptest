@@ -1936,18 +1936,18 @@ static int __http_client_msg_recv_pro(http_client_t *client)
 
 
     //测试发送数据
-    httpClient_msg_t *msg = httpClient_create();
-
-    httpmsg_client_head_init(msg, "GET", "/CWMP", "HTTP/1.1", client->useDigestAuth, &(client->auth));
-    
-    if(msg->keyvalueEn == 1)
-    {
-        keyvalue_append_set_str(msg->keyvalue, "Content-Type", "text/html");
-        keyvalue_append_set_str(msg->keyvalue, "Content-Length", "137");     
-    }
-    httpmsg_client_send_msg(msg, client->tcp);
-    
-    httpCLient_destroy(msg);
+//    httpClient_msg_t *msg = httpClient_create();
+//
+//    httpmsg_client_head_init(msg, "GET", "/CWMP", "HTTP/1.1", client->useDigestAuth, &(client->auth));
+//    
+//    if(msg->keyvalueEn == 1)
+//    {
+//        keyvalue_append_set_str(msg->keyvalue, "Content-Type", "text/html");
+//        keyvalue_append_set_str(msg->keyvalue, "Content-Length", "137");     
+//    }
+//    httpmsg_client_send_msg(msg, client->tcp);
+//    
+//    httpCLient_destroy(msg);
  
     return RET_OK;
 }   
