@@ -157,7 +157,7 @@ link_obj_t *link_create()
 
 //销毁链表， 同时销毁 节点、节点指向的存储数据的动态内存
 //只销毁节点容器 link_node_t , 不销毁 node->data 指向的动态内存
-void link_destory(link_obj_t *link)
+void link_destory(link_obj_t *link)         //惨了 destroy 写成了 destory，但是引用太多 ……
 {
     if(link == NULL)return;
 

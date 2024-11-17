@@ -22,6 +22,10 @@
 #include "http.h"
 
 
+#include "stack.h"
+#include "soap.h"
+
+
 void test(int);
 void dig_test(int argc, char ** argv);
 int mddriver_test(int, char **);
@@ -64,6 +68,9 @@ void test(int port)
     httphead_mg_init();
     http_mg_init();
 
+    stack_mg_init();
+    soap_mg_init();
+
        
     if(port > 0)
     {
@@ -86,8 +93,9 @@ void test(int port)
 
 	//base64_test();
 	//serverauth_test();
-	http_other_test();
-
+	//http_other_test();
+    //stack_test();
+    soap_test();
 }
 
 

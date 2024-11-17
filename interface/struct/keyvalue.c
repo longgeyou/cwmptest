@@ -472,10 +472,21 @@ void __keyvalue_test_aux(keyvalue_obj_t  *keyvalue)
     if(keyvalue == NULL)return ;
     KEYVALUE_FOREACH_START(keyvalue, iter){
         if(iter->key != NULL && iter->keyEn == 1 && 
-                iter->value != NULL && iter->valueEn)
-                printf("key:%s keyLen:%d keyEn:%d value:%s valueLen:%d valueEn:%d\n", 
-                        (char *)(iter->key), iter->keyLen, iter->keyEn,
-                        (char *)(iter->value), iter->valueLen, iter->valueEn);
+                iter->value != NULL && iter->valueEn == 1)
+        {
+             printf("key:%s keyLen:%d keyEn:%d value:%s valueLen:%d valueEn:%d\n", 
+                    (char *)(iter->key), iter->keyLen, iter->keyEn,
+                    (char *)(iter->value), iter->valueLen, iter->valueEn);
+
+        }               
+        else if(iter->key != NULL && iter->keyEn == 1 && 
+                (iter->value == NULL || iter->valueEn != 1))  
+        {
+            printf("key:%s keyLen:%d keyEn:%d value:%s valueLen:%d valueEn:%d\n", 
+                    (char *)(iter->key), iter->keyLen, iter->keyEn,
+                    "[void]", 0, 0);
+        }
+                
     } KEYVALUE_FOREACH_END;
 }
 

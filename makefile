@@ -30,7 +30,8 @@ SRCDIRS				:=	acs \
 					   	protocol/session \
 					   	protocol/session/struct \
 					   	protocol/session/auth \
-					   	protocol/session/auth/interface
+					   	protocol/session/auth/interface \
+					   	protocol/expression
 					   	
 					   	
 
