@@ -155,7 +155,7 @@ link_obj_t *link_create()
     return link;
 }
 
-//销毁链表， 同时销毁 节点、节点指向的存储数据的动态内存
+//销毁链表
 //只销毁节点容器 link_node_t , 不销毁 node->data 指向的动态内存
 void link_destory(link_obj_t *link)         //惨了 destroy 写成了 destory，但是引用太多 ……
 {
@@ -180,6 +180,35 @@ void link_destory(link_obj_t *link)         //惨了 destroy 写成了 destory�
     POOL_FREE(link);
     
 }
+
+//销毁链表
+//销毁节点容器 link_node_t , 同时销毁 node->data 指向的动态内存
+void link_destroy_and_data(link_obj_t *link)         
+{
+    if(link == NULL)return;
+
+
+    //销毁节点
+    link_node_t *node = link->head;
+    link_node_t *nodeNext;
+    while(node != NULL)
+    {
+        nodeNext = node->next;
+        
+        link_destory_node_and_data(node);
+        //link_destory_node(node);
+
+        node = nodeNext;
+        
+    }
+
+    //销毁链表
+    POOL_FREE(link);
+    
+}
+
+
+
 
 //清空链表节点，不销毁 node->data 指向的动态内存，不销毁链表头
 void link_clear(link_obj_t *link)
@@ -244,15 +273,18 @@ int link_append_by_node(link_obj_t *link)
 }
 
 //创建节点，分配动态内存给 数据指针
-//然后把节点添加到链表尾部
-int link_append_by_malloc(link_obj_t *link, int dataLen)
+//然后把节点添加到链表尾部；返回值是刚刚分配内存的数据指针
+void *link_append_by_malloc(link_obj_t *link, int dataLen)
 {
-    if(link == NULL)return RET_FAILD;
+    if(link == NULL)return NULL;
     
     link_node_t *node = link_create_node_and_malloc(dataLen);
-    if(node == NULL)return RET_FAILD;
+    if(node == NULL)return NULL;
 
-    return link_append_node(link, node);
+    if(RET_OK == link_append_node(link, node))
+        return node->data;
+
+    return NULL;
 }
 
 

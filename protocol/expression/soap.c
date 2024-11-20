@@ -6,31 +6,11 @@
 
 #include "soap.h"
 #include "pool2.h"
-#include "keyvalue.h"
-#include "link.h"
 
-#include "stack.h"
-#include "log.h"
 
-/*==============================================================
-                        数据结构
-==============================================================*/
-#define SOAP_NAME_STRING_LEN 128
-#define SOAP_VALUE_STRING_LEN 256
-#define SOAP_ATTR_DEFAULT_SIZE 8
-typedef struct soap_node_t{
-    char name[SOAP_NAME_STRING_LEN];
-    char nameEn;
-    char value[SOAP_VALUE_STRING_LEN];
-    char valueEn;
-    keyvalue_obj_t *attr; //属性
-    link_obj_t *son;    //子节点（链表）
-}soap_node_t;
 
-typedef struct soap_obj_t{
-    soap_node_t *root;
-    char en;
-}soap_obj_t;
+
+
 
 
 /*==============================================================
@@ -249,6 +229,36 @@ void soap_destroy(soap_obj_t *soap)
 }
 
 
+//清空节点内容
+void soap_node_clear(soap_node_t *node)
+{
+    if(node == NULL)return ;
+
+    //递归调用，对每个子节点进行摧毁
+    if(node->son != NULL)
+    {
+        LINK_FOREACH(node->son, probe){
+            if(probe->data != NULL && probe->en == 1)
+            {
+                soap_destroy_node(probe->data);
+            }
+        }
+    
+        link_clear(node->son); 
+    }
+
+    //释放 keyvalue对象
+    if(node->attr != NULL)
+        keyvalue_clear(node->attr);
+        
+   //清空成员
+   memset(node->name, '\0', SOAP_NAME_STRING_LEN);
+   memset(node->value, '\0', SOAP_VALUE_STRING_LEN);
+   node->nameEn = 0;
+   node->valueEn = 0;
+   
+}
+
 /*==============================================================
                         应用
 ==============================================================*/
@@ -388,7 +398,7 @@ void __name_attr_pro(soap_node_t *node, char *str)
 
 //字符串解析成 soap节点
 #define STACK_SIZE 30
-soap_node_t *soap_get_from_str(char *str)
+soap_node_t *soap_str2node(char *str)
 {
     if(str == NULL)return NULL;
     int i;
@@ -477,7 +487,9 @@ soap_node_t *soap_get_from_str(char *str)
                         
                         step = 2;
                     } 
-                    
+
+                    current->nameEn = 0;
+                    //keyvalue_clear(current->attr);    //清空
                     __name_attr_pro(current, buf);
                     
                 }
@@ -546,6 +558,24 @@ soap_node_t *soap_get_from_str(char *str)
     return root; 
 }
 
+//通过name匹配 得到子节点
+soap_node_t *soap_node_get_son(soap_node_t *node, char *name)
+{
+    if(node == NULL || node->son == NULL || name == NULL)return NULL;
+
+    soap_node_t *ret = NULL;
+    LINK_FOREACH(node->son, probe){
+        soap_node_t *nodeProbe = (soap_node_t *)(probe->data);
+        if(strcmp(nodeProbe->name, name) == 0)
+        {
+            ret = nodeProbe;
+            break;
+        }
+    };
+    
+    return ret;
+}
+
 
 
 /*==============================================================
@@ -592,40 +622,49 @@ void __test_show_soap(soap_obj_t *soap)
 }
 
 
+//显示接口
+void soap_node_show(soap_node_t *node)
+{
+    __test_show_node(node);
+}
+
+
 void soap_test()
 {
     //printf("soap test start ……\n");
     
 
-//    soap_obj_t *soap = soap_create_set_value("root", "value");
-//    soap_node_append_attr(soap->root, "x", "10");
-//    soap_node_append_attr(soap->root, "y", "20");
-//    
-//    soap_node_t *node = soap_create_node_set_value("node", "node-value");
-//    soap_node_append_attr(node, "x", "10");
-//    soap_node_append_attr(node, "y", "20");    
-//    soap_node_append_son(soap->root, node);
-//
-//
-//    soap_node_t *subNode1 = soap_create_node_set_value("subNode1", "subNode1-value");
-//    soap_node_append_attr(subNode1, "x", "10");
-//    soap_node_append_attr(subNode1, "y", "20");
-//    soap_node_t *subNode2 = soap_create_node_set_value("subNode2", NULL);
-//    soap_node_append_attr(subNode2, "x", "10");
-//    soap_node_append_attr(subNode2, "y", "20");
-//    soap_node_append_son(node, subNode1);
-//    soap_node_append_son(node, subNode2);
-//
-//    __test_show_node(soap->root);
-//    
-//    //摧毁    
-//    //pool_show();
-//
-//    //soap_destroy(soap);
-//
-//    //pool_show();
-//
-//    //节点到字符串
+    soap_obj_t *soap = soap_create_set_value("root", "value");
+    pool_show();
+    
+    soap_node_append_attr(soap->root, "x", "10");
+    soap_node_append_attr(soap->root, "y", "20");
+    
+    soap_node_t *node = soap_create_node_set_value("node", "node-value");
+    soap_node_append_attr(node, "x", "10");
+    soap_node_append_attr(node, "y", "20");    
+    soap_node_append_son(soap->root, node);
+
+
+    soap_node_t *subNode1 = soap_create_node_set_value("subNode1", "subNode1-value");
+    soap_node_append_attr(subNode1, "x", "10");
+    soap_node_append_attr(subNode1, "y", "20");
+    soap_node_t *subNode2 = soap_create_node_set_value("subNode2", NULL);
+    soap_node_append_attr(subNode2, "x", "10");
+    soap_node_append_attr(subNode2, "y", "20");
+    soap_node_append_son(node, subNode1);
+    soap_node_append_son(node, subNode2);
+
+    __test_show_node(soap->root);
+    
+    //摧毁    
+    //pool_show();
+
+    //soap_destroy(soap);
+
+    //pool_show();
+
+    //节点到字符串
 //    char buf[512];
 //    char *p;
 //    p = buf;
@@ -637,26 +676,34 @@ void soap_test()
 
     //字符串到节点
     //char str[] = "<root a=1 b=2></>";
-    char str2[] = "<root x=10 y=20>\n"
-    "value\n"
-    "<node x=10 y=20>\n"
-    "node-value\n"
-    "<subNode1 x=10 y=20>\n"
-    "subNode1-value\n"
-    "</subNode1>\n"
-    "<subNode2 x=10 y=20/>\n"
-    "</node>\n"
-    "</root>"
-    "<root2 m=1 n=2/>";
+//    char str2[] = "<root x=10 y=20>\n"
+//    "value\n"
+//    "<node x=10 y=20>\n"
+//    "node-value\n"
+//    "<subNode1 x=10 y=20>\n"
+//    "subNode1-value\n"
+//    "</subNode1>\n"
+//    "<subNode2 x=10 y=20/>\n"
+//    "</node>\n"
+//    "</root>"
+//    "<root2 m=1 n=2/>";
+//
+//    
+//    soap_node_t *nodePro = soap_str2node(str2);
+//
+//    __test_show_node(nodePro);
+//    pool_show();
+//
+//    soap_destroy_node(nodePro);
+//    pool_show();
 
-    
-    soap_node_t *nodePro = soap_get_from_str(str2);
 
-    __test_show_node(nodePro);
+    //测试清空 
+    pool_show();
+    soap_node_clear(soap->root);
+
     pool_show();
 
-    soap_destroy_node(nodePro);
-    pool_show();
     
 }
 

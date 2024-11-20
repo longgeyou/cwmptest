@@ -41,6 +41,8 @@ keyvalue_data_t *keyvalue_create_data_set_value(void *key, int keyLen, void *val
 void keyvalue_destroy_data(keyvalue_data_t *data);
 keyvalue_obj_t *keyvalue_create(int size);
 void keyvalue_destroy(keyvalue_obj_t *keyvalue);
+void keyvalue_clear(keyvalue_obj_t *keyvalue);
+
 
 int keyvalue_append_data(keyvalue_obj_t *keyvalue, keyvalue_data_t *data);
 int keyvalue_append_set_value(keyvalue_obj_t *keyvalue, void *key, int keyLen, void *value, int valueLen);

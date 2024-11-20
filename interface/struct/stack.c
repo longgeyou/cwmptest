@@ -29,7 +29,7 @@ stack_manager_t stack_local_mg = {0};
 //使用内存池
 #define MALLOC(x) pool_user_malloc(stack_local_mg.poolId, x)
 #define FREE(x) pool_user_free(x)
-#define DIC_POOL_NAME "stack"
+#define QUEUE_POOL_NAME "stack"
     
 //返回值
 #define RET_OK 0
@@ -42,7 +42,7 @@ void stack_mg_init()
     if(stack_local_mg.initCode == STACK_INIT_CODE)return ;   //防止重复初始化
     stack_local_mg.initCode = STACK_INIT_CODE;
     
-    strncpy(stack_local_mg.poolName, DIC_POOL_NAME, POOL_USER_NAME_MAX_LEN);
+    strncpy(stack_local_mg.poolName, QUEUE_POOL_NAME, POOL_USER_NAME_MAX_LEN);
     stack_local_mg.poolId = pool_apply_user_id(stack_local_mg.poolName); 
 
     pool_init();    //依赖于pool2.c，所以要初始化

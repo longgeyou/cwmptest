@@ -173,7 +173,7 @@ void list_destory(list_obj_t *list)
     {
         for(i = 0; i < list->size; i++)
         {
-            //1、释放member、 member->data 
+            //1、释放member
             if(list->array[i] != NULL && list->array[i]->en == 1)
                 list_destory_member(list->array[i]);
         }        
@@ -212,6 +212,57 @@ void list_destory_and_data(list_obj_t *list)
 }
 
 
+//（新增） 列表清空
+void list_clear(list_obj_t *list)
+{
+    int i;
+    
+    if(list == NULL)return ;
+    
+    if(list->array != NULL && list->size > 0)
+    {
+        
+        for(i = 0; i < list->size; i++)
+        {
+            
+            if(list->array[i] != NULL && list->array[i]->en == 1)
+            {
+                //释放member
+                list_destory_member(list->array[i]);
+                //指向空指针
+                list->array[i] = NULL;
+            }
+                
+        }                
+        
+    }
+}
+
+//（新增） 列表清空，同时释放 member 、member->data
+void list_clear_and_data(list_obj_t *list)
+{
+    int i;
+    
+    if(list == NULL)return ;
+    
+    if(list->array != NULL && list->size > 0)
+    {
+        
+        for(i = 0; i < list->size; i++)
+        {
+            
+            if(list->array[i] != NULL && list->array[i]->en == 1)
+            {
+                //释放member、member->data
+                list_destory_member_and_data(list->array[i]);
+                //指向空指针
+                list->array[i] = NULL;
+            }
+                
+        }                
+        
+    }
+}
 
 
 
@@ -427,6 +478,7 @@ void list_test()
     
 
     list_obj_t *list = list_create(100);
+    //pool_show();
 
     list_append_member_set_value(list, (void *)(a + 0), sizeof(int));
     list_append_member_set_value(list, (void *)(a + 1), sizeof(int));
@@ -442,20 +494,23 @@ void list_test()
     list_append_member_set_value(list, (void *)(a + 1), sizeof(int));
     list_append_member_set_value(list, (void *)(a + 2), sizeof(int));
     list_append_member_set_value(list, (void *)(a + 3), sizeof(int));
-    
-    pool_show();
-    
-    //__iter_test(list);
-    
+
     list_test_aux(list);
 
-    
-    
-    list_destory_and_data(list);
 
+    //测试摧毁
+//    pool_show();
+//    
+//    list_destory_and_data(list);
+//
+//    pool_show();
+
+    //测试清空
     pool_show();
-
-    
+    //list_clear(list);
+    list_clear_and_data(list);
+    //list_destory_and_data(list);
+    pool_show();
 
 }
 

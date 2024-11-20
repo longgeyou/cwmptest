@@ -226,6 +226,25 @@ void keyvalue_destroy(keyvalue_obj_t *keyvalue)
 }
 
 
+//（新增）清空
+void keyvalue_clear(keyvalue_obj_t *keyvalue)
+{
+    if(keyvalue == NULL)return ;
+
+    //1、遍历 list 成员，释放 data
+    LIST_FOREACH_START(keyvalue->list, probe)
+    {
+        if(probe->en == 1)
+            keyvalue_destroy_data(probe->data);
+    }LIST_FOREACH_END;
+
+    //2、清空列表
+    list_clear(keyvalue->list);      
+}
+
+
+
+
 /*==============================================================
                         应用
 ==============================================================*/
@@ -505,6 +524,8 @@ void keyvalue_test()
     printf("keyvalue  test start ...\n");
     
     keyvalue_obj_t *keyvalue = keyvalue_create(100);
+    pool_show();
+    
     char *key[]={"userName",
                     "password",
                     "password2"};
@@ -519,7 +540,7 @@ void keyvalue_test()
 
     //keyvalue_remove_by_str(keyvalue, key[0]);
      
-    pool_show();
+    //pool_show();
     
     //__iter_keyvalue(keyvalue);
     __keyvalue_test_aux(keyvalue);
@@ -539,7 +560,14 @@ void keyvalue_test()
 
     if(ret == RET_OK)printf("--->value:%s\n", buf);
 
-    keyvalue_destroy(keyvalue);
+    //摧毁测试
+//    keyvalue_destroy(keyvalue);
+//
+//    pool_show();
+//    
+    //清空测试
+    pool_show();
+    keyvalue_clear(keyvalue);
 
     pool_show();
 }

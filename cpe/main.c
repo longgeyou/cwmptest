@@ -24,6 +24,9 @@
 
 #include "stack.h"
 #include "soap.h"
+#include "queue.h"
+#include "soapmsg.h"
+#include "cwmprpc.h"
 
 
 void test(int);
@@ -70,6 +73,7 @@ void test(int port)
 
     stack_mg_init();
     soap_mg_init();
+    queue_mg_init();
 
        
     if(port > 0)
@@ -95,7 +99,12 @@ void test(int port)
 	//serverauth_test();
 	//http_other_test();
     //stack_test();
-    soap_test();
+    //soap_test();
+    //queue_test();
+    //soapmsg_test();
+    //cwmprpc_test();
+    //soapmsg_test2();
+    soapmsg_test3();
 }
 
 

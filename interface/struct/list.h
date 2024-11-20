@@ -43,6 +43,9 @@ void list_destory_member_and_data(list_member_t *member);
 list_obj_t *list_create(int size);
 void list_destory(list_obj_t *list);
 void list_destory_and_data(list_obj_t *list);
+void list_clear(list_obj_t *list);
+void list_clear_and_data(list_obj_t *list);
+
 
 //int __get_useful_index(list_obj_t *list);
 int list_append_member(list_obj_t *list, list_member_t *member);

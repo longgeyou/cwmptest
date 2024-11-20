@@ -1,0 +1,267 @@
+# 参考2
+
+### 1、会话例子以及相互交流的具体的http消息
+
+![image-20241030121055384](F:\share\PRO\CWMP_TEST\cwmptest\文档\tu\image-20241030121055384.png)
+
+#### 1.1 过程
+
+（1）打开连接 Open connect；
+
+（2）SSL的初始化；
+
+（3）cpe首先发出 “HTTP psot”消息，里面的内容是“Inform request”，这个“通知请求”是过程调用中的acs方法，结构和用发参考目录A；Inform 方法中，包含了“事件“（Event）的用法；
+
+（4）acs受到（3）的消息后，向cpe发回复，即“HTTP response”消息，里面的内容是“Inform response”；
+
+（5）cpe可以发送“HTTP post”消息头，但消息提可以为空；acs接收到“HTTP post”消息后，即使消息体是空的，也可以给出自己的回复“HTTP response”消息头，而回复的消息体可以加上一个rpc方法（cpe的方法），例如“GetParameterValues request”;
+
+（6）cpe收到消息后，响应（5）提到的方法调用，使用“HTTP post”消息头，消息体的内容则是“GetParameterValues response”；
+
+（7）同（5）、（6）类似，实现acs调用方法“SetParameterValues ”
+
+（8）当acs发出“HTTP response”头部但是消息体为空，意味着断开连接……
+
+#### 1.2 具体的消息内容
+
+Encoding SOAP over HTTP，参考 [Simple Object Access Protocol (SOAP) 1.1 (w3.org)](https://www.w3.org/TR/2000/NOTE-SOAP-20000508/)
+
+
+
+（1）HTTP request 
+
+HTTP post方法，是客户端请求服务器的消息，具体可以是cpe 发送HTTP post 给acs。
+
+```html
+POST /cwmp HTTP/1.1
+Host: acs.example.com
+Authorization: Digest username="user", realm="Restricted Area", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", uri="/protected/resource", response="6629fae49393a05397450978507c4ef1", opaque="5ccc069c403ebaf9f0171e9517f40e41", qop=auth, nc=00000001, cnonce="0a4f113b"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 471
+SOAPAction: "urn:dslforum-org:cwmp-1-0#Inform"
+
+
+<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap-env:Header>
+        <cwmp:ID soap-env:mustUnderstand="1">API_00000001</cwmp:ID>
+    </soap-env:Header>
+    <soap-env:Body>
+        <cwmp:Inform>
+            <DeviceId>
+                <Manufacturer>OEM Manufacturer Name</Manufacturer>
+                <OUI>001122</OUI>
+                <ProductClass>Device Product Class</ProductClass>
+                <SerialNumber>123456789012</SerialNumber>
+            </DeviceId>
+            <Event>
+                <EventStruct>
+                    <EventCode>0 BOOTSTRAP</EventCode>
+                </EventStruct>
+            </Event>
+            <MaxEnvelopes>1</MaxEnvelopes>
+            <CurrentTime>2024-01-01T00:00:00Z</CurrentTime>
+            <RetryCount>0</RetryCount>
+        </cwmp:Inform>
+    </soap-env:Body>
+</soap-env:Envelope>
+```
+
+可以发现http头部，第一行 “POST /cwmp HTTP/1.1”；头部的其他域有
+
+| 域             | 解释           | 数值例子                                                     |
+| -------------- | -------------- | ------------------------------------------------------------ |
+| Host           | 主机名称       | acs.example.com                                              |
+| Authorization  | 认证           | Digest username="user", realm="Restricted Area", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", uri="/protected/resource", response="6629fae49393a05397450978507c4ef1", opaque="5ccc069c403ebaf9f0171e9517f40e41", qop=auth, nc=00000001, cnonce="0a4f113b" |
+| Content-Type   | 内容的类型     | text/xml; charset="UTF-8"                                    |
+| Content-Length | 内容的长度     | 471                                                          |
+| SOAPAction     | SOAP行为的解释 | "urn:dslforum-org:cwmp-1-0#Inform"                           |
+
+下面是对http负荷的分析：
+
+soap封装的内容，一条信封 soap-env:Envelope，信封里面有头部  soap-env:Header 和 主体 soap-env:Body 这两个部分，而主体里面的 cwmp:Inform 则是具体的rpc方法，该方法的数据模型和解释在标准文档的附录A中有解释。
+
+```
+
+```
+
+（2）HTTP response
+
+```xml
+HTTP/1.1 200 OK
+Content-Type: text/xml; charset="utf-8"
+Content-Length: nnnn
+
+<SOAP-ENV:Envelope
+  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   <SOAP-ENV:Body>
+       <m:GetLastTradePriceResponse xmlns:m="Some-URI">
+           <Price>34.5</Price>
+       </m:GetLastTradePriceResponse>
+   </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+```
+
+第二个例子
+
+```xml
+HTTP/1.1 200 OK
+Content-Type: text/xml; charset="utf-8"
+Content-Length: xyz
+<soap:Envelope
+               xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:cwmp="urn:dslforum-org:cwmp-1-2">
+    <soap:Body>
+        <cwmp:Request>
+            <argument>value</argument>
+        </cwmp:Request>
+    </soap:Body>
+</soap:Envelope>
+```
+
+除了第一行 HTTP/1.1 200 OK 有所不一样，其他和 HTTP request大致相同
+
+注意 信封 soap:Envelope 的属性列表
+
+```
+xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:cwmp="urn:dslforum-org:cwmp-1-2"
+```
+
+
+
+
+
+
+
+
+
+### 附录（提问和回答）
+
+#### 附录A ：SOAPAction
+
+cwmp协议中 ，http post消息中的SOAPAction该如何设置，为什么？
+
+在 CWMP (CPE WAN Management Protocol) 中，HTTP POST 消息中的 `SOAPAction` 头字段用于指示请求的具体操作。CWMP 是基于 SOAP (Simple Object Access Protocol) 的协议，用于实现 CPE (Customer Premises Equipment) 和 ACS (Auto Configuration Server) 之间的通信。
+
+##### `SOAPAction` 的作用
+
+`SOAPAction` 头字段在 SOAP 请求中起到标识作用，告诉服务器即将执行的具体操作。这对于服务器来说非常重要，因为它可以根据 `SOAPAction` 的值来决定如何处理请求。如果没有正确设置 `SOAPAction`，服务器可能会拒绝处理请求或返回错误。
+
+##### `SOAPAction` 的设置方式
+
+在 CWMP 协议中，`SOAPAction` 通常设置为一个 URI，该 URI 代表了要执行的具体操作。这些操作通常对应于 CWMP 协议中定义的各种方法。
+
+##### 常见的 `SOAPAction` 值
+
+1. **`Inform`**：
+   ```http
+   SOAPAction: "urn:dslforum-org:cwmp-1-0#Inform"
+   ```
+   用于 CPE 向 ACS 报告其状态或事件。
+
+2. **`SetParameterValues`**：
+   ```http
+   SOAPAction: "urn:dslforum-org:cwmp-1-0#SetParameterValues"
+   ```
+   用于 CPE 设置特定参数的值。
+
+3. **`GetParameterValues`**：
+   ```http
+   SOAPAction: "urn:dslforum-org:cwmp-1-0#GetParameterValues"
+   ```
+   用于 CPE 获取特定参数的值。
+
+4. **`GetParameterNames`**：
+   ```http
+   SOAPAction: "urn:dslforum-org:cwmp-1-0#GetParameterNames"
+   ```
+   用于 CPE 获取参数的名称列表。
+
+5. **`SetParameterAttributes`**：
+   ```http
+   SOAPAction: "urn:dslforum-org:cwmp-1-0#SetParameterAttributes"
+   ```
+   用于 CPE 设置参数的属性。
+
+6. **`GetParameterAttributes`**：
+   ```http
+   SOAPAction: "urn:dslforum-org:cwmp-1-0#GetParameterAttributes"
+   ```
+   用于 CPE 获取参数的属性。
+
+##### 为什么需要设置 `SOAPAction`
+
+1. **操作识别**：服务器通过 `SOAPAction` 头字段来识别客户端请求的具体操作，从而调用相应的处理逻辑。
+2. **安全性**：某些操作可能需要特定的权限或认证，`SOAPAction` 可以帮助服务器进行权限检查。
+3. **路由和分发**：在复杂的系统中，`SOAPAction` 可以帮助服务器将请求路由到正确的处理模块或服务。
+
+##### 示例
+
+以下是一个完整的 HTTP POST 请求示例，其中包含 `SOAPAction` 头字段：
+
+```http
+POST /cwmp HTTP/1.1
+Host: acs.example.com
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 471
+SOAPAction: "urn:dslforum-org:cwmp-1-0#Inform"
+
+<?xml version="1.0"?>
+<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap-env:Header>
+        <cwmp:ID soap-env:mustUnderstand="1">API_00000001</cwmp:ID>
+    </soap-env:Header>
+    <soap-env:Body>
+        <cwmp:Inform>
+            <DeviceId>
+                <Manufacturer>OEM Manufacturer Name</Manufacturer>
+                <OUI>001122</OUI>
+                <ProductClass>Device Product Class</ProductClass>
+                <SerialNumber>123456789012</SerialNumber>
+            </DeviceId>
+            <Event>
+                <EventStruct>
+                    <EventCode>0 BOOTSTRAP</EventCode>
+                </EventStruct>
+            </Event>
+            <MaxEnvelopes>1</MaxEnvelopes>
+            <CurrentTime>2024-01-01T00:00:00Z</CurrentTime>
+            <RetryCount>0</RetryCount>
+        </cwmp:Inform>
+    </soap-env:Body>
+</soap-env:Envelope>
+```
+
+在这个示例中，`SOAPAction` 被设置为 `"urn:dslforum-org:cwmp-1-0#Inform"`，表示这是一个 `Inform` 请求，用于 CPE 向 ACS 报告其状态。
+
+
+
+
+
+
+
+
+
+```xml
+<soap:Envelope
+               xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
+    <soap:Header>
+        <cwmp:ID soap:mustUnderstand="1">1234</cwmp:ID>
+    </soap:Header>
+    <soap:Body>
+        <soap:Fault>
+            <faultcode>Client</faultcode>
+            <faultstring>CWMP fault</faultstring>
+            <detail>
+                <cwmp:Fault>
+                    <FaultCode>9000</FaultCode>
+                    <FaultString>Upload method not supported</FaultString>
+                </cwmp:Fault>
+            </detail>
+        </soap:Fault>
+    </soap:Body>
+</soap:Envelope>
+```
+

@@ -52,12 +52,13 @@ void link_destory_node(link_node_t *node);
 void link_destory_node_and_data(link_node_t *node);
 link_obj_t *link_create();
 void link_destory(link_obj_t *link);
+void link_destroy_and_data(link_obj_t *link);
 void link_clear(link_obj_t *link);
 
 
 int link_append_node(link_obj_t *link, link_node_t *node);
 int link_append_by_node(link_obj_t *link);
-int link_append_by_malloc(link_obj_t *link, int dataLen);
+void *link_append_by_malloc(link_obj_t *link, int dataLen);
 int link_append_by_set_pointer(link_obj_t *link, void *data);
 int link_append_by_set_value(link_obj_t *link, void *data, int dataLen);
 int link_insert(link_obj_t *link, link_node_t *node, int index);
