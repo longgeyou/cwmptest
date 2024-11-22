@@ -394,6 +394,53 @@ int httpmsg_client_digest_auth_append(char **msg, int maxSize, int *usedLen, cli
 }
 
 
+
+/*==============================================================
+                        特定的消息
+==============================================================*/
+//cpe 给 acs 发送 hello 信息（用于探测是否要摘要认证）
+void httpmsg_client_say_hello(char *out, int len)
+{
+    char buf1024[1024] = {0};
+    char header[] =    "GET /cwmp HTTP/1.1\n"
+                        "Host: example.com\n"
+                        "Content-Type: text/xml; charset=\"UTF-8\"\n"
+                        "Content-Length: %d\n\n";
+
+    char content[] =    "<html>\n"
+                        "<head>\n"
+                        "<title>Unauthorized</title>\n"
+                        "</head>\n"
+                        "<body>\n"
+                        "<h1>hello</h1>\n"
+                        "<p>hello cwmp</p>\n"
+                        "</body>\n"
+                        "</html>";
+
+    snprintf(buf1024, 1024, header, strlen(content));                    
+    snprintf(out, len, "%s%s", buf1024, content);
+    
+}
+
+//简单的http回复 （可用于摘要认证回复）
+void httpmsg_server_response_hello(char *out, int len)
+{
+    char buf1024[1024] = {0};
+    char header[] =    "HTTP/1.1 200 OK\n"
+                        "Host: cwmp.example.com\n"
+                        "Content-Type: text/xml; charset=\"UTF-8\"\n"
+                        "Content-Length: %d\n\n";
+
+    char content[] =    "hello visitor!";
+
+    snprintf(buf1024, 1024, header, strlen(content));                    
+    snprintf(out, len, "%s%s", buf1024, content);  
+}
+
+
+
+
+
 /*==============================================================
                         测试
 ==============================================================*/

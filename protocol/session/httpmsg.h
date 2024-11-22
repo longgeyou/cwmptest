@@ -52,4 +52,10 @@ int httpmsg_client_basic_auth_append(char **msg, int maxSize, int *usedLen, clie
 int httpmsg_client_digest_auth_append(char **msg, int maxSize, int *usedLen, client_auth_obj_t *auth);
 
 
+//特定的http信息
+void httpmsg_client_say_hello(char *out, int len);
+void httpmsg_server_response_hello(char *out, int len);
+
+
+
 #endif

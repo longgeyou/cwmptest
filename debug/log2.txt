@@ -1,114 +1,52 @@
 
 ======================log start=======================
-[info 0][Tue Oct 29 16:41:03 2024]file:protocol/session/http.c  fun:http_test  line:2161 
-http_test start ......
+等待消息队列非空...
 ---->POLL    IN  ready:0
-
----------------------------------------------------http_data_accept
-status:0 dataLen:54 dataIn:
-【GET /protected/resource HTTP/1.1
-Host: example.com
-
-
-
-】
-
-
----------------------------------------------------http_data_accept
-status:1 dataLen:54 dataIn:
-【GET /protected/resource HTTP/1.1
-Host: example.com
-
-
-
-】
-
 查找http第一行并解析 成功
-
----------------------------------------------------http_data_accept
-status:2 dataLen:21 dataIn:
-【Host: example.com
-
-
-
-】
-
 解析http头部 成功
 ============================show head
-num:1
+num:3
 --------------show line--------------
 name:Host
 key:example.com 
-
----------------------------------------------------http_data_accept
-status:3 dataLen:3 dataIn:
-【
-
-
-】
-
+--------------show line--------------
+name:Content-Type
+key:text/xml 
+key:charset value:"UTF-8" 
+--------------show line--------------
+name:Content-Length
+key:105 
 认证失败，要求 摘要认证...
+查找http第一行并解析 失败
 ---->POLL    IN  ready:0
----->POLL    IN  ready:0
-
----------------------------------------------------http_data_accept
-status:1 dataLen:255 dataIn:
-【
-
-
-GET /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=9cece655bd46f1b16405ec5e668d93f6, uri="/cwmp", response="feb7166c7f54989a38c609bdae9f21cd", opaque=27f5590536307a48357877f35d26a39b, qop=auth-int, nc=10, cnonce="9dbcfb68f"
-
-】
-
 查找http第一行并解析 成功
-
----------------------------------------------------http_data_accept
-status:2 dataLen:529 dataIn:
-【Authorization: Digest username="admin", realm=/cwmp, nonce=9cece655bd46f1b16405ec5e668d93f6, uri="/cwmp", response="feb7166c7f54989a38c609bdae9f21cd", opaque=27f5590536307a48357877f35d26a39b, qop=auth-int, nc=10, cnonce="9dbcfb68f"
-
-GET /CWMP HTTP/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=9cece655bd46f1b16405ec5e668d93f6, uri="/CWMP", response="3a9e099d90a6a85683cf0da4bfe70408", opaque=27f5590536307a48357877f35d26a39b, qop=auth-int, nc=11, cnonce="d0f6cc72c"
-Content-Type: text/html
-Content-Length: 137
-
-】
-
 解析http头部 成功
 ============================show head
-num:1
+num:2
 --------------show line--------------
 name:Authorization
 key:Digest username value:"admin" 
 key:realm value:/cwmp 
-key:nonce value:9cece655bd46f1b16405ec5e668d93f6 
+key:nonce value:e76c60ade96b6b7888c37b3503588dbd 
 key:uri value:"/cwmp" 
-key:response value:"feb7166c7f54989a38c609bdae9f21cd" 
-key:opaque value:27f5590536307a48357877f35d26a39b 
+key:response value:"d68e6d47d148a09f9dbfe5add1ebb446" 
+key:opaque value:fdda18857a173a8d4c454752e839019c 
 key:qop value:auth-int 
 key:nc value:10 
-key:cnonce value:"9dbcfb68f" 
-
----------------------------------------------------http_data_accept
-status:3 dataLen:297 dataIn:
-【
-GET /CWMP HTTP/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=9cece655bd46f1b16405ec5e668d93f6, uri="/CWMP", response="3a9e099d90a6a85683cf0da4bfe70408", opaque=27f5590536307a48357877f35d26a39b, qop=auth-int, nc=11, cnonce="d0f6cc72c"
-Content-Type: text/html
-Content-Length: 137
-
-】
-
+key:cnonce value:"2288fd5ec" 
+--------------show line--------------
+name:Content-Length
+key:3 
 存在 Authorization，可以开始认证 len:13 result:0 str:Authorization name:Authorization
 摘要认证开始 ...
-  客户端上来的 nonce:9cece655bd46f1b16405ec5e668d93f6 本地:9cece655bd46f1b16405ec5e668d93f6
+  客户端上来的 nonce:e76c60ade96b6b7888c37b3503588dbd 本地:e76c60ade96b6b7888c37b3503588dbd
   本地nc值:0 报文nc值:10
-[info 1][Tue Oct 29 16:41:08 2024]file:protocol/session/http.c  fun:__http_head_pro  line:952 
+[info 0][Fri Nov 22 21:39:27 2024]file:protocol/session/http.c  fun:__http_head_pro  line:823 
   用户名：admin 密码：123456
 
 计算摘要值所需参数：
-pszNonce:9cece655bd46f1b16405ec5e668d93f6
-pszCNonce:9dbcfb68f
+pszNonce:e76c60ade96b6b7888c37b3503588dbd
+pszCNonce:2288fd5ec
 pszUser:admin
 pszRealm:/cwmp
 pszPass:123456
@@ -117,78 +55,20 @@ szNonceCount:00000010
 pszMethod:GET
 pszQop:auth-int
 pszURI:/cwmp
-Response = feb7166c7f54989a38c609bdae9f21cd client Response:feb7166c7f54989a38c609bdae9f21cd
+Response = d68e6d47d148a09f9dbfe5add1ebb446 client Response:d68e6d47d148a09f9dbfe5add1ebb446
 摘要认证成功！
 【摘要认证】 最终停下的步骤 4
-
----------------------------------------------------http_data_accept
-status:1 dataLen:297 dataIn:
-【
-GET /CWMP HTTP/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=9cece655bd46f1b16405ec5e668d93f6, uri="/CWMP", response="3a9e099d90a6a85683cf0da4bfe70408", opaque=27f5590536307a48357877f35d26a39b, qop=auth-int, nc=11, cnonce="d0f6cc72c"
-Content-Type: text/html
-Content-Length: 137
-
-】
-
-查找http第一行并解析 成功
-
----------------------------------------------------http_data_accept
-status:2 dataLen:277 dataIn:
-【Authorization: Digest username="admin", realm=/cwmp, nonce=9cece655bd46f1b16405ec5e668d93f6, uri="/CWMP", response="3a9e099d90a6a85683cf0da4bfe70408", opaque=27f5590536307a48357877f35d26a39b, qop=auth-int, nc=11, cnonce="d0f6cc72c"
-Content-Type: text/html
-Content-Length: 137
-
-】
-
-解析http头部 成功
-============================show head
-num:3
---------------show line--------------
-name:Authorization
-key:Digest username value:"admin" 
-key:realm value:/cwmp 
-key:nonce value:9cece655bd46f1b16405ec5e668d93f6 
-key:uri value:"/CWMP" 
-key:response value:"3a9e099d90a6a85683cf0da4bfe70408" 
-key:opaque value:27f5590536307a48357877f35d26a39b 
-key:qop value:auth-int 
-key:nc value:11 
-key:cnonce value:"d0f6cc72c" 
---------------show line--------------
-name:Content-Type
-key:text/html 
---------------show line--------------
-name:Content-Length
-key:137 
-
----------------------------------------------------http_data_accept
-status:3 dataLen:1 dataIn:
-【
-】
-
-存在 Authorization，可以开始认证 len:13 result:0 str:Authorization name:Authorization
-摘要认证开始 ...
-  客户端上来的 nonce:9cece655bd46f1b16405ec5e668d93f6 本地:9cece655bd46f1b16405ec5e668d93f6
-  本地nc值:10 报文nc值:11
-[info 2][Tue Oct 29 16:41:08 2024]file:protocol/session/http.c  fun:__http_head_pro  line:952 
-  用户名：admin 密码：123456
-
-计算摘要值所需参数：
-pszNonce:9cece655bd46f1b16405ec5e668d93f6
-pszCNonce:d0f6cc72c
-pszUser:admin
-pszRealm:/cwmp
-pszPass:123456
-pszAlg:md5
-szNonceCount:00000011
-pszMethod:GET
-pszQop:auth-int
-pszURI:/CWMP
-Response = 3a9e099d90a6a85683cf0da4bfe70408 client Response:3a9e099d90a6a85683cf0da4bfe70408
-摘要认证成功！
-【摘要认证】 最终停下的步骤 4
+----->__get_http_payload_len payloadNeedLen:3
+----->http_status_data_pro 开始 ......
+【123】
+开始发送条件变量....
+开始处理消息队列表...
+---->http_status_data_pro 完成, retHttpMsg :0
+-->msgData len:3 msg:
+【123】
+开始发送 http 的回复信息
+等待消息队列非空...
 ---->POLL    IN  ready:0
-[info 3][Tue Oct 29 16:41:10 2024]file:protocol/transport/tcp.c  fun:thread_tcp_transceiver  line:393 
-i=0 [192.168.1.20-8082] 断开连接
+[info 1][Fri Nov 22 21:39:35 2024]file:protocol/transport/tcp.c  fun:thread_tcp_transceiver  line:409 
+i=0 [192.168.1.20-8081] 断开连接
 

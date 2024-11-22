@@ -414,7 +414,7 @@ extern const rpc_fault_code_t acs_fault_code[];
 #define RPC_FAULT_PARAMETER_NAME_STRING_LENGTH 128
 typedef struct rpc_SetParameterValuesFault_t{
     char ParameterName[RPC_FAULT_PARAMETER_NAME_STRING_LENGTH];
-    int FaultCode;
+    int FaultCode;  
     char FaultString[RPC_FAULT_STRING_LENGTH + 8]; 
 }rpc_SetParameterValuesFault_t;
     
@@ -426,6 +426,14 @@ typedef struct rpc_fault_t{
     char FaultString[RPC_FAULT_STRING_LENGTH + 8]; 
     rpc_SetParameterValuesFault_t SetParameterValuesFault;   
 }rpc_fault_t;
+
+typedef struct rpc_soap_fault_t{
+    char FaultCode[32];  // soap:Fault 值为 Client 或者 Server
+    char FaultString[RPC_FAULT_STRING_LENGTH + 8];  
+}rpc_soap_fault_t;
+
+
+
 
 
 

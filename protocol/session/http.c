@@ -112,11 +112,18 @@ http_server_t *http_create_server(char *ipv4, int port)
         user->sendReady = 0; 
         pthread_mutex_init(&(user->sendMutex), NULL);
         pthread_cond_init(&(user->sendCond), NULL);
- 
+
+        //1.4 信号量
+        sem_init(&(user->semHttpMsgReady), 0, 0);
+        sem_init(&(user->semHttpMsgRecvComplete), 0, 0);
+
+        //id号
+        user->id = i;
     }
     
     //2、初始化信号量
     sem_init(&(http->semSendReady), 0, 0);
+    
     
 
    //3、用于认证的账户表单
@@ -128,22 +135,22 @@ http_server_t *http_create_server(char *ipv4, int port)
     return http;
 }
 
-////摧毁一个http server
-//void http_destory_server(http_server_t *http)
-//{
-//    if(http == NULL)return;
-//    int i;
-//
-//    //释放http user 成员
-//    for(i = 0; i < HTTP_USER_NUM; i++)
-//    {
-//        ;//if(http->user[i].head.keyvalue != NULL)
-//            //keyvalue_obj_destory(http->user[i].head.keyvalue);
-//    }
-//        
-//    //释放自己
-//    POOL_FREE(http);   
-//}
+//摧毁一个http server
+void http_destory_server(http_server_t *http)
+{
+    if(http == NULL)return;
+    int i;
+
+    //释放http user 成员
+    for(i = 0; i < HTTP_USER_NUM; i++)
+    {
+        ;//if(http->user[i].head.keyvalue != NULL)
+            //keyvalue_obj_destory(http->user[i].head.keyvalue);
+    }
+        
+    //释放自己
+    POOL_FREE(http);   
+}
 
 //创建一个http client
 
@@ -176,24 +183,40 @@ http_client_t *http_create_client()
     //LOG_INFO("client auth: nonce:%s opaque:%s\n", client->auth.nonce, client->auth.opaque);
 
     //2、发送
-
-    
+    client->resend = 0;
+    sem_init(&(client->semSendComplent), 0, 0);
+    pthread_mutex_init(&(client->sendMutex), NULL);
+        
     return client;
 }
 
-////摧毁一个http client
-//void http_destory_client(http_client_t *client)
-//{
-//    if(client == NULL)return ;
-//
-//    //int i;
-//    //释放 成员
-//    
-//    
-//                    
-//    //释放自己
-//    POOL_FREE(client);
-//}
+//摧毁一个http client
+void http_destory_client(http_client_t *client)
+{
+    if(client == NULL)return ;
+
+    //int i;
+    //释放 成员
+    
+    
+                    
+    //释放自己
+    POOL_FREE(client);
+}
+
+
+//辅助应用：获取http user 的id号
+int httpUser_get_id(http_server_t *server, httpUser_obj_t *user)
+{
+    if(server == NULL || user == NULL)return -1;
+    int i;
+    for(i = 0; i < HTTP_USER_NUM; i++)
+    {
+        if(user == &(server->user[i]))
+            return i;
+    }
+    return -1;
+}
 
 
 /*==============================================================
@@ -441,6 +464,8 @@ static int __http_message_head_parse(httpUser_obj_t *user, int *endPos)
 
 
 //------------------------------------------------------------------------发送相关
+//这里把发送搞那么复杂，是考虑到可能要发送大文件；
+//后面需要简化，比如用队列 queue 来替代
 typedef struct http_send_arg_t{
     http_server_t *http;
     int userId;
@@ -565,9 +590,25 @@ int http_send_str(http_server_t *http, int userId, char *str)
 {
     return http_send(http, userId, (void *)str, strlen(str) + 1);
 }
+//用户发送
+int httpUser_send(http_server_t *http, httpUser_obj_t *user, void *data, int dataLen)
+{
+    int id = httpUser_get_id(http, user);
+
+    if(id >= 0)
+        return http_send(http, id, data, dataLen);
+        
+    return -1;
+}
+//用户发送字符串
+int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str)
+{
+    return httpUser_send(http, user, (void *)str, strlen(str) + 1);
+}
 
 
-//------------------------------------------------------------------------发送线相关
+
+//------------------------------------------------------------------------发送 相关
 
 
 
@@ -938,6 +979,78 @@ int http_send_str(http_server_t *http, int userId, char *str)
     
 }
 
+//http 负荷长度
+int __get_http_payload_len(httpUser_obj_t *user)
+{
+    //LOG_SHOW("__http_payload_recv 开始 ......\n");
+
+    if(user == NULL)return -1;
+    int contentLen;
+
+    
+    char lenStr[] = "Content-Length";
+   
+    link_obj_t *link = user->head.parse->link;
+
+    //httphead_show(user->head.parse);
+
+    contentLen = 0;
+
+    LINK_FOREACH(link, probe)
+    {
+        httphead_line_t *iter = (httphead_line_t *)(probe->data);        
+
+        //LOG_SHOW("name:%s  lenStr:%s\n", iter->name, lenStr);   
+        if(probe->en == 1 && strcmp(iter->name, lenStr) == 0) //查看是否存在 "Content-Length"
+        {
+           if((iter->keyvalue->list->array)[0]->en == 1)
+           {
+               //得到第一个 keyvalue 值，一般就是长度
+               keyvalue_data_t *kv =(keyvalue_data_t *)((iter->keyvalue->list->array)[0]->data);
+               if(kv->keyEn == 1)
+               {
+                    contentLen = atoi(kv->key);
+                    //LOG_SHOW("---->kv->key:%s contentLen:%d\n", kv->key, contentLen);    
+               }
+
+           }
+           break;
+           
+        }
+            
+    } 
+  
+    
+    return contentLen;
+}
+
+//把负荷内容存入缓存（这里没有考虑到负荷内容过大的情况，如果是负荷比较大，
+//例如下载文件，那么需要有新的方式，以后优化）
+int __http_payload_recv(httpUser_obj_t *user, int needLen, int *endPos)
+{
+    //int ret;
+    if(user == NULL || endPos == NULL)return -1;    //参数错误
+    if(needLen < 0)return -2;   //其他意外情况
+
+    http_payload_t *payload = &(user->payload);
+
+    if(user->bufLen >= needLen)  //完成接收
+    {
+        memcpy(payload->buf + payload->len, user->buf, needLen);
+        *endPos = needLen;
+        payload->len += needLen;
+        return 1;
+    }
+    else if(user->bufLen < needLen && needLen > 0)  //部分接收
+    {
+        memcpy(payload->buf, user->buf, user->bufLen);
+        *endPos = user->bufLen;
+        payload->len += user->bufLen;
+        return 0;
+    }
+    
+    return -2;  //其他意外情况
+}
 
 
 /*==============================================================
@@ -959,6 +1072,7 @@ int http_data_accept(http_server_t *http, int userId)
     int len;
     //int pos;
     int endPos;
+    static int payloadNeedLen = 0;  //需要静态类型，用于重入
     
 
 
@@ -985,8 +1099,8 @@ int http_data_accept(http_server_t *http, int userId)
     }
     pthread_mutex_unlock(&(tcpUser->mutex));
 
-    LOG_SHOW("\n---------------------------------------------------http_data_accept\n");
-    LOG_SHOW("status:%d dataLen:%d dataIn:\n【%s】\n\n", httpUser->status, httpUser->bufLen, httpUser->buf);
+    //LOG_SHOW("\n---------------------------------------------------http_data_accept\n");
+    //LOG_SHOW("status:%d dataLen:%d dataIn:\n【%s】\n\n", httpUser->status, httpUser->bufLen, httpUser->buf);
     
     
     //状态机
@@ -1090,7 +1204,10 @@ int http_data_accept(http_server_t *http, int userId)
                 {
                     LOG_SHOW("解析http头部 成功\n");
                     httphead_show(httpUser->head.parse);
-                 
+
+                    memmove(httpUser->buf, httpUser->buf + 1, httpUser->bufLen - 1);   //去掉空行
+                    httpUser->bufLen--;
+                    
                     //LOG_INFO("http 头部处理完毕 ...");
                     httpUser->status = http_status_head_pro;
                     http_data_accept(http, userId); //状态转移，然后重入
@@ -1103,35 +1220,114 @@ int http_data_accept(http_server_t *http, int userId)
         { 
             ret = __http_head_pro(http, userId);
 
-            
-//            if(ret == RET_FAILD)    //认证失败或者其他
-//            {   
-//                httpUser->status = http_status_recv_head_find;  //状态转移至 http_status_recv_head_find，然后重入
-//                http_data_accept(http, userId); 
-//            }
-//            else
-//            {
-//                httpUser->status = http_status_recv_head_find;  //测试
-//                http_data_accept(http, userId); 
-//            }
+            //LOG_SHOW("http_status_head_pro 结果 ret:%d\n", ret);
+            if(ret == RET_OK)    //成功
+            {                   
+                payloadNeedLen = __get_http_payload_len(httpUser);  //获取负载长度，一般在http头部的 "Content-Length"后面
+                LOG_SHOW("----->__get_http_payload_len payloadNeedLen:%d\n", payloadNeedLen);
 
-            httpUser->status = http_status_recv_head_find;  //测试用
+                if(payloadNeedLen < 0)
+                {
+                    LOG_ALARM("payloadLen < 0");
+                    payloadNeedLen = 0;
+                }
+                else if(payloadNeedLen > HTTP_PAYLOAD_BUF_SIZE)
+                {
+                    LOG_ALARM("负载长度超过缓存容量，需要额外处理");
+                    payloadNeedLen = HTTP_PAYLOAD_BUF_SIZE;
+                }
+                
+                httpUser->payload.len = 0; //清空净荷缓存区   
+                memset(httpUser->payload.buf, '\0', httpUser->payload.len);
+                
+                httpUser->status = http_status_recv_payload; 
+                http_data_accept(http, userId);                
+            }
+            else //失败
+            {
+                httpUser->status = http_status_recv_head_find;  //状态转移至 http_status_recv_head_find，然后重入
+                http_data_accept(http, userId); 
+            }
 
+            //httpUser->status = http_status_recv_head_find;  //测试用
             
             
+            //semHttpMsgReady
         }break;
         case http_status_recv_payload:
         {
             
+            //LOG_SHOW("----->payloadNeedLen:%d\n", payloadNeedLen);
+            ret = __http_payload_recv(httpUser, payloadNeedLen, &endPos);
+            //LOG_SHOW("----->ret:%d\n", ret);
+            if(ret == 0)    //部分接收
+            {
+                payloadNeedLen -= httpUser->bufLen;
+                httpUser->bufLen = 0;                   
+            }
+            else if(ret == 1)   //完成接收
+            {
+                //去掉处理完成的字符
+                if(endPos >= 0)
+                {
+                    if(endPos >= httpUser->bufLen - 1)endPos = httpUser->bufLen - 1;    
+                    httpUser->bufLen = httpUser->bufLen - endPos - 1;   
+                    memmove(httpUser->buf, httpUser->buf + endPos + 1, httpUser->bufLen);   
+                    httpUser->buf[httpUser->bufLen] = '\0';   //也许是字符串？   
+                }
+
+                httpUser->status = http_status_data_pro;    //状态转移
+                http_data_accept(http, userId);
+            }
+            else if(ret == -1)
+            {
+                LOG_ALARM("__http_payload_recv 错误");
+                httpUser->status = http_status_recv_head_find;    //状态转移
+                //http_data_accept(http, userId);
+            }
+
+
         }break;
         case http_status_data_pro:
         {
+            httpUser->payload.buf[httpUser->payload.len] = '\0';
+            LOG_SHOW("----->http_status_data_pro 开始 ......\n【%s】\n", httpUser->payload.buf);
+
+            httpUser->retHttpMsg = 0;
+            sem_post(&(httpUser->semHttpMsgReady));    //发送信号 上层会接收到，目标是会话层session，
+                                                       //用于处理 soap信封
+            
+            sem_wait(&(httpUser->semHttpMsgRecvComplete));  //等待对方完成，一般来说是把信息放到 session 的
+                                                            //消息队列，如果队列满了，可能就阻塞，或者传回
+                                                            //队列已满的消息，例如返回值
+            LOG_SHOW("---->http_status_data_pro 完成, retHttpMsg :%d\n", httpUser->retHttpMsg );                                                
+            if(httpUser->retHttpMsg == -1)
+            {
+                //LOG_INFO("session 消息队列满了，来不及处理\n");
+            }
+            else if(httpUser->retHttpMsg == 0)
+            {
+                //LOG_INFO("已经存入消息队列\n");
+                httpUser->status = http_status_end;    //状态转移
+                http_data_accept(http, userId);
+            }
+            else if(httpUser->retHttpMsg == -2) 
+            {
+                //LOG_INFO("其他情况\n");;  
+            }
+                                
+        }break;
+        case http_status_end:
+        {
+            //LOG_INFO("---->http_status_data_end 完成\n");
+            //httpUser->status = http_status_start;    //状态转移
+            //http_data_accept(http, userId);
             
         }break;
     }
     
-    //httpUser->isCompleted = 1;     //处理完成的标志
-    return RET_OK;
+    
+    return RET_OK;  //注意：重入可能会导致的问题……
 }
 
 
@@ -1251,10 +1447,10 @@ int http_server_start(http_server_t *http)
 
     
     ret = pthread_create(&(http->data_accept), NULL, thread_http_data_recv, (void *)http);
-    if(ret != 0){LOG_ALARM("thread_http_data_recv"); return ret;};
+    if(ret != 0){LOG_ALARM("thread_http_data_recv"); return ret;};
 
     ret = pthread_create(&(http->data_send), NULL, thread_http_data_send, (void *)http);
-    if(ret != 0){LOG_ALARM("thread_http_data_send"); return ret;};
+    if(ret != 0){LOG_ALARM("thread_http_data_send"); return ret;};
     
 
     return RET_OK;
@@ -1490,7 +1686,8 @@ static int __http_client_msg_recv_pro(http_client_t *client)
 
     //httphead_line_t *line;
     keyvalue_obj_t *keyvalue;
-    enum {_isBasic, _isDigest, _noAuth} authType = _noAuth;
+    enum {_isBasic, _isDigest, _noAuth} authType = _noAuth; //摘要认证这部分的逻辑比较复杂，
+                                                            //需要重构 http 模块才能解决
 #define BUF_KEY_SIZE 32
     char bufkey[BUF_KEY_SIZE + 8] = {0};
 #define BUF_AUTH_SIZE 3072      //注意大小
@@ -1500,6 +1697,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
     int len;
     int pos;
     int lenBasic, lenDigest;
+    //int ret;
     
     LOG_SHOW(" 客户端 http 报文接收处理\n");
 
@@ -1512,6 +1710,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
         LOG_ALARM("没有可用的头部解析");
         return RET_FAILD;
     }
+    
     if(client->parse.code == 401 && strcmp(client->parse.reason, HTTP_CLIENT_MSG_AUTH_REASON) == 0)  //需要认证
     {
         
@@ -1713,7 +1912,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
             
             strcpy(client->auth.uri, pszURI);
             strcpy(client->auth.response, Response);
-            //------------------------------------------------------------------------------
+            //------------------------------------------------------------------------------ 测试
 
             pos = 0;   
             p = bufAuth;
@@ -1747,9 +1946,15 @@ static int __http_client_msg_recv_pro(http_client_t *client)
 //
 //            tcp_client_send(client->tcp, tmpStr2, tmpCnt );
             //-------------------------------------
+            LOG_SHOW("------------->pos:%d len:%d\n", pos, len);
             
-            bufAuth[pos++] = '\n';
-            bufAuth[pos] = '\0';
+            p += pos;
+            len = snprintf(bufAuth + pos, BUF_AUTH_SIZE - pos, "Content-Length:3\n\n123"); //??
+            //len = snprintf(p, BUF_AUTH_SIZE - pos, "Content-Length:0\n\n"); //失败 p ??
+            pos += len;
+            
+            //bufAuth[pos] = '\n';
+            //bufAuth[pos+1] = '\0';
             
             LOG_SHOW("发送认证测试 长度:%d 内容:%s\n", pos, bufAuth);
             tcp_client_send(client->tcp, bufAuth, pos);
@@ -1914,6 +2119,10 @@ int http_client_accept(http_client_t *client)
         {
             ;
         }break;
+        case http_status_end:
+        {
+            ;
+        }break;
     }    
 
     return RET_OK;
@@ -1948,9 +2157,6 @@ void *thread_http_client_recv(void *in)
 }
 
 
-
-
-
 //http 客户端开启
 int http_client_start(http_client_t *client, char *ipv4, int port, char *targetIpv4, int targetPort)
 {
@@ -1960,22 +2166,110 @@ int http_client_start(http_client_t *client, char *ipv4, int port, char *targetI
     client->tcp = tcp_client_create(ipv4, port);  
 
     ret = tcp_client_start(client->tcp, targetIpv4, targetPort);
-     if(ret != 0){LOG_ALARM("tcp_client_start"); return ret;}
+     if(ret != 0){LOG_ALARM("tcp_client_start"); return ret;}
     
     ret = pthread_create(&(client->dataAccept), NULL, thread_http_client_recv, (void *)client);
-    if(ret != 0){LOG_ALARM("thread_http_client_recv"); return ret;}
+    if(ret != 0){LOG_ALARM("thread_http_client_recv"); return ret;}
 
 
     return RET_OK;
 }
 
 
+#if 0
+//客户端信息发送线程
+typedef struct __client_send_arg_t{
+    http_client_t *client;
+    char *msg;
+    int msgLen;
+}__client_send_arg_t;
+
+
+void *thread_http_client_send(void *in)
+{
+    if(in == NULL)
+    {
+        LOG_ALARM("thread_http_client_send");
+        return NULL;
+    }
+    
+    __client_send_arg_t *arg = (__client_send_arg_t *)in;
+    
+    if(arg->client == NULL)
+    {
+        LOG_ALARM("arg->client is NULL");
+        return NULL;
+    }
+    
+    tcp_client_send(arg->client->tcp, arg->msg, arg->msgLen);
+    
+    while(1)
+    {
+        sem_wait(&(arg->client->semSendComplent));
+
+
+        LOG_INFO("发送完成， resend:%d\n", arg->client->resend);
+
+    }
+
+    //释放缓存
+    POOL_FREE(arg->msg);
+    
+    return NULL;
+}
+
+
+//客户端发送数据
+#define CLIENT_SEND_MAX_LEN 4096
+int http_client_send(http_client_t *client, char *msg, int size)
+{
+    
+    int ret;
+
+    if(size >= CLIENT_SEND_MAX_LEN - 1)
+    {
+        LOG_ALARM("客户端发送失败：发送的内容超过%d字节", CLIENT_SEND_MAX_LEN);
+    }
+
+    //开辟缓存
+    char *sendTmpBuf = (char *)POOL_MALLOC(CLIENT_SEND_MAX_LEN);
+    memcpy(sendTmpBuf, msg, size + 1);
+    
+    if(sendTmpBuf == NULL)
+    {
+        LOG_ALARM("为了发送数据而欲分配4096字节内存，失败");
+        return RET_FAILD;
+    }
+
+
+    __client_send_arg_t arg = {
+        .client = client,
+        .msg = sendTmpBuf,
+        .msgLen = size
+    };
+    //开启发送线程
+    ret = pthread_create(&(client->dataSend), NULL, thread_http_client_send, (void *)(&arg));
+    if(ret != 0){LOG_ALARM("thread_http_client_send"); return ret;}
+
+    return RET_OK;
+}
+#endif
+
+
+
+//暂时用简单的方式实现
+int http_client_send(http_client_t *client, char *msg, int size)
+{
+    return tcp_client_send(client->tcp, msg, size);  
+}
+
+
+
+
 
 /*==============================================================
                         测试
 ==============================================================*/
-
-
 void http_test()
 {
 
@@ -1989,45 +2283,6 @@ void http_test()
     for(;;);
     
 }
-
-
-
-void http_client_test(char *ipv4, int port, char *targetIpv4, int targetPort)
-{
-
-    http_client_t *client = http_create_client();
-
-    if(RET_OK != http_client_start(client, ipv4, port, targetIpv4, targetPort))return; 
-
-    LOG_SHOW("http 客户端开启 start ......\n");
-    //pool_show();
-    
-//    char sendStr[] = "GET /protected/resource HTTP/1.1\n"
-//                "Host: example.com\n"
-//                "Authorization: Digest username=\"user\", "
-//                "realm=\"Restricted Area\", "
-//                "nonce=\"af8c7760297db973dfbbbe1d268cb6bd\", "
-//                "uri=\"/protected/resource\", "
-//                "response=\"6629fae49393a05397450978507c4ef1\", "
-//                "opaque=\"8c85f23cbe747fe648bb2d130f2986a3\", "
-//                "qop=auth, "
-//                "nc=00000101, "
-//                "cnonce=\"0a4f113b\" "
-//                "\n\n";
-                
-    char sendStr[] = "GET /protected/resource HTTP/1.1\n"
-                "Host: example.com\n"
-                "\n\n\n";
-
-    tcp_client_send(client->tcp, sendStr, strlen(sendStr));
-    //tcp_client_send(client->tcp, "123", 3);
-    
-    
-
-    for(;;);
-    
-}
-
 
 
 void http_other_test()
@@ -2072,5 +2327,100 @@ void http_other_test()
 //
 //    LOG_SHOW("ret:%d endpos:%d len:%d %c%c%c\n", ret, endPos, p[endPos - 1], len, p[endPos], p[endPos + 1]);
 }
+
+
+
+void http_client_test(char *ipv4, int port, char *targetIpv4, int targetPort)
+{
+
+    http_client_t *client = http_create_client();
+
+    if(RET_OK != http_client_start(client, ipv4, port, targetIpv4, targetPort))return; 
+
+    LOG_SHOW("http 客户端开启 start ......\n");
+    //pool_show();
+    
+//    char sendStr[] = "GET /protected/resource HTTP/1.1\n"
+//                "Host: example.com\n"
+//                "Authorization: Digest username=\"user\", "
+//                "realm=\"Restricted Area\", "
+//                "nonce=\"af8c7760297db973dfbbbe1d268cb6bd\", "
+//                "uri=\"/protected/resource\", "
+//                "response=\"6629fae49393a05397450978507c4ef1\", "
+//                "opaque=\"8c85f23cbe747fe648bb2d130f2986a3\", "
+//                "qop=auth, "
+//                "nc=00000101, "
+//                "cnonce=\"0a4f113b\" "
+//                "\n\n";
+                
+    char sendStr[] = "GET /protected/resource HTTP/1.1\n"
+                "Host: example.com\n"
+                "\n\n\n";
+
+    tcp_client_send(client->tcp, sendStr, strlen(sendStr));
+    //tcp_client_send(client->tcp, "123", 3);
+    
+    
+
+    for(;;);
+    
+}
+
+
+void http_client_test2(char *ipv4, int port, char *targetIpv4, int targetPort)
+{
+
+    http_client_t *client = http_create_client();
+
+    if(RET_OK != http_client_start(client, ipv4, port, targetIpv4, targetPort))return; 
+
+    LOG_SHOW("http 客户端开启 start ......\n");
+   
+                
+    char headerStr[] =  "POST /cwmp HTTP/1.1\n"
+                        "Host: acs.example.com\n"
+                        "Content-Type: text/xml; charset=\"UTF-8\"\n"
+                        "Content-Length: %d\n"
+                        "SOAPAction: \"urn:dslforum-org:cwmp-1-4\"\n"
+                        "\n";
+                        
+    char soapStr[] =    "<soap:Envelope "
+                        "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+                        "xmlns:cwmp=\"urn:dslforum-org:cwmp-1-0\">\n"
+                        "    <soap:Header>\n"
+                        "        <cwmp:ID soap:mustUnderstand=\"1\">1234</cwmp:ID>\n"
+                        "    </soap:Header>\n"
+                        "    <soap:Body>\n"
+                        "        <soap:Fault>\n"
+                        "            <faultcode>Client</faultcode>\n"
+                        "            <faultstring>CWMP fault</faultstring>\n"
+                        "            <detail>\n"
+                        "                <cwmp:Fault>\n"
+                        "                    <FaultCode>9000</FaultCode>\n"
+                        "                    <FaultString>Upload method not supported</FaultString>\n"
+                        "                </cwmp:Fault>\n"
+                        "            </detail>\n"
+                        "        </soap:Fault>\n"
+                        "    </soap:Body>\n"
+                        "</soap:Envelope>";
+  
+
+    char buf512[512] = {0};
+    snprintf(buf512, 512, headerStr, strlen(soapStr));
+
+    
+    char buf2048[2048] = {0};
+    snprintf(buf2048, 2048, "%s%s", buf512, soapStr);
+
+    //LOG_SHOW("send:\n%s\n", buf2048);
+    tcp_client_send(client->tcp, buf2048, strlen(buf2048));    
+    
+    
+    for(;;);
+    
+}
+
+
+
 
 

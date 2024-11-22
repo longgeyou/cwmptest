@@ -237,12 +237,6 @@ SOAPAction: "urn:dslforum-org:cwmp-1-0#Inform"
 
 
 
-
-
-
-
-
-
 ```xml
 <soap:Envelope
                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
@@ -265,3 +259,185 @@ SOAPAction: "urn:dslforum-org:cwmp-1-0#Inform"
 </soap:Envelope>
 ```
 
+
+
+```xml
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
+    <soap:Header>
+        <cwmp:ID soap:mustUnderstand="1">1234</cwmp:ID>
+    </soap:Header>
+    <soap:Body>
+        <soap:Fault>
+            <faultcode>Client</faultcode>
+            <faultstring>CWMP fault</faultstring>
+            <detail>
+                <cwmp:Fault>
+                    <FaultCode>9000</FaultCode>
+                    <FaultString>Upload method not supported</FaultString>
+                </cwmp:Fault>
+            </detail>
+        </soap:Fault>
+    </soap:Body>
+</soap:Envelope>
+```
+
+
+
+
+
+
+
+### 2、sourceInsight 4 编辑器 bug
+
+```c
+//开启接收线程
+//ret = pthread_create(&(session->threadRecv), NULL, thread_sessioncpe_recv, (void *)session);
+//if(ret != RET_OK){LOG_ALARM("thread_sessioncpe_recv")
+;return ret;}
+```
+
+![image-20241121212733729](F:\share\PRO\CWMP_TEST\cwmptest\文档\tu\image-20241121212733729.png)
+
+`;return ret;}` 变成了新的一行
+
+可见 其中有一个换行符，但是编辑器并没有显示出来，导致编译出错
+
+
+
+### 3、线程之条件变量
+
+> linux 编程中，某个线程的进行需要某个条件满足，才能进行下一步动作；在条件满足之前需要阻塞等待，希望不占用太多cpu时间，该如何实现
+
+在Linux编程中，如果某个线程需要在某个条件满足时才继续执行，而在此之前需要阻塞等待，可以使用条件变量（`pthread_cond_t`）来实现。条件变量与互斥锁（`pthread_mutex_t`）结合使用，可以有效地实现线程的阻塞和唤醒，而不占用过多的CPU时间。
+
+#### 示例代码
+
+以下是一个简单的示例，展示了如何使用条件变量和互斥锁来实现线程的阻塞和唤醒：
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+// 条件变量和互斥锁
+pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
+//替代 pthread_cond_init(&cond_var, NULL);
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// 条件标志
+int condition_met = 0;
+
+// 生产者线程函数
+void* producer(void* arg) {
+    // 模拟生产数据
+    sleep(2);
+    
+    // 获取互斥锁
+    pthread_mutex_lock(&mutex);
+    
+    // 设置条件标志
+    condition_met = 1;
+    printf("Producer: Condition met, notifying consumer.\n");
+    
+    // 通知等待的消费者线程
+    pthread_cond_signal(&cond_var);
+    
+    // 释放互斥锁
+    pthread_mutex_unlock(&mutex);
+    
+    return NULL;
+}
+
+// 消费者线程函数
+void* consumer(void* arg) {
+    // 获取互斥锁
+    pthread_mutex_lock(&mutex);
+    
+    // 检查条件是否满足
+    while (!condition_met) {
+        printf("Consumer: Condition not met, waiting...\n");
+        
+        // 阻塞等待条件变量
+        pthread_cond_wait(&cond_var, &mutex);
+    }
+    
+    // 条件满足，继续执行
+    printf("Consumer: Condition met, continuing execution.\n");
+    
+    // 释放互斥锁
+    pthread_mutex_unlock(&mutex);
+    
+    return NULL;
+}
+
+int main() {
+    pthread_t producer_thread, consumer_thread;
+
+    // 创建生产者线程
+    if (pthread_create(&producer_thread, NULL, producer, NULL) != 0) {
+        perror("Failed to create producer thread");
+        exit(EXIT_FAILURE);
+    }
+
+    // 创建消费者线程
+    if (pthread_create(&consumer_thread, NULL, consumer, NULL) != 0) {
+        perror("Failed to create consumer thread");
+        exit(EXIT_FAILURE);
+    }
+
+    // 等待生产者线程结束
+    if (pthread_join(producer_thread, NULL) != 0) {
+        perror("Failed to join producer thread");
+        exit(EXIT_FAILURE);
+    }
+
+    // 等待消费者线程结束
+    if (pthread_join(consumer_thread, NULL) != 0) {
+        perror("Failed to join consumer thread");
+        exit(EXIT_FAILURE);
+    }
+
+    // 销毁条件变量和互斥锁
+    pthread_cond_destroy(&cond_var);
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
+```
+
+#### 详细说明
+
+1. **条件变量和互斥锁初始化**:
+   - `pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;`: 初始化条件变量。
+   - `pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;`: 初始化互斥锁。
+
+2. **条件标志**:
+   - `int condition_met = 0;`: 用于标记条件是否满足。
+
+3. **生产者线程**:
+   - `producer` 函数模拟生产数据，设置条件标志，并通知等待的消费者线程。
+   - `pthread_mutex_lock(&mutex);`: 获取互斥锁。
+   - `condition_met = 1;`: 设置条件标志。
+   - `pthread_cond_signal(&cond_var);`: 通知等待的消费者线程。
+   - `pthread_mutex_unlock(&mutex);`: 释放互斥锁。
+
+4. **消费者线程**:
+   - `consumer` 函数获取互斥锁，检查条件是否满足，如果不满足则阻塞等待。
+   - `while (!condition_met) { ... }`: 循环检查条件是否满足。
+   - `pthread_cond_wait(&cond_var, &mutex);`: 阻塞等待条件变量。
+   - `pthread_mutex_unlock(&mutex);`: 释放互斥锁。
+
+5. **主函数**:
+   - 创建生产者和消费者线程。
+   - 等待生产者和消费者线程结束。
+   - 销毁条件变量和互斥锁。
+
+#### 关键点
+
+- **互斥锁** (`pthread_mutex_t`): 用于保护共享资源，确保在检查和修改条件标志时不会发生竞态条件。
+- **条件变量** (`pthread_cond_t`): 用于线程间的同步，使线程在条件不满足时阻塞等待，条件满足时被唤醒。
+- **`pthread_cond_wait`**: 使当前线程阻塞并释放互斥锁，直到被 `pthread_cond_signal` 或 `pthread_cond_broadcast` 唤醒。
+- **`pthread_cond_signal`**: 唤醒一个等待在条件变量上的线程。
+
+通过这种方式，可以有效地实现线程的阻塞和唤醒，而不占用过多的CPU时间。如果您有更多问题或需要进一步的帮助，请随时告诉我！

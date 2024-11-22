@@ -20,7 +20,9 @@
 
 #define TCP_IPV4_NAME_MAX_LEN 64
 #define TCP_USER_NUM 32
-#define TCP_USER_BUF_SIZE 512  //用户 接收数据 缓存区大小
+//#define TCP_USER_BUF_SIZE 512  //用户 接收数据 缓存区大小
+#define TCP_USER_BUF_SIZE 4092  
+
 
 typedef struct __tcpUser_obj{       //用户
     char ipv4[TCP_IPV4_NAME_MAX_LEN];
@@ -62,7 +64,10 @@ typedef struct __tcp_server{
     //char pollIn;
 
     //信号量
-    sem_t semBufReady;
+    sem_t semBufReady;  //接收到数据的信号
+    sem_t semUserConnect;   //有新用户接入服务器的信号
+    //sem_t semUserDisconnect;    //有用户断开链接的信号
+    int newUserId;  //给出新用户的ID号
     
 }tcp_server_t;
 

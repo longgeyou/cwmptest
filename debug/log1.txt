@@ -1,2 +1,123 @@
 
 ======================log start=======================
+[info 0][Fri Nov 22 21:39:26 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:573 
+connect to [192.168.1.20:8080] OK
+---------------->POLL   IN
+
+------------------------------------------http_client_accept
+status:0 dataLen:160 dataIn:
+【http/1.1 401 Unauthorized
+WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=e76c60ade96b6b7888c37b3503588dbd, opaque=fdda18857a173a8d4c454752e839019c
+
+】
+
+
+------------------------------------------http_client_accept
+status:1 dataLen:160 dataIn:
+【http/1.1 401 Unauthorized
+WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=e76c60ade96b6b7888c37b3503588dbd, opaque=fdda18857a173a8d4c454752e839019c
+
+】
+
+解析头部 version:http/1.1 code:401 reason:Unauthorized
+
+------------------------------------------http_client_accept
+status:2 dataLen:134 dataIn:
+【WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=e76c60ade96b6b7888c37b3503588dbd, opaque=fdda18857a173a8d4c454752e839019c
+
+】
+
+============================show head
+num:1
+--------------show line--------------
+name:WWW-Authenticate
+key:Digest realm value:/cwmp 
+key:qop value:auth-int 
+key:nonce value:e76c60ade96b6b7888c37b3503588dbd 
+key:opaque value:fdda18857a173a8d4c454752e839019c 
+[info 1][Fri Nov 22 21:39:27 2024]file:protocol/session/http.c  fun:http_client_accept  line:2100 
+http 头部处理完毕 ...
+
+------------------------------------------http_client_accept
+status:3 dataLen:1 dataIn:
+【】
+
+ 客户端 http 报文接收处理
+需要摘要认证 ...
+计算摘要认证 ...
+计算摘要值所需参数：
+pszNonce:e76c60ade96b6b7888c37b3503588dbd
+pszCNonce:2288fd5ec
+pszUser:admin
+pszRealm:/cwmp
+pszPass:123456
+pszAlg:md5
+szNonceCount:00000010
+pszMethod:GET
+pszQop:auth-int
+pszURI:/cwmp
+Response = d68e6d47d148a09f9dbfe5add1ebb446
+------------->pos:251 len:232
+发送认证测试 长度:272 内容:GET /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=e76c60ade96b6b7888c37b3503588dbd, uri="/cwmp", response="d68e6d47d148a09f9dbfe5add1ebb446", opaque=fdda18857a173a8d4c454752e839019c, qop=auth-int, nc=10, cnonce="2288fd5ec"
+Content-Length:3
+
+123
+
+------------------------------------------http_client_accept
+status:1 dataLen:1 dataIn:
+【】
+
+---------------->POLL   IN
+
+------------------------------------------http_client_accept
+status:1 dataLen:114 dataIn:
+【HTTP/1.1 200 OK
+Host: cwmp.example.com
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 14
+
+hello visitor!】
+
+解析头部 version:HTTP/1.1 code:200 reason:OK
+
+------------------------------------------http_client_accept
+status:2 dataLen:98 dataIn:
+【Host: cwmp.example.com
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 14
+
+hello visitor!】
+
+============================show head
+num:4
+--------------show line--------------
+name:WWW-Authenticate
+key:Digest realm value:/cwmp 
+key:qop value:auth-int 
+key:nonce value:e76c60ade96b6b7888c37b3503588dbd 
+key:opaque value:fdda18857a173a8d4c454752e839019c 
+key:realm value:/cwmp 
+--------------show line--------------
+name:Host
+key:cwmp.example.com 
+--------------show line--------------
+name:Content-Type
+key:text/xml 
+key:charset value:"UTF-8" 
+--------------show line--------------
+name:Content-Length
+key:14 
+[info 2][Fri Nov 22 21:39:27 2024]file:protocol/session/http.c  fun:http_client_accept  line:2100 
+http 头部处理完毕 ...
+
+------------------------------------------http_client_accept
+status:3 dataLen:15 dataIn:
+【hello visitor!】
+
+ 客户端 http 报文接收处理
+
+------------------------------------------http_client_accept
+status:1 dataLen:15 dataIn:
+【hello visitor!】
+

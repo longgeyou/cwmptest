@@ -20,7 +20,7 @@
 #include "strpro.h"
 #include "base64.h"
 
-
+#include "sessionacs.h"
 
 void test();
 int main()
@@ -48,6 +48,7 @@ void test()
     ssl_mg_init();
     tcp_init();
     http_mg_init();
+    sessionacs_mg_init();
 	
 	//link_test();
 	//list_test();
@@ -56,9 +57,10 @@ void test()
 	//ssl_test();
     //tcp_test("192.168.1.20", 8080);
 
-    http_test();
+    //http_test();
     //serverauth_test();
 	//pool_show();
+	sessionacs_test();
 }
 
 

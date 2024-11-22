@@ -25,7 +25,7 @@
 
 //http 报文接收 相关    
 //#define HTTP_HEAD_DATA_MAX_SIZE 1024
-#define HTTP_PAYLOAD_BUF_SIZE 512   //http净荷
+#define HTTP_PAYLOAD_BUF_SIZE 4096   //http净荷
 #define HTTP_USER_BUF_SIZE (TCP_USER_BUF_SIZE * 2)  //用户缓存长度
 #define HTTP_USER_BUF_A_BLOCK_SIZE (HTTP_USER_BUF_SIZE / 2) //在逻辑上把 http 缓存分为A、B两个块
 
@@ -41,10 +41,6 @@
 
 //http 报文发送相关
 #define HTTP_SEND_BUF_SIZE (TCP_USER_BUF_SIZE)  //发送缓存长度
-
-
-
-
 
 //http头部
 typedef struct http_head_t{
@@ -66,7 +62,7 @@ typedef struct http_head_t{
 //http净荷
 typedef struct http_payload_t{
     int len;
-    unsigned char buf[HTTP_PAYLOAD_BUF_SIZE];   //buf是缓存区，并不存储所有的净荷
+    unsigned char buf[HTTP_PAYLOAD_BUF_SIZE + 8];   //buf是缓存区，并不存储所有的净荷
 }http_payload_t;
 
 
@@ -77,7 +73,8 @@ typedef enum{
     http_status_recv_head,
     http_status_head_pro,
     http_status_recv_payload,
-    http_status_data_pro
+    http_status_data_pro,
+    http_status_end
 }http_status_e;
 
 
@@ -94,7 +91,13 @@ typedef struct httpUser_obj_t{
     int bufLen;    
     int headByteCnt;    //处理的头部数据字节计数（不包括第一行），超过阈值 
                         //HTTP_HEAD_BYTE_CNT_MAX_SIZE 视为报文无效 ！！
-
+    //char httpMsgReady;  //soap 消息已经准备好
+    //pthread_mutex_t soapMsgmutex;  //互斥锁（可能用不到）
+    
+    sem_t semHttpMsgReady;  //准备好了信息，供 session 的线程服务调用
+    sem_t semHttpMsgRecvComplete;   //信息已经放入了 session 的消息队列中
+    int retHttpMsg; //返回的信息
+    
     //2、http send（报文发送）
     unsigned char sendBuf[HTTP_SEND_BUF_SIZE + 8];    //是tcp user 缓存的两倍，可以看做 A、B 两个块
     int sendBufLen;
@@ -106,6 +109,9 @@ typedef struct httpUser_obj_t{
     server_digest_auth_obj_t auth;
     char useSSL;    //是否使用SSL
     char useDigestAuth; //是否使用摘要认证
+
+    //id 号
+    int id;
 
     
 }httpUser_obj_t;
@@ -124,7 +130,9 @@ typedef struct http_server_t{
     pthread_t data_send;    //发送线程
 
     //信号量
-    sem_t semSendReady;
+    sem_t semSendReady;     //发送信号量
+    //sem_t semHttpMsgReady;  //接收信号量，用于会话的soap信息已准备好
+    
 
     //用于认证的账户表单
     keyvalue_obj_t *account;    //如果数据比较大，可以用字典 dic_obj_t
@@ -167,7 +175,10 @@ typedef struct http_client_t{
     int headByteCnt;    //字节计数
 
     //2、数据发送
-     sem_t semSendReady;    //信号量
+     pthread_t dataSend;  //发送线程
+     sem_t semSendComplent;    //信号量，发送完成
+     char resend;   //是否重发的指示，1代表需要重发，0代表不用
+     pthread_mutex_t sendMutex;   //互斥锁 
 
     //3、http 认证
     client_auth_obj_t auth;
@@ -187,9 +198,31 @@ typedef struct http_client_t{
 void http_mg_init();
 void http_test();
 void http_other_test();
-
-
 void http_client_test(char *ipv4, int port, char *targetIpv4, int targetPort);
+void http_client_test2(char *ipv4, int port, char *targetIpv4, int targetPort);
+
+
+//对象
+http_server_t *http_create_server(char *ipv4, int port);
+void http_destory_server(http_server_t *http);
+http_client_t *http_create_client();
+void http_destory_client(http_client_t *client);
+
+//发送
+int http_send(http_server_t *http, int userId, void *data, int dataLen);
+int http_send_str(http_server_t *http, int userId, char *str);
+int httpUser_send(http_server_t *http, httpUser_obj_t *user, void *data, int dataLen);
+int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str);
+
+
+//服务器应用
+int http_data_accept(http_server_t *http, int userId);
+int http_server_start(http_server_t *http);
+
+//客户端应用
+int http_client_accept(http_client_t *client);
+int http_client_start(http_client_t *client, char *ipv4, int port, char *targetIpv4, int targetPort);
+int http_client_send(http_client_t *client, char *msg, int size);
 
 
 

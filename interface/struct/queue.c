@@ -12,22 +12,7 @@
 #include "pool2.h"
 
 
-/*==============================================================
-                        数据结构
-==============================================================*/
-typedef struct queue_member_t{
-    void *d;
-    char en;
-}queue_member_t;
 
-//top 代表队列尾，添加时向上增长；bottom代表队列头，取出时向上增长
-//top == bottom 代表没有成员；top + 1 == bottom ，代表成员已满
-typedef struct queue_obj_t{ 
-    int top;    
-    int bottom;     
-    int size;   
-    queue_member_t **array;
-}queue_obj_t;
 
 /*==============================================================
                         本地管理
@@ -89,6 +74,24 @@ queue_member_t *queue_create_member_set_pointer(void *data)
 
     return member;
 }
+//创建一个队列成员， 并且给数据分配内存
+queue_member_t *queue_create_member_and_malloc(int size)
+{
+    if(size <= 0)return NULL;
+    
+    queue_member_t *member = queue_create_member();
+    if(member == NULL)return NULL;
+
+    member->d = (void *)MALLOC(size);
+    if(member->d != NULL)
+        member->en = 1;
+    else
+        member->en = 0;
+
+    return member;
+}
+
+
 
 //创建一个队列 
 queue_obj_t *queue_create(int size)
@@ -120,6 +123,20 @@ void queue_destroy_member(queue_member_t *member)
     //释放自己
     FREE(member);
 }
+
+//摧毁一个队列成员，并且该成员释放指向的数据
+void queue_destroy_member_and_data(queue_member_t *member)
+{
+    if(member == NULL)return ;
+
+    if(member->d != NULL && member->en == 1)
+        FREE(member->d);
+    
+    //释放自己
+    FREE(member);
+}
+
+
 //摧毁一个队列
 void queue_destroy(queue_obj_t *queue)
 {
@@ -142,6 +159,31 @@ void queue_destroy(queue_obj_t *queue)
     //释放自己
     FREE(queue);
 }
+
+//摧毁一个队列，同时释放每个队列成员 指向的数据
+void queue_destroy_and_data(queue_obj_t *queue)
+{
+    if(queue == NULL)return ;
+
+    int i;
+    int pos;
+    //摧毁队列的所有成员
+    for(i = 0; i < queue->size; i++)
+    {
+        pos = (queue->bottom + i) % queue->size;
+        if(pos == queue->top)
+            break;
+        
+        queue_destroy_member_and_data((queue->array)[pos]);
+    }
+
+    //释放队列成员 array
+    if(queue->array != NULL)FREE(queue->array);
+    
+    //释放自己
+    FREE(queue);
+}
+
 
 /*==============================================================
                         应用
@@ -173,7 +215,7 @@ int queue_in(queue_obj_t *queue, queue_member_t *member)
 
     return RET_OK;
 }
-//队列添加成员，指定数据指针，需要分配内存
+//队列添加成员，指定数据指针
 int queue_in_set_pointer(queue_obj_t *queue, void *data)
 {
     if(queue == NULL)return RET_FAILD;
@@ -189,6 +231,22 @@ int queue_in_set_pointer(queue_obj_t *queue, void *data)
     return RET_OK;
     
 }
+//队列添加成员，给数据 分配内存
+int queue_in_and_malloc(queue_obj_t *queue, int size)
+{
+    if(queue == NULL)return RET_FAILD;
+    if(queue_isFull(queue))return RET_FAILD;
+
+    queue_member_t *member = queue_create_member_and_malloc(size);
+
+    if(member == NULL)return RET_FAILD;
+
+    (queue->array)[queue->top] = member;    
+    queue->top = (queue->top + 1) % queue->size;
+
+    return RET_OK;    
+}
+
 
 //从队列中取出成员（出队列）
 int queue_out(queue_obj_t *queue, queue_member_t **memberP)
@@ -233,7 +291,11 @@ int queue_get_num(queue_obj_t *queue)
 void __queue_show(queue_obj_t *queue)
 {
     printf("-----------queue show ----------\n");
-    if(queue == NULL)printf("[void]\n");
+    if(queue == NULL)
+    {
+        printf("[void]\n");
+        return ;
+    }
 
     int i;
     int pos;
@@ -246,6 +308,39 @@ void __queue_show(queue_obj_t *queue)
         printf("-->i:%d data:%d\n", i, *p);
     }
 }
+
+//遍历测试
+void __queue_foreach(queue_obj_t *queue)
+{
+    printf("-----------queue show ----------\n");
+    if(queue == NULL)
+    {
+        printf("[void]\n");
+        return ;
+    }
+
+    //int i;
+    //int pos;
+
+    
+    
+//    for(int queue_i = 0; queue_i < queue->size; queue_i++)
+//    {
+//        int queue_tmp = (queue->bottom + queue_i) % queue->size;
+//        if(queue_tmp == queue->top)
+//            break;
+//        queue_member_t *probe = (queue->array)[queue_tmp];    
+//        //int *p = (int *)((queue->array)[pos]->d);
+//        
+//        printf("-->i:%d data:%d\n", queue_i, *((int *)(probe->d)));
+//    }
+
+    QUEUE_FOEWACH_START(queue, probe){
+        printf("data:%d\n", *((int *)(probe->d)));
+    }QUEUE_FOEWACH_END
+    
+}
+
 
 
 void queue_test()
@@ -263,13 +358,15 @@ void queue_test()
     
     __queue_show(queue);
 
-    printf("队列成员个数:%d\n", queue_get_num(queue));
+    __queue_foreach(queue);
 
-    pool_show();
-
-    queue_destroy(queue);
-
-    pool_show();
+//    printf("队列成员个数:%d\n", queue_get_num(queue));
+//
+//    pool_show();
+//
+//    queue_destroy(queue);
+//
+//    pool_show();
 
     
 }

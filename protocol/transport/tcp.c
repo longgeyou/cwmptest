@@ -95,6 +95,9 @@ int tcpUser_add_member(tcp_server_t *tcp, char *ipv4, int port, int fd)
         //初始化互斥锁
         //tcp->user[id].mutex = PTHREAD_MUTEX_INITIALIZER;
         pthread_mutex_init(&(tcp->user[id].mutex), NULL);
+
+        
+        
     }
     else
     {
@@ -181,6 +184,8 @@ tcp_server_t *tcp_server_create(char *ipv4, int port)
 
     //初始化信号量
     sem_init(&(tcp->semBufReady), 0, 0);
+    sem_init(&(tcp->semUserConnect), 0, 0);
+
     
     tcp_local_mg.tcpServerCnt++;
     return tcp;
@@ -303,7 +308,18 @@ void *thread_tcp_accept(void *in)
             }  */
 
             ret = tcpUser_add_member(tcp, ipv4, port, fd);
-            if(ret < 0)LOG_ALARM("apply user list faild\n");
+            
+            if(ret < 0)
+            {
+                LOG_ALARM("apply user list faild\n");
+            }   
+            else
+            {
+                tcp->newUserId = ret;
+            
+                sem_post(&(tcp->semUserConnect));   //发送信号量
+            }
+            
         }
         else
         {

@@ -27,6 +27,7 @@
 #include "queue.h"
 #include "soapmsg.h"
 #include "cwmprpc.h"
+#include "sessioncpe.h"
 
 
 void test(int);
@@ -74,12 +75,14 @@ void test(int port)
     stack_mg_init();
     soap_mg_init();
     queue_mg_init();
+    sessioncpe_mg_init();
 
        
     if(port > 0)
-    {
-        //tcp_client_test("192.168.1.20", port, "192.168.1.20", 8080);  
-        http_client_test("192.168.1.20", port, "192.168.1.20", 8080);
+    {  
+        //http_client_test("192.168.1.20", port, "192.168.1.20", 8080);
+        //http_client_test2("192.168.1.20", port, "192.168.1.20", 8080);
+        sessioncpe_test("192.168.1.20", port, "192.168.1.20", 8080);
     }
 	    
     
@@ -100,11 +103,12 @@ void test(int port)
 	//http_other_test();
     //stack_test();
     //soap_test();
-    //queue_test();
+    queue_test();
     //soapmsg_test();
     //cwmprpc_test();
     //soapmsg_test2();
-    soapmsg_test3();
+    //soapmsg_test3();
+    
 }
 
 

@@ -112,6 +112,8 @@ int soapmsg_set_base(soap_obj_t *soap, soap_header_t *header)
             if(header->idEn == 1)
             {
                 soap_node_t *nodeID = soap_create_node_set_value("cwmp:ID", header->ID);
+                if(nodeID != NULL)
+                    keyvalue_append_set_str(nodeID->attr, "soapenv:mustUnderstand", "1");
                 soap_node_append_son(nodeHeader, nodeID);                
             }
 
@@ -119,6 +121,8 @@ int soapmsg_set_base(soap_obj_t *soap, soap_header_t *header)
             {
                 sprintf(buf, "%d", header->HoldRequests);
                 soap_node_t *nodeHoldRequests = soap_create_node_set_value("cwmp:HoldRequests", buf);
+                if(nodeHoldRequests != NULL)
+                    keyvalue_append_set_str(nodeHoldRequests->attr, "soapenv:mustUnderstand", "1");
                 soap_node_append_son(nodeHeader, nodeHoldRequests);
             }
 
@@ -147,7 +151,7 @@ A.3.1.1 GetRPCMethods
 // GetRPCMethods
 soap_node_t *soapmsg_to_node_GetRPCMethods(rpc_GetRPCMethods_t data)
 {
-    soap_node_t *node = soap_create_node_set_value("GetRPCMethods", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:GetRPCMethods", NULL);
     return node;
 }
 
@@ -155,7 +159,7 @@ soap_node_t *soapmsg_to_node_GetRPCMethods(rpc_GetRPCMethods_t data)
 soap_node_t *soapmsg_to_node_GetRPCMethodsResponse(rpc_GetRPCMethodsResponse_t data)
 {
     char buf64[64];
-    soap_node_t *node = soap_create_node_set_value("GetRPCMethodsResponse", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:GetRPCMethodsResponse", NULL);
     if(node == NULL)return NULL;
 
     // 添加 MethodList （方法列表） 
@@ -190,7 +194,7 @@ soap_node_t *soapmsg_to_node_SetParameterValues(rpc_SetParameterValues_t data)
     char buf64[64] = {0};
     int ret;
 
-    soap_node_t *node = soap_create_node_set_value("SetParameterValues", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:SetParameterValues", NULL);
 
     //添加 ParameterList 成员，该成员是一个链表，链表节点类型 ParameterValueStruct
     soap_node_t *nodeParameterList = soap_create_node_set_value("ParameterList", NULL);
@@ -229,7 +233,7 @@ soap_node_t *soapmsg_to_node_SetParameterValues(rpc_SetParameterValues_t data)
 soap_node_t *soapmsg_to_node_SetParameterValuesResponse(rpc_SetParameterValuesResponse_t data)
 {
     char buf8[8] = {0};
-    soap_node_t *node = soap_create_node_set_value("SetParameterValues", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:SetParameterValues", NULL);
     
     //添加 Status 成员
     sprintf(buf8, "%d", data.Status);
@@ -245,7 +249,7 @@ A.3.2.2 GetParameterValues
 soap_node_t *soapmsg_to_node_GetParameterValues(rpc_GetParameterValues_t data)
 {
     char buf64[64] = {0};
-    soap_node_t *node = soap_create_node_set_value("GetParameterValues", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:GetParameterValues", NULL);
     
     //添加 ParameterNames 成员
     soap_node_t *nodeParameterNames = soap_create_node_set_value("ParameterNames", NULL);
@@ -272,7 +276,7 @@ soap_node_t *soapmsg_to_node_GetParameterValuesResponse(rpc_GetParameterValuesRe
     char buf512[512] = {0};
     char buf64[64] = {0};
     int ret;
-    soap_node_t *node = soap_create_node_set_value("GetParameterValuesResponse", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:GetParameterValuesResponse", NULL);
     
     //1、添加 ParameterList 链表成员，成员类型 ParameterValueStruct
     soap_node_t *nodeParameterList = soap_create_node_set_value("ParameterList", NULL);
@@ -333,7 +337,7 @@ soap_node_t *soapmsg_to_node_Inform(rpc_Inform_t data)
     char buf512[512] = {0};
     int ret;
     
-    soap_node_t *node = soap_create_node_set_value("Inform", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:Inform", NULL);
     
     //1、添加 DeviceId 成员
     /*
@@ -431,7 +435,7 @@ soap_node_t *soapmsg_to_node_Inform(rpc_Inform_t data)
 soap_node_t *soapmsg_to_node_InformResponse(rpc_InformResponse_t data)
 {
     char buf8[8] = {0};
-    soap_node_t *node = soap_create_node_set_value("InformResponse", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:InformResponse", NULL);
 
     //添加 MaxEnvelopes 成员
     snprintf(buf8, 8, "%d", data.MaxEnvelopes);
@@ -505,17 +509,26 @@ A.4.2.4 AutonomousDUStateChangeComplete
     </soap:Body>
 </soap:Envelope>
 --------------------------------------------------------------*/
-soap_node_t *soapmsg_to_node_Fault(rpc_fault_t data)
+soap_node_t *soapmsg_to_node_Fault(rpc_fault_t data, rpc_soap_fault_t soapData)
 {
     char buf8[8] = {0};
+
+    //1、设置 soap:Fault
+    soap_node_t *nodeSoapFault = soap_create_node_set_value("soap:Fault", NULL);
+    soap_node_append_son(nodeSoapFault, soap_create_node_set_value("faultCode", soapData.FaultCode));
+    soap_node_append_son(nodeSoapFault, soap_create_node_set_value("faultString", soapData.FaultString));
+    soap_node_t *nodeDetail = soap_create_node_set_value("detail", NULL);
+    soap_node_append_son(nodeSoapFault, nodeDetail);
+
+    //2、设置 cwmp:Fault
     soap_node_t *node = soap_create_node_set_value("Fault", NULL);
 
-    //添加 FaultCode 、FaultString
+    //2.1 添加 FaultCode 、FaultString
     snprintf(buf8, 8, "%d", data.FaultCode);
     soap_node_append_son(node, soap_create_node_set_value("FaultCode", buf8));
     soap_node_append_son(node, soap_create_node_set_value("FaultString", data.FaultString));
     
-    //添加 SetParameterValuesFault
+    //2.2 添加 SetParameterValuesFault
     soap_node_t *nodeSpvf = soap_create_node_set_value("SetParameterValuesFault", NULL);
     soap_node_append_son(nodeSpvf, soap_create_node_set_value("ParameterName", data.SetParameterValuesFault.ParameterName));
     snprintf(buf8, 8, "%d", data.SetParameterValuesFault.FaultCode);
@@ -523,8 +536,10 @@ soap_node_t *soapmsg_to_node_Fault(rpc_fault_t data)
     soap_node_append_son(nodeSpvf, soap_create_node_set_value("FaultString", data.SetParameterValuesFault.FaultString));
         
     soap_node_append_son(node, nodeSpvf);
+    soap_node_append_son(nodeDetail, node);
 
-    return node;
+   
+    return nodeSoapFault;
 }
 
 
@@ -763,7 +778,12 @@ void soapmsg_test3()
     strcpy(dataFault.SetParameterValuesFault.FaultString, cpe_fault_code[1].describ);
     strcpy(dataFault.SetParameterValuesFault.ParameterName, "parameter_1");   
 
-    soap_node_append_son(body, soapmsg_to_node_Fault(dataFault));
+    rpc_soap_fault_t soapFault = {
+        .FaultCode = "Client",
+        .FaultString = "CPE Fault detail"
+    };
+    
+    soap_node_append_son(body, soapmsg_to_node_Fault(dataFault, soapFault));
 
     //节点到文本测试
     char buf2048[2048 + 8] = {0};
