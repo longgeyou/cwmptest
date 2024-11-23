@@ -23,13 +23,11 @@ soapmsg
 #include <stdio.h>
 #include <string.h>
 
-#include "pool2.h"
+
 #include "soapmsg.h"
-#include "soap.h"
-#include "cwmprpc.h"
-#include "keyvalue.h"
-#include "log.h"
-#include "strpro.h"
+#include "pool2.h"
+
+
 
 
 
@@ -99,7 +97,7 @@ int soapmsg_set_base(soap_obj_t *soap, soap_header_t *header)
             "\"http://schemas.xmlsoap.org/soap/envelope/\"");
             
         keyvalue_append_set_str(soap->root->attr, "xmlns:cwmp", 
-            "\"urn:dslforum-org:cwmp-1-0\"");
+            "\"urn:dslforum-org:cwmp-1-4\"");
     }
         
     //添加头部 ，如果 header 为 NULL则跳过
@@ -328,7 +326,7 @@ A.3.2.9 Reboot
 /*--------------------------------------------------------------
 A.3.3.1 Inform
 --------------------------------------------------------------*/
-// DeviceIdStruct
+// Inform
 soap_node_t *soapmsg_to_node_Inform(rpc_Inform_t data)
 {
     int i;

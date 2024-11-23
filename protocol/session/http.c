@@ -119,6 +119,7 @@ http_server_t *http_create_server(char *ipv4, int port)
 
         //id号
         user->id = i;
+        user->tcpUser = &(http->tcp->user[i]);
     }
     
     //2、初始化信号量
@@ -186,6 +187,11 @@ http_client_t *http_create_client()
     client->resend = 0;
     sem_init(&(client->semSendComplent), 0, 0);
     pthread_mutex_init(&(client->sendMutex), NULL);
+
+    //3、信号量
+    sem_init(&(client->semHttpMsgReady), 0, 0);
+    sem_init(&(client->semHttpMsgRecvComplete), 0, 0);
+    client->retHttpMsg = 0;
         
     return client;
 }
@@ -606,6 +612,96 @@ int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str)
     return httpUser_send(http, user, (void *)str, strlen(str) + 1);
 }
 
+//服务器向用户发送 http 报文（带有 http 认证）
+int http_send_msg(httpUser_obj_t *user, void *msg, 
+                    int msgLen, int faultCode, char *reason)
+{       
+    
+#undef BUF_SIZE    
+#define BUF_SIZE 1024   //用于存储头部信息
+    char buf[BUF_SIZE + 8] = {0};
+    char *bufSeek;
+    int pos;
+    int len;
+    int ret;
+
+    //char buf128[128 + 8] = {0};
+    
+    if(user == NULL)return RET_FAILD;
+
+
+    //A、头部信息
+    //A1、第一行填充   
+    pos = 0;   
+    bufSeek = buf + pos;
+    httpmsg_server_first_line(&bufSeek, BUF_SIZE, &len, "http/1.1", faultCode, reason);
+    pos += len;
+    
+    //A2、认证域 填充
+    if(user->useDigestAuth == 1) //摘要认证
+    {
+        bufSeek = buf + pos;
+        httpmsg_server_digest_auth_append(&bufSeek, BUF_SIZE - pos, &len, &(user->auth));
+        pos += len; 
+    }
+    else    //其他情况，暂时默认是基础认证
+    {
+        bufSeek = buf + pos;
+        len = snprintf(bufSeek, BUF_SIZE - pos, "%s", "WWW-Authenticate: Basic realm=\"/cwmp\"\n");
+        pos += len;           
+    }
+
+    //A3、内容类型和长度
+    char content[] = "Content-Type: text/xml; charset=\"UTF-8\"\n"
+                     "Content-Length: ";
+    
+    bufSeek = buf + pos;
+    len = snprintf(bufSeek, BUF_SIZE - pos, "%s%d\n", content, msgLen);
+    pos += len;
+
+    //A4、SOAPAction 域（暂时没有作用，用来凑数）
+    char soapAction[] = "SOAPAction:\"urn:dslforum-org:cwmp-1-4\"\n";
+    bufSeek = buf + pos;
+    len = snprintf(bufSeek, BUF_SIZE - pos, "%s", soapAction);
+    pos += len;
+
+    //A5、空行
+    buf[pos++] = '\n';
+    buf[pos] = '\0'; //收尾
+
+    //B、http 消息体
+    int sendSpaceLen = BUF_SIZE + msgLen + 8;
+    void *sendSpace = (void *)POOL_MALLOC(sendSpaceLen);
+    if(sendSpace == NULL)
+    {
+        LOG_ALARM("内存分配失败，停止发送http msg");
+        return RET_FAILD;
+    }
+    memset(sendSpace, '\0', sendSpaceLen);
+    strcpy(sendSpace, buf);
+
+    pos = strlen(buf);
+    bufSeek = sendSpace + pos;
+    
+    if(msg != NULL && msgLen > 0)    //判断消息体是否为空
+    {
+        memcpy((void *)bufSeek, msg, msgLen);
+        pos += msgLen;
+    }
+        
+    
+    bufSeek[pos++] = '\0'; //字符串末尾，可能要用到
+
+    LOG_SHOW("客户端发送msg 长度:%d 内容:%s\n", pos, (char *)sendSpace);
+
+    ret = tcpUser_send(user->tcpUser, sendSpace , pos);
+    
+    LOG_SHOW("发送完成，返回值 ret:%d\n", ret);
+    POOL_FREE(sendSpace);
+
+    return RET_OK;
+}
+    
 
 
 //------------------------------------------------------------------------发送 相关
@@ -668,7 +764,9 @@ int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str)
     }   
 
     authOk = 0; //默认需要认证，无论是基础认证还是摘要认证，都要求认证
+#undef BUF_SIZE
 #define BUF_SIZE 64
+#undef BUF_VALUE_LEN
 #define BUF_VALUE_LEN 128
     char buf[BUF_SIZE + 8] = {0};
     char bufTmp[BUF_SIZE * 2 + 8] = {0};
@@ -858,7 +956,7 @@ int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str)
 
                         DigestCalcHA1(pszAlg, pszUser, pszRealm, pszPass, pszNonce, pszCNonce, HA1);
                         DigestCalcResponse(HA1, pszNonce, szNonceCount, pszCNonce, pszQop, pszMethod, pszURI, HA2, Response);
-                        LOG_SHOW("Response = %s client Response:%s\n", Response, msgResponse);
+                        LOG_SHOW("Response = %s client msgResponse:%s\n", Response, msgResponse);
 
                         if(strcmp(Response, msgResponse) == 0)
                         {
@@ -943,7 +1041,7 @@ int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str)
              
              p = buf1024;
              pos = 0;
-             httpmsg_server_first_line(&p, BUF_SIZE_1024, &len, "http/1.1", "401", "Unauthorized");
+             httpmsg_server_first_line(&p, BUF_SIZE_1024, &len, "http/1.1", 401, "Unauthorized");
              pos += len; 
              p = buf1024 + pos;
              httpmsg_server_digest_auth_append(&p, BUF_SIZE_1024 - pos, &len, &(user->auth));
@@ -1030,7 +1128,12 @@ int __http_payload_recv(httpUser_obj_t *user, int needLen, int *endPos)
 {
     //int ret;
     if(user == NULL || endPos == NULL)return -1;    //参数错误
-    if(needLen < 0)return -2;   //其他意外情况
+    
+    if(needLen <= 0)
+    {
+        *endPos = -1;   //表示没有处理任何数据 
+        return 1;   //无数据接收，直接完成
+    }
 
     http_payload_t *payload = &(user->payload);
 
@@ -1238,7 +1341,7 @@ int http_data_accept(http_server_t *http, int userId)
                 }
                 
                 httpUser->payload.len = 0; //清空净荷缓存区   
-                memset(httpUser->payload.buf, '\0', httpUser->payload.len);
+                memset(httpUser->payload.buf, '\0', HTTP_PAYLOAD_BUF_SIZE);
                 
                 httpUser->status = http_status_recv_payload; 
                 http_data_accept(http, userId);                
@@ -1311,6 +1414,10 @@ int http_data_accept(http_server_t *http, int userId)
                 httpUser->status = http_status_end;    //状态转移
                 http_data_accept(http, userId);
             }
+            else if(httpUser->retHttpMsg == -3) 
+            {
+                LOG_SHOW("消息队列不允许被操作\n"); 
+            }
             else if(httpUser->retHttpMsg == -2) 
             {
                 //LOG_INFO("其他情况\n");;  
@@ -1320,8 +1427,8 @@ int http_data_accept(http_server_t *http, int userId)
         case http_status_end:
         {
             //LOG_INFO("---->http_status_data_end 完成\n");
-            //httpUser->status = http_status_start;    //状态转移
-            //http_data_accept(http, userId);
+            httpUser->status = http_status_start;    //状态转移
+            http_data_accept(http, userId);
             
         }break;
     }
@@ -1676,6 +1783,83 @@ static int __http_client_msg_head_parse(http_client_t *client, int *endPos)
 }
 
 
+
+
+//摘要值计算处理
+void __http_client_digest_calc(http_client_t *client, char * pszMethod, char * pszURI)
+{
+    if(client == NULL)
+    {   
+        LOG_ALARM("client is NULL! ");
+        return ;
+    }
+    //计算
+    //char * pszNonce = (char *)(data_nonce->value);
+    char * pszNonce = (char *)(client->auth.nonce);
+    char * pszCNonce = client->auth.cnonce;
+    char * pszUser = client->auth.username;
+    //char * pszRealm = (char *)(data_realm->value);
+    char * pszRealm = (char *)(client->auth.realm);
+    char * pszPass = client->auth.password;                                     
+    char * pszAlg = "md5";
+
+
+    if(strcmp(client->auth.oldNonce, pszNonce) == 0)
+    {
+        client->auth.nc++;  //nc需要自增，并告知服务器
+    }
+    else
+    {
+        strcpy(client->auth.oldNonce, pszNonce);
+        client->auth.nc = 10;
+    }
+    char szNonceCount[9] = {0};  
+    snprintf(szNonceCount, 9, "%08d", client->auth.nc % 9999999);
+    
+    //char * pszMethod = "GET";   //测试用
+    //char * pszQop = (char *)(data_qop->value);
+    char * pszQop = (char *)(client->auth.qop);
+    //char * pszURI = "/cwmp";    //测试用
+    HASHHEX HA1;
+    HASHHEX HA2 = "";
+    HASHHEX Response;
+
+    LOG_SHOW("计算摘要值所需参数：\n"
+                            "pszNonce:%s\n"
+                            "pszCNonce:%s\n"
+                            "pszUser:%s\n"
+                            "pszRealm:%s\n"
+                            "pszPass:%s\n"
+                            "pszAlg:%s\n"
+                            "szNonceCount:%s\n"
+                            "pszMethod:%s\n"
+                            "pszQop:%s\n"
+                            "pszURI:%s\n",
+                            pszNonce,
+                            pszCNonce,
+                            pszUser,
+                            pszRealm,
+                            pszPass,
+                            pszAlg,
+                            szNonceCount,
+                            pszMethod,
+                            pszQop,
+                            pszURI);
+    
+    DigestCalcHA1(pszAlg, pszUser, pszRealm, pszPass, pszNonce, pszCNonce, HA1);
+    DigestCalcResponse(HA1, pszNonce, szNonceCount, pszCNonce, pszQop, pszMethod, pszURI, HA2, Response);
+    LOG_SHOW("Response = %s\n", Response);
+
+    
+    //把计算结果存入本地
+    strcpy(client->auth.uri, pszURI);
+    strcpy(client->auth.response, Response);
+
+
+}
+
+
+
 //客户端响应信息的处理
 #define HTTP_CLIENT_MSG_AUTH_REASON "Unauthorized"
 #define HTTP_CLIENT_MSG_AUTH_NAME "WWW-Authenticate"
@@ -1711,108 +1895,98 @@ static int __http_client_msg_recv_pro(http_client_t *client)
         return RET_FAILD;
     }
     
-    if(client->parse.code == 401 && strcmp(client->parse.reason, HTTP_CLIENT_MSG_AUTH_REASON) == 0)  //需要认证
+    //1、处理头部的 WWW-Authenticate 域
+    LINK_FOREACH(client->parse.head->link, probe)
     {
-        
-        LINK_FOREACH(client->parse.head->link, probe)
+        httphead_line_t *lineIter = (httphead_line_t *)(probe->data);
+        if(lineIter != NULL)
         {
-            httphead_line_t *lineIter = (httphead_line_t *)(probe->data);
-            if(lineIter != NULL)
+            if(strcmp(lineIter->name, HTTP_CLIENT_MSG_AUTH_NAME) == 0)
             {
-                if(strcmp(lineIter->name, HTTP_CLIENT_MSG_AUTH_NAME) == 0)
+                //line = lineIter;
+                keyvalue = lineIter->keyvalue;
+                if(keyvalue != NULL)
                 {
-                    //line = lineIter;
-                    keyvalue = lineIter->keyvalue;
-                    if(keyvalue != NULL)
+                    KEYVALUE_FOREACH_START(keyvalue, iter) 
                     {
-                        KEYVALUE_FOREACH_START(keyvalue, iter) 
+                        keyvalue_data_t *data = (keyvalue_data_t *)iter;
+                        lenBasic = strlen(HTTP_CLIENT_MSG_AUTH_BASIC);
+                        lenDigest = strlen(HTTP_CLIENT_MSG_AUTH_DIGEST);
+                        
+                        //1.1 基础认证     HTTP/1.1 401 Unauthorized \n WWW-Authenticate: Basic realm="Restricted Area"
+                        if(data->keyEn == 1 && 
+                            //data->valueEn == 1 && 
+                            strncmp(HTTP_CLIENT_MSG_AUTH_BASIC, data->key, lenBasic) == 0)
                         {
-                            keyvalue_data_t *data = (keyvalue_data_t *)iter;
-                            lenBasic = strlen(HTTP_CLIENT_MSG_AUTH_BASIC);
-                            lenDigest = strlen(HTTP_CLIENT_MSG_AUTH_DIGEST);
-                            
-                            //1.1 基础认证     HTTP/1.1 401 Unauthorized \n WWW-Authenticate: Basic realm="Restricted Area"
-                            if(data->keyEn == 1 && 
-                                //data->valueEn == 1 && 
-                                strncmp(HTTP_CLIENT_MSG_AUTH_BASIC, data->key, lenBasic) == 0)
-                            {
-                                LOG_SHOW("需要基础认证 ...\n");                 
-                                authType = _isBasic;
-                                client->useDigestAuth = 0;  //标记
-
-                                break;
-                            }
-
-                            //1.2 摘要认证
-                            /*
-                                HTTP/1.1 401 Unauthorized
-                                WWW-Authenticate: Digest realm="Restricted Area", \
-                                qop="auth", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", \
-                                opaque="5ccc069c403ebaf9f0171e9517f40e41"
-                                Content-Type: text/html
-                                Content-Length: 137
-                            */
-                            else if(data->keyEn == 1 && 
-                                //data->valueEn == 1 && 
-                                strncmp(HTTP_CLIENT_MSG_AUTH_DIGEST, data->key, lenDigest) == 0)
-                            {
-                                LOG_SHOW("需要摘要认证 ...\n");
-                                strcpy(bufkey, data->key);
-                               
-                                
-                                p = bufkey + lenDigest;
-                                strpro_clean_space(&p); //  去掉空格
-                                keyvalue_append_set_str(keyvalue, p, data->value);  //添加键值对 
-                                
-                                client->useDigestAuth = 1;  //标记
-
-                                authType = _isDigest;
-                                break;
-
-                            }
+                            LOG_SHOW("需要基础认证 ...\n");                 
+                            authType = _isBasic;
                             
 
-                        }KEYVALUE_FOREACH_END;
-                    }
+                            break;
+                        }
 
-                    break;
-                }               
-            }
+                        //1.2 摘要认证
+                        /* ---------------------------------------------------------例子
+                            HTTP/1.1 401 Unauthorized
+                            WWW-Authenticate: Digest realm="Restricted Area", \
+                            qop="auth", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", \
+                            opaque="5ccc069c403ebaf9f0171e9517f40e41"
+                            Content-Type: text/html
+                            Content-Length: 137
+                        
+                            GET /protected/resource HTTP/1.1
+                            Host: example.com
+                            Authorization: Digest username="user", \
+                            realm="Restricted Area", \
+                            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", \ 
+                            uri="/protected/resource", \
+                            response="6629fae49393a05397450978507c4ef1", \
+                            opaque="5ccc069c403ebaf9f0171e9517f40e41", \
+                            qop=auth, \
+                            nc=00000001, \
+                            cnonce="0a4f113b"
+                        -------------------------------------------------------------*/
+                        else if(data->keyEn == 1 && 
+                            //data->valueEn == 1 && 
+                            strncmp(HTTP_CLIENT_MSG_AUTH_DIGEST, data->key, lenDigest) == 0)
+                        {
+                            LOG_SHOW("需要摘要认证 ...\n");
+                            strcpy(bufkey, data->key);
+                           
+                            
+                            p = bufkey + lenDigest;
+                            strpro_clean_space(&p); //  去掉空格
+                            keyvalue_append_set_str(keyvalue, p, data->value);  //添加键值对 
+                            
+
+                            authType = _isDigest;
+                            break;
+
+                        }
+                        
+
+                    }KEYVALUE_FOREACH_END;
+                }
+
+                break;
+            }               
         }
-        
     }
-
-    //测试：基本认证消息发送
-    if(authType == _isBasic && client->auth.authFaildCnt < 3)
+    
+    //1.4 基本认证
+    if(authType == _isBasic /*&& client->auth.authFaildCnt < 3*/)
     {
-        clientauth_updata(&(client->auth));  //更新 client->auth ，为认证做准备
-        
-        client->auth.authFaildCnt++;
-
-        pos = 0;   
-        p = bufAuth;
-        httpmsg_client_first_line(&p, BUF_AUTH_SIZE, &len, "GET", "/cwmp", "http/1.1");
-        pos += len;
-        
-        p += pos;
-        httpmsg_client_basic_auth_append(&p, BUF_AUTH_SIZE - pos, &len, &(client->auth));
-        pos += len;
-
-        bufAuth[pos++] = '\n';
-        bufAuth[pos++] = '\0';
-        
-        LOG_SHOW("发送认证测试 长度:%d 内容:%s\n", pos, bufAuth);
-        tcp_client_send(client->tcp, bufAuth, pos);
+        client->useDigestAuth = 0;  
         
     }
-    //测试：摘要认证消息发送
-    else if(authType == _isDigest && client->auth.authFaildCnt < 3)
+    //1.5 摘要认证
+    else if(authType == _isDigest )
     {  
-        client->auth.authFaildCnt++;    //认证失败次数限制
-
+        client->useDigestAuth = 1;  
+        
+        //计算摘要值
         clientauth_updata(&(client->auth));  //更新 client->auth ，为认证做准备，主要是更新 cnonce 
         
-        //------------------------------------------------------------------------------计算摘要值
         //1.2.1 从响应报文中获取 realm、nonce、opaque、qop                                
         keyvalue_data_t *data_realm;
         keyvalue_data_t *data_nonce;
@@ -1832,75 +2006,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
             data_qop != NULL)
         {
             LOG_SHOW("计算摘要认证 ...\n");
-            //1.2.2 确定摘要认证所需的变量
-            char * pszNonce = (char *)(data_nonce->value);
-            char * pszCNonce = client->auth.cnonce;
-            char * pszUser = client->auth.username;
-            char * pszRealm = (char *)(data_realm->value);
-            char * pszPass = client->auth.password;                                     
-            char * pszAlg = "md5";
 
-
-            if(strcmp(client->auth.oldNonce, pszNonce) == 0)
-            {
-                client->auth.nc++;  //nc需要自增，并告知服务器
-            }
-            else
-            {
-                strcpy(client->auth.oldNonce, pszNonce);
-                client->auth.nc = 10;
-            }
-            char szNonceCount[9] = {0};  
-            snprintf(szNonceCount, 9, "%08d", client->auth.nc % 9999999);
-            
-            char * pszMethod = "GET";   //测试用
-            char * pszQop = (char *)(data_qop->value);
-            char * pszURI = "/cwmp";    //测试用
-            HASHHEX HA1;
-            HASHHEX HA2 = "";
-            HASHHEX Response;
-
-            LOG_SHOW("计算摘要值所需参数：\n"
-                                    "pszNonce:%s\n"
-                                    "pszCNonce:%s\n"
-                                    "pszUser:%s\n"
-                                    "pszRealm:%s\n"
-                                    "pszPass:%s\n"
-                                    "pszAlg:%s\n"
-                                    "szNonceCount:%s\n"
-                                    "pszMethod:%s\n"
-                                    "pszQop:%s\n"
-                                    "pszURI:%s\n",
-                                    pszNonce,
-                                    pszCNonce,
-                                    pszUser,
-                                    pszRealm,
-                                    pszPass,
-                                    pszAlg,
-                                    szNonceCount,
-                                    pszMethod,
-                                    pszQop,
-                                    pszURI);
-            
-            DigestCalcHA1(pszAlg, pszUser, pszRealm, pszPass, pszNonce, pszCNonce, HA1);
-            DigestCalcResponse(HA1, pszNonce, szNonceCount, pszCNonce, pszQop, pszMethod, pszURI, HA2, Response);
-            LOG_SHOW("Response = %s\n", Response);
-
-
-            //配置认证对象 auth
-            /*
-            GET /protected/resource HTTP/1.1
-            Host: example.com
-            Authorization: Digest username="user", \
-            realm="Restricted Area", \
-            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", \ 
-            uri="/protected/resource", \
-            response="6629fae49393a05397450978507c4ef1", \
-            opaque="5ccc069c403ebaf9f0171e9517f40e41", \
-            qop=auth, \
-            nc=00000001, \
-            cnonce="0a4f113b"
-            */
 
             //把摘要认证所需参数存入本地
             strcpy(client->auth.realm, data_realm->value);  //来自于服务器
@@ -1908,86 +2014,156 @@ static int __http_client_msg_recv_pro(http_client_t *client)
             strcpy(client->auth.qop, data_qop->value);
             strcpy(client->auth.nonce, data_nonce->value);
 
-            
-            
-            strcpy(client->auth.uri, pszURI);
-            strcpy(client->auth.response, Response);
-            //------------------------------------------------------------------------------ 测试
+        }  
+    }
 
+
+
+    //处理错误码 401
+    if(client->parse.code == 401 && strcmp(client->parse.reason, HTTP_CLIENT_MSG_AUTH_REASON) == 0)  //需要认证
+    {
+        client->auth.authFaildCnt++;
+        if(client->auth.authFaildCnt > 3)
+        {
+            LOG_ALARM("认证失败次数超过3 次，将停止本次通信，请及时处理\n");
+            return 401;
+        }
+        
+        if(authType == _noAuth) //说明没有找到有用的 WWW-Authenticate 域
+        {
+            LOG_ALARM("没有找到有用的 WWW-Authenticate 域\n");
+            //某些处理...？？
+        }   
+
+        //发送验证测试
+        
+        if(client->useDigestAuth == 1)
+        {
+            char pszMethod[] = "GET";
+            char pszURI[] = "/cwmp";
+           __http_client_digest_calc(client, pszMethod, pszURI);   //计算摘要值
+
+            //构造 http 报文
             pos = 0;   
-            p = bufAuth;
-            httpmsg_client_first_line(&p, BUF_AUTH_SIZE, &len, pszMethod, pszURI, "http/1.1");
+            p = bufAuth + pos;
+            httpmsg_client_first_line(&p, BUF_AUTH_SIZE, &len, pszMethod, client->auth.uri, "http/1.1");
             pos += len;
             
-            p += pos;
+            p = bufAuth + pos;
             httpmsg_client_digest_auth_append(&p, BUF_AUTH_SIZE - pos, &len, &(client->auth));
             pos += len;
 
-            //-------------------------------------测试
-//            bufAuth[pos] = '\0';
-//            tcp_client_send(client->tcp, bufAuth, pos);
-//
-//            system("sleep 2");
-//            char tmpStr[] = "test name: key:";
-//            tcp_client_send(client->tcp, tmpStr, strlen(tmpStr) );
-//
-//            system("sleep 2");
-//            //char tmpStr2[] = "value\n\n";
-//            int tmpCnt = 0;
-//            char tmpStr2[128] = {0};
-//            tmpStr2[tmpCnt++] = 'v';
-//            tmpStr2[tmpCnt++] = 'a';
-//            tmpStr2[tmpCnt++] = 'l';
-//            tmpStr2[tmpCnt++] = '\0';
-//            tmpStr2[tmpCnt++] = 'e';
-//            tmpStr2[tmpCnt++] = '\n';
-//            tmpStr2[tmpCnt++] = '\n';
-//            tmpStr2[tmpCnt] = '\0';
-//
-//            tcp_client_send(client->tcp, tmpStr2, tmpCnt );
-            //-------------------------------------
-            LOG_SHOW("------------->pos:%d len:%d\n", pos, len);
             
-            p += pos;
-            len = snprintf(bufAuth + pos, BUF_AUTH_SIZE - pos, "Content-Length:3\n\n123"); //??
-            //len = snprintf(p, BUF_AUTH_SIZE - pos, "Content-Length:0\n\n"); //失败 p ??
+            p = bufAuth + pos;
+            //len = snprintf(bufAuth + pos, BUF_AUTH_SIZE - pos, "Content-Length:3\n\n123"); //??
+            len = snprintf(p, BUF_AUTH_SIZE - pos, "Content-Length:0\n\n"); //失败 p ??
             pos += len;
             
             //bufAuth[pos] = '\n';
             //bufAuth[pos+1] = '\0';
             
-            LOG_SHOW("发送认证测试 长度:%d 内容:%s\n", pos, bufAuth);
+            LOG_SHOW("发送摘要认证测试 长度:%d 内容:%s\n", pos, bufAuth);
             tcp_client_send(client->tcp, bufAuth, pos);
-
-            
-            //char tmpstr[] = "ok..........\n\n";
-            //tcp_client_send(client->tcp, tmpstr, strlen(tmpstr));
         }
         else
         {
-           LOG_ALARM("解析realm、nonce、opaque、qop出现问题，无法完成 摘要认证");
-           
+            pos = 0;   
+            p = bufAuth + pos;
+            httpmsg_client_first_line(&p, BUF_AUTH_SIZE, &len, "GET", "/cwmp", "http/1.1");
+            pos += len;
+            
+            p = bufAuth + pos;
+            httpmsg_client_basic_auth_append(&p, BUF_AUTH_SIZE - pos, &len, &(client->auth));
+            pos += len;
+
+            bufAuth[pos++] = '\n';
+            bufAuth[pos++] = '\0';
+            
+            LOG_SHOW("发送认证测试 长度:%d 内容:%s\n", pos, bufAuth);
+            tcp_client_send(client->tcp, bufAuth, pos);
+
         }
-        
+
+        return 401;     //返回错误码401，代表 处理http认证消息
     }
 
 
-    //测试发送数据
-//    httpClient_msg_t *msg = httpClient_create();
-//
-//    httpmsg_client_head_init(msg, "GET", "/CWMP", "HTTP/1.1", client->useDigestAuth, &(client->auth));
-//    
-//    if(msg->keyvalueEn == 1)
-//    {
-//        keyvalue_append_set_str(msg->keyvalue, "Content-Type", "text/html");
-//        keyvalue_append_set_str(msg->keyvalue, "Content-Length", "137");     
-//    }
-//    httpmsg_client_send_msg(msg, client->tcp);
-//    
-//    httpCLient_destroy(msg);
  
     return RET_OK;
 }   
+
+
+//http 负荷长度
+int __http_client_get_payload_len(http_client_t *client)
+{
+    //LOG_SHOW("__http_payload_recv 开始 ......\n");
+
+    if(client == NULL)return -1;
+    int contentLen;
+
+    
+    char lenStr[] = "Content-Length";
+   
+    link_obj_t *link = client->parse.head->link;
+
+    //httphead_show(user->head.parse);
+
+    contentLen = 0;
+
+    LINK_FOREACH(link, probe)
+    {
+        httphead_line_t *iter = (httphead_line_t *)(probe->data);        
+
+        //LOG_SHOW("name:%s  lenStr:%s\n", iter->name, lenStr);   
+        if(probe->en == 1 && strcmp(iter->name, lenStr) == 0) //查看是否存在 "Content-Length"
+        {
+           if((iter->keyvalue->list->array)[0]->en == 1)
+           {
+               //得到第一个 keyvalue 值，一般就是长度
+               keyvalue_data_t *kv =(keyvalue_data_t *)((iter->keyvalue->list->array)[0]->data);
+               if(kv->keyEn == 1)
+               {
+                    contentLen = atoi(kv->key);
+                    //LOG_SHOW("---->kv->key:%s contentLen:%d\n", kv->key, contentLen);    
+               }
+
+           }
+           break;
+           
+        }
+            
+    } 
+  
+    
+    return contentLen;
+}
+
+
+int __http_client_recv_payload(http_client_t *client, int needLen, int *endPos)
+{
+    //int ret;
+    if(client == NULL || endPos == NULL)return -1;    //参数错误
+    if(needLen < 0)return -2;   //其他意外情况
+
+    http_payload_t *payload = &(client->parse.payload);
+
+    if(client->bufLen >= needLen)  //完成接收
+    {
+        memcpy(payload->buf + payload->len, client->buf, needLen);
+        *endPos = needLen;
+        payload->len += needLen;
+        return 1;
+    }
+    else if(client->bufLen < needLen && needLen > 0)  //部分接收
+    {
+        memcpy(payload->buf, client->buf, client->bufLen);
+        *endPos = client->bufLen;
+        payload->len += client->bufLen;
+        return 0;
+    }
+    
+    return -2;  //其他意外情况
+}
 
 
 
@@ -2003,6 +2179,7 @@ int http_client_accept(http_client_t *client)
     //int len;
     int pos;
     int endPos;
+    static int payloadNeedLen;
 
     //接收数据（来自 tcp 接口的数据）
     pthread_mutex_lock(&(tcp->mutex));                               
@@ -2027,8 +2204,8 @@ int http_client_accept(http_client_t *client)
     }
     pthread_mutex_unlock(&(tcp->mutex));
 
-    LOG_SHOW("\n------------------------------------------http_client_accept\n");
-    LOG_SHOW("status:%d dataLen:%d dataIn:\n【%s】\n\n", client->status, client->bufLen, client->buf);
+    //LOG_SHOW("\n------------------------------------------http_client_accept\n");
+    //LOG_SHOW("status:%d dataLen:%d dataIn:\n【%s】\n\n", client->status, client->bufLen, client->buf);
 
     //状态机
     switch(client->status)   //状态变化？
@@ -2058,8 +2235,10 @@ int http_client_accept(http_client_t *client)
                 
                 if(ret == RET_OK)  //找到了头部    
                 {
-                    client->status = http_status_recv_head;
+                    httphead_clear_head(client->parse.head);  //清空头部
+                    
                     client->headByteCnt = 0;
+                    client->status = http_status_recv_head;
                     http_client_accept(client); //状态转移，然后重入
                 }
             }
@@ -2104,24 +2283,121 @@ int http_client_accept(http_client_t *client)
         }break;
         case http_status_head_pro:
         { 
-            __http_client_msg_recv_pro(client);
+            ret = __http_client_msg_recv_pro(client);
 
-            client->status = http_status_recv_head_find;    //测试
-            http_client_accept(client); 
+            if(ret == RET_OK)   //头部处理完成（这里知识简单的处理了http认证）
+            {
+                payloadNeedLen = __http_client_get_payload_len(client);
+                
+                LOG_SHOW("----->__get_http_payload_len payloadNeedLen:%d\n", payloadNeedLen);
+
+                if(payloadNeedLen < 0)
+                {
+                    LOG_ALARM("payloadLen < 0");
+                    payloadNeedLen = 0;
+                }
+                else if(payloadNeedLen > HTTP_PAYLOAD_BUF_SIZE)
+                {
+                    LOG_ALARM("负载长度超过缓存容量，需要额外处理");
+                    payloadNeedLen = HTTP_PAYLOAD_BUF_SIZE;
+                }
+                
+                client->parse.payload.len = 0; //清空净荷缓存区   
+                memset(client->parse.payload.buf, '\0', HTTP_PAYLOAD_BUF_SIZE);
+                
+                client->status = http_status_recv_payload;    
+                http_client_accept(client);
+            }
+            else 
+            {
+                if(ret == 401)
+                    LOG_SHOW("http_status_head_pro：http 401 处理， 对方要求认证 \n");
+   
+                client->status = http_status_recv_head_find;    
+                http_client_accept(client); 
+            }
+             
+        }break;
+        case http_status_recv_payload:    //接收净荷
+        {
+            ret = __http_client_recv_payload(client, payloadNeedLen, &endPos);
+
+            if(ret == 0)    //部分接收
+            {
+                payloadNeedLen -= client->bufLen;
+                client->bufLen = 0;                   
+            }
+            else if(ret == 1)   //完成接收
+            {
+                //去掉处理完成的字符
+                if(endPos >= 0)
+                {
+                    if(endPos >= client->bufLen - 1)endPos = client->bufLen - 1;    
+                    client->bufLen = client->bufLen - endPos - 1;   
+                    memmove(client->buf, client->buf + endPos + 1, client->bufLen);   
+                    client->buf[client->bufLen] = '\0';   //也许是字符串？   
+                }
+
+                client->status = http_status_data_pro;    //状态转移
+                http_client_accept(client);
+            }
+            else if(ret == -1)
+            {
+                LOG_ALARM("__http_payload_recv 错误");
+                client->status = http_status_recv_head_find;    //状态转移
+                //http_client_accept(client);
+            }
+
+        }break;
+        case http_status_data_pro:  //处理消息体
+        {
+            client->parse.payload.buf[client->parse.payload.len] = '\0';
+            //LOG_SHOW("http_status_data_pro 开始，msg:\n【%s】\n", client->parse.payload.buf);
+
+            client->retHttpMsg = 0;
+            sem_post(&(client->semHttpMsgReady));    
+            
+            sem_wait(&(client->semHttpMsgRecvComplete));  
+            
+            LOG_SHOW("---->http_status_data_pro 完成, retHttpMsg :%d\n", client->retHttpMsg ); 
             
             
+            if(client->retHttpMsg == 0)
+            {
+                LOG_SHOW("已经存入消息队列\n");
+                client->status = http_status_end;    //状态转移
+                http_client_accept(client);
+            }
+            else    //没有被正确处理，可能需要阻塞
+            {
+                if(client->retHttpMsg == -1)
+                {
+                    //LOG_SHOW("session 消息队列满了，来不及处理\n");
+                }
+                else if(client->retHttpMsg == -3) 
+                {
+                    //LOG_SHOW("消息队列不允许被操作\n"); 
+                }
+                else if(client->retHttpMsg == -2) 
+                {
+                    //LOG_SHOW("其他情况\n");;  
+                }
+
+                //测试：阻塞后，每隔1s 重入
+                system("sleep 1");
+                http_client_accept(client);
+            }
+            
+   
         }break;
-        case http_status_recv_payload:
+        case http_status_end:   //结束
         {
-            ;
-        }break;
-        case http_status_data_pro:
-        {
-            ;
-        }break;
-        case http_status_end:
-        {
-            ;
+            //LOG_SHOW("http_status_end ......\n");
+            //结束后的操作 ？？
+            
+            client->status = http_status_start;    //状态转移
+            //http_client_accept(client);
+            
         }break;
     }    
 
@@ -2263,8 +2539,104 @@ int http_client_send(http_client_t *client, char *msg, int size)
     return tcp_client_send(client->tcp, msg, size);  
 }
 
+//客户端 发送带有 认证 的http 报文
+int http_client_send_msg(http_client_t *client, void *body, int size,
+                            char *method, char *uri)
+{       
+    
+#undef BUF_SIZE    
+#define BUF_SIZE 1024   //用于存储头部信息
+    char buf[BUF_SIZE + 8] = {0};
+    char *bufSeek;
+    int pos;
+    int len;
+    int ret;
+
+    //char buf128[128 + 8] = {0};
+    
+    if(client == NULL)return RET_FAILD;
 
 
+    //A、头部信息
+    //A1、第一行填充
+    //char method[] = "GET";
+    //char uri[] = "/cwmp";
+    char version[] = "http/1.1";
+    pos = 0;   
+    bufSeek = buf;
+    httpmsg_client_first_line(&bufSeek, BUF_SIZE - pos, &len, method, uri, version);
+    pos += len;
+    
+    //A2、认证域 填充
+    if(client->useDigestAuth == 1) //摘要认证
+    {
+        __http_client_digest_calc(client, method, uri);
+        
+        bufSeek = buf + pos;
+        httpmsg_client_digest_auth_append(&bufSeek, BUF_SIZE - pos, &len, &(client->auth));
+        pos += len;
+    }
+    else    //其他情况，暂时默认是基础认证
+    {
+        clientauth_updata(&(client->auth));  //更新 client->auth ，为认证做准备
+        
+        bufSeek = buf + pos;
+        httpmsg_client_basic_auth_append(&bufSeek, BUF_SIZE - pos, &len, &(client->auth));
+        pos += len;     
+               
+    }
+
+    //A3、内容类型
+    char content[] = "Content-Type: text/xml; charset=\"UTF-8\"\n"
+                     "Content-Length: ";
+    //snprintf(buf128, 128, "%s%d\n", content, size);
+    //len = strlen(buf128);
+    bufSeek = buf + pos;
+    len = snprintf(bufSeek, BUF_SIZE - pos, "%s%d\n", content, size);
+    pos += len;
+
+    //A4、SOAPAction 域（暂时没有作用，用来凑数）
+    char soapAction[] = "SOAPAction:\"urn:dslforum-org:cwmp-1-4\"\n";
+    //len = strlen(soapAction);
+    bufSeek = buf + pos;
+    len = snprintf(bufSeek, BUF_SIZE - pos, "%s", soapAction);
+    pos += len;
+
+    //A5、空行
+    buf[pos++] = '\n';
+    buf[pos] = '\0'; //收尾
+
+    //B、http 消息体
+    int sendSpaceLen = BUF_SIZE + size + 8;
+    void *sendSpace = (void *)POOL_MALLOC(sendSpaceLen);
+    if(sendSpace == NULL)
+    {
+        LOG_ALARM("内存分配失败，停止发送http msg");
+        return RET_FAILD;
+    }
+    memset(sendSpace, '\0', sendSpaceLen);
+    strcpy(sendSpace, buf);
+
+    pos = strlen(buf);
+    bufSeek = sendSpace + pos;
+    
+    if(body != NULL && size > 0)    //判断消息体是否为空
+    {
+        memcpy((void *)bufSeek, body, size);
+        pos += size;
+    }
+        
+    
+    bufSeek[pos++] = '\0'; //字符串末尾，可能要用到
+
+    LOG_SHOW("客户端发送msg 长度:%d 内容:%s\n", pos, (char *)sendSpace);
+
+    ret = tcp_client_send_data(client->tcp,sendSpace , pos);
+    LOG_SHOW("发送完成，返回值 ret:%d\n", ret);
+    POOL_FREE(sendSpace);
+
+    return RET_OK;
+}
 
 
 /*==============================================================

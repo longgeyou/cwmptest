@@ -44,7 +44,7 @@ void httpmsg_mg_init();
 void httpmsg_test();
 
 
-int httpmsg_server_first_line(char **msg, int maxSize, int *usedLen, char *version, char *code, char *reason);
+int httpmsg_server_first_line(char **msg, int maxSize, int *usedLen, char *version, int code, char *reason);
 int httpmsg_server_basic_auth_append(char **msg, int maxSize, int *usedLen, char *realm);
 int httpmsg_server_digest_auth_append(char **msg, int maxSize, int *usedLen, server_digest_auth_obj_t *auth);
 int httpmsg_client_first_line(char **msg, int maxSize, int *usedLen, char *method, char *uri, char *version);

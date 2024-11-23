@@ -1,53 +1,26 @@
 
 ======================log start=======================
-[info 0][Fri Nov 22 21:39:26 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:573 
+[info 0][Sun Nov 24 00:19:55 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:573 
 connect to [192.168.1.20:8080] OK
+等待消息队列非空...
 ---------------->POLL   IN
-
-------------------------------------------http_client_accept
-status:0 dataLen:160 dataIn:
-【http/1.1 401 Unauthorized
-WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=e76c60ade96b6b7888c37b3503588dbd, opaque=fdda18857a173a8d4c454752e839019c
-
-】
-
-
-------------------------------------------http_client_accept
-status:1 dataLen:160 dataIn:
-【http/1.1 401 Unauthorized
-WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=e76c60ade96b6b7888c37b3503588dbd, opaque=fdda18857a173a8d4c454752e839019c
-
-】
-
 解析头部 version:http/1.1 code:401 reason:Unauthorized
-
-------------------------------------------http_client_accept
-status:2 dataLen:134 dataIn:
-【WWW-Authenticate: Digest realm=/cwmp, qop=auth-int, nonce=e76c60ade96b6b7888c37b3503588dbd, opaque=fdda18857a173a8d4c454752e839019c
-
-】
-
 ============================show head
 num:1
 --------------show line--------------
 name:WWW-Authenticate
 key:Digest realm value:/cwmp 
 key:qop value:auth-int 
-key:nonce value:e76c60ade96b6b7888c37b3503588dbd 
-key:opaque value:fdda18857a173a8d4c454752e839019c 
-[info 1][Fri Nov 22 21:39:27 2024]file:protocol/session/http.c  fun:http_client_accept  line:2100 
+key:nonce value:85546880e60faff1ec17b9a2bc1b4520 
+key:opaque value:b1fa0c6bba26b231b6262ddb44a0a592 
+[info 1][Sun Nov 24 00:19:57 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
 http 头部处理完毕 ...
-
-------------------------------------------http_client_accept
-status:3 dataLen:1 dataIn:
-【】
-
  客户端 http 报文接收处理
 需要摘要认证 ...
 计算摘要认证 ...
 计算摘要值所需参数：
-pszNonce:e76c60ade96b6b7888c37b3503588dbd
-pszCNonce:2288fd5ec
+pszNonce:85546880e60faff1ec17b9a2bc1b4520
+pszCNonce:41e8eafc0
 pszUser:admin
 pszRealm:/cwmp
 pszPass:123456
@@ -56,48 +29,17 @@ szNonceCount:00000010
 pszMethod:GET
 pszQop:auth-int
 pszURI:/cwmp
-Response = d68e6d47d148a09f9dbfe5add1ebb446
-------------->pos:251 len:232
-发送认证测试 长度:272 内容:GET /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=e76c60ade96b6b7888c37b3503588dbd, uri="/cwmp", response="d68e6d47d148a09f9dbfe5add1ebb446", opaque=fdda18857a173a8d4c454752e839019c, qop=auth-int, nc=10, cnonce="2288fd5ec"
-Content-Length:3
+Response = 70443f36872f9057d8d5fe62d53d71d2
+发送摘要认证测试 长度:269 内容:GET /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=85546880e60faff1ec17b9a2bc1b4520, uri="/cwmp", response="70443f36872f9057d8d5fe62d53d71d2", opaque=b1fa0c6bba26b231b6262ddb44a0a592, qop=auth-int, nc=10, cnonce="41e8eafc0"
+Content-Length:0
 
-123
 
-------------------------------------------http_client_accept
-status:1 dataLen:1 dataIn:
-【】
-
+http_status_head_pro：http 401 处理， 对方要求认证 
 ---------------->POLL   IN
-
-------------------------------------------http_client_accept
-status:1 dataLen:114 dataIn:
-【HTTP/1.1 200 OK
-Host: cwmp.example.com
-Content-Type: text/xml; charset="UTF-8"
-Content-Length: 14
-
-hello visitor!】
-
 解析头部 version:HTTP/1.1 code:200 reason:OK
-
-------------------------------------------http_client_accept
-status:2 dataLen:98 dataIn:
-【Host: cwmp.example.com
-Content-Type: text/xml; charset="UTF-8"
-Content-Length: 14
-
-hello visitor!】
-
 ============================show head
-num:4
---------------show line--------------
-name:WWW-Authenticate
-key:Digest realm value:/cwmp 
-key:qop value:auth-int 
-key:nonce value:e76c60ade96b6b7888c37b3503588dbd 
-key:opaque value:fdda18857a173a8d4c454752e839019c 
-key:realm value:/cwmp 
+num:3
 --------------show line--------------
 name:Host
 key:cwmp.example.com 
@@ -108,16 +50,179 @@ key:charset value:"UTF-8"
 --------------show line--------------
 name:Content-Length
 key:14 
-[info 2][Fri Nov 22 21:39:27 2024]file:protocol/session/http.c  fun:http_client_accept  line:2100 
+[info 2][Sun Nov 24 00:19:58 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
 http 头部处理完毕 ...
-
-------------------------------------------http_client_accept
-status:3 dataLen:15 dataIn:
-【hello visitor!】
-
  客户端 http 报文接收处理
-
-------------------------------------------http_client_accept
-status:1 dataLen:15 dataIn:
+----->__get_http_payload_len payloadNeedLen:14
+开始发送条件变量....
+开始处理消息队列表...
+---->http_status_data_pro 完成, retHttpMsg :0
+msgData len:14 msg:
 【hello visitor!】
+已经存入消息队列
+sessioncpe_status_start ret:0
+sessioncpe_status_establish_connection 来了......
+计算摘要值所需参数：
+pszNonce:85546880e60faff1ec17b9a2bc1b4520
+pszCNonce:41e8eafc0
+pszUser:admin
+pszRealm:/cwmp
+pszPass:123456
+pszAlg:md5
+szNonceCount:00000011
+pszMethod:POST
+pszQop:auth-int
+pszURI:/cwmp
+Response = ec1e2d14f94c93190c5a83065932049c
+客户端发送msg 长度:1591 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=85546880e60faff1ec17b9a2bc1b4520, uri="/cwmp", response="ec1e2d14f94c93190c5a83065932049c", opaque=b1fa0c6bba26b231b6262ddb44a0a592, qop=auth-int, nc=11, cnonce="41e8eafc0"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 1237
+SOAPAction:"urn:dslforum-org:cwmp-1-4"
 
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+long123
+</cwmp:ID>
+<cwmp:HoldRequests soapenv:mustUnderstand=1>
+1
+</cwmp:HoldRequests>
+</soap:Header>
+<soap:Body>
+<cwmp:Inform>
+<DeviceId>
+<Manufacturer>
+设备制造商的名称
+</Manufacturer>
+<OUI>
+设备特定序列号的产品类别的标识符
+</OUI>
+<ProductClass>
+特定序列号的产品类别的标识符
+</ProductClass>
+<SerialNumber>
+特定设备的标识符
+</SerialNumber>
+</DeviceId>
+<EventList soapenc:arrayType=tns:ParameterValueStruct[2]>
+<EventStruct>
+<EventCode>
+0 BOOTSTRAP
+</EventCode>
+<CommandKey>
+CommandKey_0
+</CommandKey>
+</EventStruct>
+<EventStruct>
+<EventCode>
+1 BOOT
+</EventCode>
+<CommandKey>
+CommandKey_1
+</CommandKey>
+</EventStruct>
+</EventList>
+<MaxEnvelopes>
+1
+</MaxEnvelopes>
+<CurrentTime>
+2024-11-19T17:51:00
+</CurrentTime>
+<RetryCount>
+0
+</RetryCount>
+<ParameterList>
+<ParameterValueStruct>
+<Name>
+parameter_1
+</Name>
+<Value>
+76616c75655f32
+</Value>
+</ParameterValueStruct>
+<ParameterValueStruct>
+<Name>
+parameter_2
+</Name>
+<Value>
+76616c75655f32
+</Value>
+</ParameterValueStruct>
+</ParameterList>
+</cwmp:Inform>
+</soap:Body>
+</soap:Envelope>
+
+发送完成，返回值 ret:1591
+等待消息队列非空...
+---------------->POLL   IN
+解析头部 version:http/1.1 code:200 reason:OK
+============================show head
+num:4
+--------------show line--------------
+name:WWW-Authenticate
+key:Digest realm value:/cwmp 
+key:qop value:auth-int 
+key:nonce value:85546880e60faff1ec17b9a2bc1b4520 
+key:opaque value:b1fa0c6bba26b231b6262ddb44a0a592 
+--------------show line--------------
+name:Content-Type
+key:text/xml 
+key:charset value:"UTF-8" 
+--------------show line--------------
+name:Content-Length
+key:381 
+--------------show line--------------
+name:SOAPAction
+key:"urn:dslforum-org:cwmp-1-4" 
+[info 3][Sun Nov 24 00:19:58 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
+http 头部处理完毕 ...
+ 客户端 http 报文接收处理
+需要摘要认证 ...
+计算摘要认证 ...
+----->__get_http_payload_len payloadNeedLen:381
+开始发送条件变量....
+开始处理消息队列表...
+
+---------------- show msg queue ----------------
+---->http_status_data_pro 完成, retHttpMsg :0
+cnt:0 len:381 msg(字符串表示):
+【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+long123
+</cwmp:ID>
+<cwmp:HoldRequests soapenv:mustUnderstand=1>
+1
+</cwmp:HoldRequests>
+</soap:Header>
+<soap:Body>
+<cwmp:InformResponse>
+<MaxEnvelopes>
+1
+</MaxEnvelopes>
+</cwmp:InformResponse>
+</soap:Body>
+</soap:Envelope>
+】
+已经存入消息队列
+msgData len:381 msg:
+【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+long123
+</cwmp:ID>
+<cwmp:HoldRequests soapenv:mustUnderstand=1>
+1
+</cwmp:HoldRequests>
+</soap:Header>
+<soap:Body>
+<cwmp:InformResponse>
+<MaxEnvelopes>
+1
+</MaxEnvelopes>
+</cwmp:InformResponse>
+</soap:Body>
+</soap:Envelope>
+】

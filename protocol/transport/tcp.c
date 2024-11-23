@@ -604,10 +604,26 @@ int tcp_server_read(tcp_server_t *tcp, int userId, char *content, int size) //�
     return read(tcp->user[userId].fd, content, size);
 }
 
-int tcp_client_send(tcp_client_t *cl, char *msg, int size)
+int tcpUser_send(tcpUser_obj_t *user, void *data, int dataLen)
+{
+    if(user < 0 || data == NULL || dataLen <= 0)
+    {
+        LOG_ALARM("param");
+        return -1;
+    }
+    return write(user->fd, data, dataLen);
+}
+
+int tcp_client_send(tcp_client_t *cl, char *msg, int size)  //这里有待修改，msg是字符串的话，长度参数可以不用
 {
     return write(cl->fd, (const void *)msg, size);
 }
+
+int tcp_client_send_data(tcp_client_t *cl, void *data, int size)  
+{
+    return write(cl->fd, (const void *)data, size);
+}
+
 
 //接收数据
 int tcp_client_read(tcp_client_t *cl, char *content, int size)

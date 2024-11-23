@@ -112,6 +112,7 @@ typedef struct httpUser_obj_t{
 
     //id 号
     int id;
+    tcpUser_obj_t *tcpUser;
 
     
 }httpUser_obj_t;
@@ -185,7 +186,10 @@ typedef struct http_client_t{
     char useSSL;    //是否使用SSL
     char useDigestAuth; //是否使用摘要认证
 
-     
+    //4、提供给上层msg 
+    sem_t semHttpMsgReady;  //准备好了信息，供 session 的线程服务调用
+    sem_t semHttpMsgRecvComplete;   //信息已经放入了 session 的消息队列中
+    int retHttpMsg; //返回的信息
     
 }http_client_t;
 //---------------------------------------------------------客户端
@@ -213,6 +217,8 @@ int http_send(http_server_t *http, int userId, void *data, int dataLen);
 int http_send_str(http_server_t *http, int userId, char *str);
 int httpUser_send(http_server_t *http, httpUser_obj_t *user, void *data, int dataLen);
 int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str);
+int http_send_msg(httpUser_obj_t *user, void *msg, 
+                    int msgLen, int faultCode, char *reason);
 
 
 //服务器应用
@@ -223,6 +229,8 @@ int http_server_start(http_server_t *http);
 int http_client_accept(http_client_t *client);
 int http_client_start(http_client_t *client, char *ipv4, int port, char *targetIpv4, int targetPort);
 int http_client_send(http_client_t *client, char *msg, int size);
+int http_client_send_msg(http_client_t *client, void *body, int size,
+                            char *method, char *uri);
 
 
 

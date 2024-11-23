@@ -246,7 +246,7 @@ int httpmsg_client_send_msg(httpClient_msg_t *msg, tcp_client_t *client)
 ==============================================================*/
 
 //服务器报文 添加第一行
-int httpmsg_server_first_line(char **msg, int maxSize, int *usedLen, char *version, char *code, char *reason)
+int httpmsg_server_first_line(char **msg, int maxSize, int *usedLen, char *version, int code, char *reason)
 {
 
     char buf[BUF_SIZE_128 + 8] = {0};
@@ -254,7 +254,7 @@ int httpmsg_server_first_line(char **msg, int maxSize, int *usedLen, char *versi
     if(msg == NULL) return RET_FAILD;
     if(*msg == NULL)return RET_FAILD;
 
-    snprintf(buf, BUF_SIZE_128, "%s %s %s\n", version, code, reason);
+    snprintf(buf, BUF_SIZE_128, "%s %d %s\n", version, code, reason);
     *usedLen = strlen(buf);
 
     if(*usedLen  > maxSize)return RET_FAILD;
@@ -436,7 +436,6 @@ void httpmsg_server_response_hello(char *out, int len)
     snprintf(buf1024, 1024, header, strlen(content));                    
     snprintf(out, len, "%s%s", buf1024, content);  
 }
-
 
 
 

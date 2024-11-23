@@ -38,6 +38,7 @@ void queue_destroy_member(queue_member_t *member);
 void queue_destroy_member_and_data(queue_member_t *member);
 void queue_destroy(queue_obj_t *queue);
 void queue_destroy_and_data(queue_obj_t *queue);
+void queue_clear(queue_obj_t *queue);
 
 
 int queue_isFull(queue_obj_t *queue);

@@ -184,6 +184,30 @@ void queue_destroy_and_data(queue_obj_t *queue)
     FREE(queue);
 }
 
+//清空
+void queue_clear(queue_obj_t *queue)
+{
+    if(queue == NULL)return ;
+
+    int i;
+    int pos;
+    //摧毁队列的所有成员
+    for(i = 0; i < queue->size; i++)
+    {
+        pos = (queue->bottom + i) % queue->size;
+        if(pos == queue->top)
+            break;
+        
+        queue_destroy_member((queue->array)[pos]);
+    }
+
+    //释放队列成员 array
+    queue->bottom = 0;
+    queue->top = 0;
+    
+}
+
+
 
 /*==============================================================
                         应用

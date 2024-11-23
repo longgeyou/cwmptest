@@ -14,7 +14,7 @@
 #include "queue.h"
 #include "httpmsg.h"
 #include "soap.h"
-
+#include "soapmsg.h"
 
 
 /*==============================================================
@@ -330,6 +330,7 @@ int sessionacs_append(sessionacs_obj_t *session, sessionacs_member_t *member)
 
 
 
+
 /*==============================================================
                         应用
 ==============================================================*/
@@ -369,6 +370,53 @@ void sessionacs_show_msgQUeue(sessionacs_member_t *member)
     
 }
 
+//-----------------------------------------------------------------会话过程辅助函数
+//1、建立连接（默认acs 被动接收到 Inform 消息，然后开始建立会话）
+static int __aux_establish_connection(sessionacs_member_t *member)
+{
+    if(member == NULL)return RET_FAILD;
+#undef BUF_SIZE
+#define BUF_SIZE 4096
+    char buf[BUF_SIZE + 8] = {0};
+    //char buf64[64] = {0};
+    int pos = 0;
+    int ret;
+    
+    //建立会话所要的操作（以后拓展）
+
+    
+
+    //完成建立后，发送 Infor response 消息，告知 cpe
+    //A、构建 Inform 消息
+    //A1、添加基础内容
+    soap_obj_t *soap = soap_create();
+    soap_header_t header = {
+        .ID = "long123",
+        .idEn = 1,
+        .HoldRequests = 1,
+        .holdRequestsEn = 1
+    };
+    soapmsg_set_base(soap, &header);
+    soap_node_t *root = soap->root;
+
+    soap_node_t *body = soap_node_get_son(root, "soap:Body");
+    
+    //A2、添加rpc方法 InformResponse
+    rpc_InformResponse_t dataInformResponse = {.MaxEnvelopes = 1};
+    soap_node_append_son(body, soapmsg_to_node_InformResponse(dataInformResponse));
+
+    //B、生成soap信封，并通过http 接口发送给 acs   
+    soap_node_to_str(soap->root, buf, &pos, BUF_SIZE);
+    
+    ret = http_send_msg(member->user, (void *)buf, strlen(buf), 200, "OK");
+
+    if(ret == 0)
+    {
+        //LOG_SHOW("发送 Inform 完成\n");
+    }
+    
+    return RET_OK;    
+}
 
 //会话线程
 void *thread_sessionacs(void *in)
@@ -392,6 +440,7 @@ void *thread_sessionacs(void *in)
     char *strp;
     int informExit;
     char buf1024[1024 + 8] = {0};
+    int ret;
     
     while(1)
     {
@@ -409,8 +458,7 @@ void *thread_sessionacs(void *in)
                 
            }break;
            case sessionacs_status_establish_connection:{    //建立连接
-                //等待msgQueue有可用信息 ，需要条件变量
-                   
+                //等待msgQueue有可用信息 ，需要条件变量   
                 pthread_mutex_lock(&(member->mutexMsgQueue));
                 while (queue_isEmpty(member->msgQueue)) {
                     LOG_SHOW("等待消息队列非空...\n");
@@ -421,57 +469,74 @@ void *thread_sessionacs(void *in)
                 LOG_SHOW("开始处理消息队列表...\n");
                 //sessionacs_show_msgQUeue(member);
 
+                informExit = 0;
                 while(!queue_isEmpty(member->msgQueue))
                 {                     
-                    queue_out_get_pointer(member->msgQueue, (void**)(&msgData));    
-                    strp = (char *)(msgData->d);
-                    strp[msgData->len] = '\0';
-                    LOG_SHOW("-->msgData len:%d msg:\n【%s】\n", msgData->len, strp);
+                    queue_out_get_pointer(member->msgQueue, (void**)(&msgData));  
+                    if(msgData->d != NULL)  //msgData 可能是空消息，这里要注意
+                    {
+                        strp = (char *)(msgData->d);
+                        strp[msgData->len] = '\0';
+                        LOG_SHOW("-->msgData len:%d msg:\n【%s】\n", msgData->len, strp);
 
 
-                    //开始解析成 soap 节点，这里简单规定，第一个字节点应该是 "soap:Envelope"
-                    //里面包含的 Inform 方法 用于acs的初始化连接；其他的话不处理，
-                    //一律回复 HTTP/1.1 200 OK；后面需要优化；对于htpp 的错误码响应的实现，但
-                    //是要重构 http ，以后再说吧
-                    soapNodeRoot = soap_str2node(strp);
-                    soap_node_show(soapNodeRoot);
+                        //开始解析成 soap 节点，这里简单规定，第一个字节点应该是 "soap:Envelope"
+                        //里面包含的 Inform 方法 用于acs的初始化连接；其他的话不处理，
+                        //一律回复 HTTP/1.1 200 OK；后面需要优化；对于htpp 的错误码响应的实现，但
+                        //是要重构 http ，以后再说吧
+                        soapNodeRoot = soap_str2node(strp);
+                        soap_node_show(soapNodeRoot);
 
-                    informExit = 0;
-                    //这里只考虑 soap消息的第一个 soap 信封（1.4 新版本只支持一个信封， 老版本
-                    //则需要协商个数）
-                    soapNodeInform = soap_node_get_son(
-                                        soap_node_get_son(
-                                        soap_node_get_son(
-                                        soapNodeRoot, 
-                                        "soap:Envelope"), 
-                                        "soap:Body"), 
-                                        "soap:Envelope");
-                   if(soapNodeInform != NULL)
-                   {
-                        informExit = 1;
-                        break;
-                   }
- 
+                        
+                        //这里只考虑 soap消息的第一个 soap 信封（1.4 新版本只支持一个信封， 老版本
+                        //则需要协商个数）
+                        soapNodeInform = soap_node_get_son(
+                                            soap_node_get_son(
+                                            soap_node_get_son(
+                                            soapNodeRoot, 
+                                            "soap:Envelope"), 
+                                            "soap:Body"), 
+                                            "cwmp:Inform");
+                       if(soapNodeInform != NULL)
+                       {
+                            informExit = 1;
+                            break;
+                       }
+
+                    }
+                    else
+                    {
+                        LOG_SHOW("-->msgData len:%d msg:\n【空】\n", msgData->len);
+                    }
+                    
                 }
                 
                 pthread_mutex_unlock(&(member->mutexMsgQueue));
                 
-                if(informExit == 0) //发送回复
-                {
-                    httpmsg_server_response_hello(buf1024, 1024);
-                    LOG_SHOW("开始发送 http 的回复信息\n");
-                    httpUser_send_str(member->session->http, member->user, buf1024);
-                }
-                else
+                if(informExit == 1)  //得到 Inform 消息
                 {
                     if(member->user->id >= 0 && member->user->id < HTTP_USER_NUM)
                     {
-                        tcpUser_obj_t *tcpUser = &(member->session->http->tcp[member->user->id]);
+                        tcpUser_obj_t *tcpUser = &((member->session->http->tcp->user)[member->user->id]);
                         LOG_SHOW("收到来自 %s:%d 的 Inform 消息，开始握手.....\n", tcpUser->ipv4, tcpUser->port);
 
                     }
+
+                    //关闭 msg 队列接收
                     
-                    
+                    //建立连接的操作
+                    ret = __aux_establish_connection(member);  
+
+                    if(ret == RET_OK)
+                    {
+                        member->status = sessionacs_status_send;    //状态转移
+                    }
+                }
+                else //发送回复
+                {
+                    httpmsg_server_response_hello(buf1024, 1024);
+                    LOG_SHOW("开始发送 http 的回复信息\n");
+                    httpUser_send_str(member->session->http, member->user, buf1024);  
                 }
 
                

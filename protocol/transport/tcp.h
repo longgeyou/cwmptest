@@ -114,6 +114,10 @@ int tcp_client_start(tcp_client_t *client, char *ipv4, int port);
 int tcp_server_send(tcp_server_t *tcp, int userId, char *msg, int size);
 int tcp_server_read(tcp_server_t *tcp, int userId, char *content, int size) ;
 int tcp_client_send(tcp_client_t *cl, char *msg, int size);
+int tcp_client_send_data(tcp_client_t *cl, void *data, int size);
+int tcpUser_send(tcpUser_obj_t *user, void *data, int dataLen);
+
+
 int tcp_client_read(tcp_client_t *cl, char *content, int size);
 
 
