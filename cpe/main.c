@@ -86,7 +86,7 @@ void test(int port)
     }
 	    
     
-	
+	log_test();
 	//link_test();
 	//list_test();
 	//dic_test();
@@ -103,7 +103,7 @@ void test(int port)
 	//http_other_test();
     //stack_test();
     //soap_test();
-    queue_test();
+    //queue_test();
     //soapmsg_test();
     //cwmprpc_test();
     //soapmsg_test2();

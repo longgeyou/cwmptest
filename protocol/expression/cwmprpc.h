@@ -357,8 +357,7 @@ typedef struct rpc_fault_code_t{
 }rpc_fault_code_t;
 
 
-extern const rpc_fault_code_t cpe_fault_code[];
-extern const rpc_fault_code_t acs_fault_code[];
+
 
 
 
@@ -433,9 +432,14 @@ typedef struct rpc_soap_fault_t{
 }rpc_soap_fault_t;
 
 
+/*==============================================================
+                        全局变量
+==============================================================*/
+extern const rpc_fault_code_t cpe_fault_code[];
+extern const rpc_fault_code_t acs_fault_code[];
 
-
-
+extern const char *cwmprpc_cpe_method_g[];
+extern const char *cwmprpc_cpe_method_soap_name_g[];
 
 /*==============================================================
                         接口
@@ -444,6 +448,9 @@ void cwmprpc_test();
 
 int cwmprpc_dateTime2str(dateTime date, char *out, int outLen);
 int cwmprpc_str2dateTime(char *in, dateTime *date);
+
+int cwmprpc_cpe_method_soap_name_match(char *in);
+int cwmprpc_acs_method_soap_name_match(char *in);
 
 
 

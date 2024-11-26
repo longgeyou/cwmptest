@@ -38,7 +38,7 @@ typedef struct soap_obj_t{
 typedef struct soap_header_t{
     char ID[SOAP_HEADER_ID_STRING_LENGTH];
     char idEn;  //指示是否使用 ID
-    char HoldRequests;
+    char HoldRequests[8];   //bool类型，要么是 "true" 要么是 "false"
     char holdRequestsEn;    //指示是否使用 HoldRequests
 }soap_header_t;
 
@@ -73,6 +73,7 @@ void soap_node_to_str(soap_node_t *node, char *buf, int *pos, int bufLen);
 soap_node_t *soap_str2node(char *str);
 soap_node_t *soap_node_get_son(soap_node_t *node, char *name);
 
+int soap_node_copy(soap_node_t *in, soap_node_t **outp);
 
 
 

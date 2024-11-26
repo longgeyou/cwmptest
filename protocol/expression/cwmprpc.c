@@ -21,7 +21,53 @@ cwmp 远程过程调用 数据模型
 
 
 #include <stdio.h>
+#include <string.h>
+
 #include "cwmprpc.h"
+
+/*==============================================================
+                        cpe支持的rpc方法
+==============================================================*/
+const char *cwmprpc_cpe_method_g[] = {
+    "GetRPCMethods",
+    "SetParameterValues",
+    "GetParameterValues",
+    "GetParameterNames",
+    "SetParameterAttributes",
+    "GetParameterAttributes",
+    "AddObject",
+    "DeleteObject",
+    "Reboot",
+    "Download"
+};
+
+
+const char *cwmprpc_cpe_method_soap_name_g[] = {
+    "cwmp:GetRPCMethods",
+    "cwmp:SetParameterValues",
+    "cwmp:GetParameterValues",
+    "cwmp:GetParameterNames",
+    "cwmp:SetParameterAttributes",
+    "cwmp:GetParameterAttributes",
+    "cwmp:AddObject",
+    "cwmp:DeleteObject",
+    "cwmp:Reboot",
+    "cwmp:Download"
+};
+
+
+const char *cwmprpc_acs_method_g[] = {
+    "Inform"
+    "GetRPCMethods"
+    "TransferComplete"
+};
+
+
+const char *cwmprpc_acs_method_soap_name_g[] = {
+    "cwmp:Inform"
+    "cwmp:GetRPCMethods"
+    "cwmp:TransferComplete"
+};
 
 
 
@@ -190,6 +236,40 @@ int cwmprpc_str2dateTime(char *in, dateTime *date)
     date->mouth--;
     date->day--;
     return 0;
+}
+
+//匹配 cpe rpc 方法，例如 "cwmp:GetRPCMethods"
+int cwmprpc_cpe_method_soap_name_match(char *in)
+{
+    if(in == NULL)return -1;
+
+    int i;
+    int num;
+    num = sizeof(cwmprpc_cpe_method_soap_name_g) / sizeof(char *);
+    for(i = 0; i < num; i++)
+    {
+        if(strcmp(cwmprpc_cpe_method_soap_name_g[i], in) == 0)
+            return 0;   //说明匹配到了
+    }
+    
+    return -2;
+}
+
+//匹配 acs rpc 方法，例如 "cwmp:GetRPCMethods"
+int cwmprpc_acs_method_soap_name_match(char *in)
+{
+    if(in == NULL)return -1;
+
+    int i;
+    int num;
+    num = sizeof(cwmprpc_acs_method_soap_name_g) / sizeof(char *);
+    for(i = 0; i < num; i++)
+    {
+        if(strcmp(cwmprpc_acs_method_soap_name_g[i], in) == 0)
+            return 0;   //说明匹配到了
+    }
+    
+    return -2;
 }
 
 

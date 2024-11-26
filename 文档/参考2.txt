@@ -1,5 +1,177 @@
 # 参考2
 
+
+
+```xml
+GET /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=fedb59f66e11029177704b3e2aecc676, uri="/cwmp", response="3534d55b189f4e5862342ff5e9cbad7f", opaque=e516948c29913259afd658467b9d6619, qop=auth-int, nc=10, cnonce="c15d255ea"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 1237
+SOAPAction:"urn:dslforum-org:cwmp-1-4"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
+    <soap:Header>
+        <cwmp:ID soapenv:mustUnderstand=1>
+            long123
+        </cwmp:ID>
+        <cwmp:HoldRequests soapenv:mustUnderstand=1>
+            1
+        </cwmp:HoldRequests>
+    </soap:Header>
+    <soap:Body>
+        <cwmp:Inform>
+            <DeviceId>
+                <Manufacturer>
+                    设备制造商的名称
+                </Manufacturer>
+                <OUI>
+                    设备特定序列号的产品类别的标识符
+                </OUI>
+                <ProductClass>
+                    特定序列号的产品类别的标识符
+                </ProductClass>
+                <SerialNumber>
+                    特定设备的标识符
+                </SerialNumber>
+            </DeviceId>
+            <EventList soapenc:arrayType=tns:ParameterValueStruct[2]>
+                <EventStruct>
+                    <EventCode>
+                        0 BOOTSTRAP
+                    </EventCode>
+                    <CommandKey>
+                        CommandKey_0
+                    </CommandKey>
+                </EventStruct>
+                <EventStruct>
+                    <EventCode>
+                        1 BOOT
+                    </EventCode>
+                    <CommandKey>
+                        CommandKey_1
+                    </CommandKey>
+                </EventStruct>
+            </EventList>
+            <MaxEnvelopes>
+                1
+            </MaxEnvelopes>
+            <CurrentTime>
+                2024-11-19T17:51:00
+            </CurrentTime>
+            <RetryCount>
+                0
+            </RetryCount>
+            <ParameterList>
+                <ParameterValueStruct>
+                    <Name>
+                        parameter_1
+                    </Name>
+                    <Value>
+                        76616c75655f32
+                    </Value>
+                </ParameterValueStruct>
+                <ParameterValueStruct>
+                    <Name>
+                        parameter_2
+                    </Name>
+                    <Value>
+                        76616c75655f32
+                    </Value>
+                </ParameterValueStruct>
+            </ParameterList>
+        </cwmp:Inform>
+    </soap:Body>
+</soap:Envelope>
+
+
+```
+
+
+
+
+
+
+
+```xml
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+    <soap:Header>
+        <cwmp:ID soapenv:mustUnderstand=1>
+            long123
+        </cwmp:ID>
+        <cwmp:HoldRequests soapenv:mustUnderstand=1>
+            1
+        </cwmp:HoldRequests>
+    </soap:Header>
+    <soap:Body>
+        <cwmp:Inform>
+            <DeviceId>
+                <Manufacturer>
+                    设备制造商的名称
+                </Manufacturer>
+                <OUI>
+                    设备特定序列号的产品类别的标识符
+                </OUI>
+                <ProductClass>
+                    特定序列号的产品类别的标识符
+                </ProductClass>
+                <SerialNumber>
+                    特定设备的标识符
+                </SerialNumber>
+            </DeviceId>
+            <EventList soapenc:arrayType=tns:ParameterValueStruct[2]>
+                <EventStruct>
+                    <EventCode>
+                        0 BOOTSTRAP
+                    </EventCode>
+                    <CommandKey>
+                        CommandKey_0
+                    </CommandKey>
+                </EventStruct>
+                <EventStruct>
+                    <EventCode>
+                        1 BOOT
+                    </EventCode>
+                    <CommandKey>
+                        CommandKey_1
+                    </CommandKey>
+                </EventStruct>
+            </EventList>
+            <MaxEnvelopes>
+                1
+            </MaxEnvelopes>
+            <CurrentTime>
+                2024-11-19T17:51:00
+            </CurrentTime>
+            <RetryCount>
+                0
+            </RetryCount>
+            <ParameterList>
+                <ParameterValueStruct>
+                    <Name>
+                        parameter_1
+                    </Name>
+                    <Value>
+                        76616c75655f32
+                    </Value>
+                </ParameterValueStruct>
+                <ParameterValueStruct>
+                    <Name>
+                        parameter_2
+                    </Name>
+                    <Value>
+                        76616c75655f32
+                    </Value>
+                </ParameterValueStruct>
+            </ParameterList>
+        </cwmp:Inform>
+    </soap:Body>
+</soap:Envelope>
+```
+
+
+
+
+
 ### 1、会话例子以及相互交流的具体的http消息
 
 ![image-20241030121055384](F:\share\PRO\CWMP_TEST\cwmptest\文档\tu\image-20241030121055384.png)
@@ -446,89 +618,4 @@ int main() {
 
 
 
-
-
-```xml
-GET /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=fedb59f66e11029177704b3e2aecc676, uri="/cwmp", response="3534d55b189f4e5862342ff5e9cbad7f", opaque=e516948c29913259afd658467b9d6619, qop=auth-int, nc=10, cnonce="c15d255ea"
-Content-Type: text/xml; charset="UTF-8"
-Content-Length: 1237
-SOAPAction:"urn:dslforum-org:cwmp-1-4"
-
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
-    <soap:Header>
-        <cwmp:ID soapenv:mustUnderstand=1>
-            long123
-        </cwmp:ID>
-        <cwmp:HoldRequests soapenv:mustUnderstand=1>
-            1
-        </cwmp:HoldRequests>
-    </soap:Header>
-    <soap:Body>
-        <cwmp:Inform>
-            <DeviceId>
-                <Manufacturer>
-                    设备制造商的名称
-                </Manufacturer>
-                <OUI>
-                    设备特定序列号的产品类别的标识符
-                </OUI>
-                <ProductClass>
-                    特定序列号的产品类别的标识符
-                </ProductClass>
-                <SerialNumber>
-                    特定设备的标识符
-                </SerialNumber>
-            </DeviceId>
-            <EventList soapenc:arrayType=tns:ParameterValueStruct[2]>
-                <EventStruct>
-                    <EventCode>
-                        0 BOOTSTRAP
-                    </EventCode>
-                    <CommandKey>
-                        CommandKey_0
-                    </CommandKey>
-                </EventStruct>
-                <EventStruct>
-                    <EventCode>
-                        1 BOOT
-                    </EventCode>
-                    <CommandKey>
-                        CommandKey_1
-                    </CommandKey>
-                </EventStruct>
-            </EventList>
-            <MaxEnvelopes>
-                1
-            </MaxEnvelopes>
-            <CurrentTime>
-                2024-11-19T17:51:00
-            </CurrentTime>
-            <RetryCount>
-                0
-            </RetryCount>
-            <ParameterList>
-                <ParameterValueStruct>
-                    <Name>
-                        parameter_1
-                    </Name>
-                    <Value>
-                        76616c75655f32
-                    </Value>
-                </ParameterValueStruct>
-                <ParameterValueStruct>
-                    <Name>
-                        parameter_2
-                    </Name>
-                    <Value>
-                        76616c75655f32
-                    </Value>
-                </ParameterValueStruct>
-            </ParameterList>
-        </cwmp:Inform>
-    </soap:Body>
-</soap:Envelope>
-
-
-```
-
+### 4、线程之条件变量与超时

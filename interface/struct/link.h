@@ -81,6 +81,14 @@ link_node_t *link_get_node(link_obj_t *link, int index);
 #define LINK_FOREACH(link, probe) for(link_node_t *(probe) = (link)->head->next; \
                                         (probe) != NULL; (probe) = (probe)->next)
 
+//遍历访问数据
+#define LINK_DATA_FOREACH_START(link, probeData) for(link_node_t *(linkprobe) = (link)->head->next; \
+                                        (linkprobe) != NULL; (linkprobe) = (linkprobe)->next){   \
+                                        if((linkprobe)->en == 1 && (linkprobe)->data != NULL){  \
+                                        void *probeData = (linkprobe)->data;    
+                                        
+#define LINK_DATA_FOREACH_END   }}
+
 //遍历访问，多了参数，表示 上一个
 #define LINK_FOREACH_LAST(link, probe, last) for(link_node_t *(probe) = (link)->head->next, (last) = (link)->head; \
                                         (probe) != NULL; (last) = (probe), (probe) = (probe)->next)

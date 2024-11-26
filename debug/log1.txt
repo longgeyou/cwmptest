@@ -1,6 +1,6 @@
 
 ======================log start=======================
-[info 0][Sun Nov 24 00:19:55 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:573 
+[info 0][Tue Nov 26 16:14:47 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:573 
 connect to [192.168.1.20:8080] OK
 等待消息队列非空...
 ---------------->POLL   IN
@@ -11,16 +11,16 @@ num:1
 name:WWW-Authenticate
 key:Digest realm value:/cwmp 
 key:qop value:auth-int 
-key:nonce value:85546880e60faff1ec17b9a2bc1b4520 
-key:opaque value:b1fa0c6bba26b231b6262ddb44a0a592 
-[info 1][Sun Nov 24 00:19:57 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
+key:nonce value:0447abac039f384b4f7c60fc7b6e1414 
+key:opaque value:3fe9b40d19cbd9031e8512aff1559ca6 
+[info 1][Tue Nov 26 16:14:47 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
 http 头部处理完毕 ...
  客户端 http 报文接收处理
 需要摘要认证 ...
 计算摘要认证 ...
 计算摘要值所需参数：
-pszNonce:85546880e60faff1ec17b9a2bc1b4520
-pszCNonce:41e8eafc0
+pszNonce:0447abac039f384b4f7c60fc7b6e1414
+pszCNonce:da34d4e22
 pszUser:admin
 pszRealm:/cwmp
 pszPass:123456
@@ -29,9 +29,9 @@ szNonceCount:00000010
 pszMethod:GET
 pszQop:auth-int
 pszURI:/cwmp
-Response = 70443f36872f9057d8d5fe62d53d71d2
+Response = 02065d3f0255b0670b4225c5866f254a
 发送摘要认证测试 长度:269 内容:GET /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=85546880e60faff1ec17b9a2bc1b4520, uri="/cwmp", response="70443f36872f9057d8d5fe62d53d71d2", opaque=b1fa0c6bba26b231b6262ddb44a0a592, qop=auth-int, nc=10, cnonce="41e8eafc0"
+Authorization: Digest username="admin", realm=/cwmp, nonce=0447abac039f384b4f7c60fc7b6e1414, uri="/cwmp", response="02065d3f0255b0670b4225c5866f254a", opaque=3fe9b40d19cbd9031e8512aff1559ca6, qop=auth-int, nc=10, cnonce="da34d4e22"
 Content-Length:0
 
 
@@ -50,7 +50,7 @@ key:charset value:"UTF-8"
 --------------show line--------------
 name:Content-Length
 key:14 
-[info 2][Sun Nov 24 00:19:58 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
+[info 2][Tue Nov 26 16:14:47 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
 http 头部处理完毕 ...
  客户端 http 报文接收处理
 ----->__get_http_payload_len payloadNeedLen:14
@@ -63,8 +63,8 @@ msgData len:14 msg:
 sessioncpe_status_start ret:0
 sessioncpe_status_establish_connection 来了......
 计算摘要值所需参数：
-pszNonce:85546880e60faff1ec17b9a2bc1b4520
-pszCNonce:41e8eafc0
+pszNonce:0447abac039f384b4f7c60fc7b6e1414
+pszCNonce:da34d4e22
 pszUser:admin
 pszRealm:/cwmp
 pszPass:123456
@@ -73,11 +73,11 @@ szNonceCount:00000011
 pszMethod:POST
 pszQop:auth-int
 pszURI:/cwmp
-Response = ec1e2d14f94c93190c5a83065932049c
-客户端发送msg 长度:1591 内容:POST /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=85546880e60faff1ec17b9a2bc1b4520, uri="/cwmp", response="ec1e2d14f94c93190c5a83065932049c", opaque=b1fa0c6bba26b231b6262ddb44a0a592, qop=auth-int, nc=11, cnonce="41e8eafc0"
+Response = 60f155446acfc21a349574a772d9a23a
+客户端发送msg 长度:1523 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=0447abac039f384b4f7c60fc7b6e1414, uri="/cwmp", response="60f155446acfc21a349574a772d9a23a", opaque=3fe9b40d19cbd9031e8512aff1559ca6, qop=auth-int, nc=11, cnonce="da34d4e22"
 Content-Type: text/xml; charset="UTF-8"
-Content-Length: 1237
+Content-Length: 1169
 SOAPAction:"urn:dslforum-org:cwmp-1-4"
 
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
@@ -85,9 +85,6 @@ SOAPAction:"urn:dslforum-org:cwmp-1-4"
 <cwmp:ID soapenv:mustUnderstand=1>
 long123
 </cwmp:ID>
-<cwmp:HoldRequests soapenv:mustUnderstand=1>
-1
-</cwmp:HoldRequests>
 </soap:Header>
 <soap:Body>
 <cwmp:Inform>
@@ -154,7 +151,7 @@ parameter_2
 </soap:Body>
 </soap:Envelope>
 
-发送完成，返回值 ret:1591
+发送完成，返回值 ret:1523
 等待消息队列非空...
 ---------------->POLL   IN
 解析头部 version:http/1.1 code:200 reason:OK
@@ -164,65 +161,73 @@ num:4
 name:WWW-Authenticate
 key:Digest realm value:/cwmp 
 key:qop value:auth-int 
-key:nonce value:85546880e60faff1ec17b9a2bc1b4520 
-key:opaque value:b1fa0c6bba26b231b6262ddb44a0a592 
+key:nonce value:0447abac039f384b4f7c60fc7b6e1414 
+key:opaque value:3fe9b40d19cbd9031e8512aff1559ca6 
 --------------show line--------------
 name:Content-Type
 key:text/xml 
 key:charset value:"UTF-8" 
 --------------show line--------------
 name:Content-Length
-key:381 
+key:385 
 --------------show line--------------
 name:SOAPAction
 key:"urn:dslforum-org:cwmp-1-4" 
-[info 3][Sun Nov 24 00:19:58 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
+[info 3][Tue Nov 26 16:14:48 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
 http 头部处理完毕 ...
  客户端 http 报文接收处理
 需要摘要认证 ...
 计算摘要认证 ...
------>__get_http_payload_len payloadNeedLen:381
+----->__get_http_payload_len payloadNeedLen:385
 开始发送条件变量....
 开始处理消息队列表...
-
----------------- show msg queue ----------------
+-->msgData len:385 msg:
+【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+long123
+</cwmp:ID>
+<cwmp:HoldRequests soapenv:mustUnderstand=1>
+false
+</cwmp:HoldRequests>
+</soap:Header>
+<soap:Body>
+<cwmp:InformResponse>
+<MaxEnvelopes>
+1
+</MaxEnvelopes>
+</cwmp:InformResponse>
+</soap:Body>
+</soap:Envelope>
+】
 ---->http_status_data_pro 完成, retHttpMsg :0
-cnt:0 len:381 msg(字符串表示):
-【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
-<soap:Header>
-<cwmp:ID soapenv:mustUnderstand=1>
-long123
-</cwmp:ID>
-<cwmp:HoldRequests soapenv:mustUnderstand=1>
-1
-</cwmp:HoldRequests>
-</soap:Header>
-<soap:Body>
-<cwmp:InformResponse>
-<MaxEnvelopes>
-1
-</MaxEnvelopes>
-</cwmp:InformResponse>
-</soap:Body>
-</soap:Envelope>
-】
 已经存入消息队列
-msgData len:381 msg:
-【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
-<soap:Header>
-<cwmp:ID soapenv:mustUnderstand=1>
-long123
-</cwmp:ID>
-<cwmp:HoldRequests soapenv:mustUnderstand=1>
-1
-</cwmp:HoldRequests>
-</soap:Header>
-<soap:Body>
-<cwmp:InformResponse>
-<MaxEnvelopes>
-1
-</MaxEnvelopes>
-</cwmp:InformResponse>
-</soap:Body>
-</soap:Envelope>
-】
+开始清空 taskQueue
+
+-------------------【cpe会话 task_pro】---------------  
+__aux_task_queue_pro 返回值 ret:-2 
+
+-------------------【cpe会话 task_void】---------------  
+
+-------------------【cpe会话 task_pro】---------------  
+计算摘要值所需参数：
+pszNonce:0447abac039f384b4f7c60fc7b6e1414
+pszCNonce:0d6cb05b4
+pszUser:admin
+pszRealm:/cwmp
+pszPass:123456
+pszAlg:md5
+szNonceCount:00000012
+pszMethod:POST
+pszQop:auth-int
+pszURI:/cwmp
+Response = 2c0a745b5bbb0f2a49db6433b0b38ac8
+客户端发送msg 长度:351 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=0447abac039f384b4f7c60fc7b6e1414, uri="/cwmp", response="2c0a745b5bbb0f2a49db6433b0b38ac8", opaque=3fe9b40d19cbd9031e8512aff1559ca6, qop=auth-int, nc=12, cnonce="0d6cb05b4"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 0
+SOAPAction:"urn:dslforum-org:cwmp-1-4"
+
+
+发送完成，返回值 ret:351
+等待消息队列非空...

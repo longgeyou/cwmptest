@@ -576,6 +576,44 @@ soap_node_t *soap_node_get_son(soap_node_t *node, char *name)
     return ret;
 }
 
+//soap 节点复制
+int soap_node_copy(soap_node_t *in, soap_node_t **outp)
+{
+    if(in == NULL)return RET_FAILD;
+
+    soap_node_t *out;
+    
+    out = (soap_node_t *)MALLOC(sizeof(soap_node_t));
+    memcpy(out, in, sizeof(soap_node_t));
+
+    //子成员 attr
+    if(in->attr != NULL)
+    {
+        out->attr = keyvalue_create(in->attr->list->size);
+        KEYVALUE_FOREACH_START(in->attr, iter){
+            keyvalue_data_t *data = iter;
+            keyvalue_append_set_str(out->attr, data->key, data->value);        
+        }KEYVALUE_FOREACH_END
+    }
+
+    //子成员 son
+    if(in->son != NULL)
+    {   
+        out->son = link_create();
+        LINK_DATA_FOREACH_START(in->son, probeData)
+        {
+            soap_node_t *data = (soap_node_t *)probeData;
+            soap_node_t *nodeTmp;
+            soap_node_copy(data, &nodeTmp);  //递归调用
+            link_append_by_set_pointer(out->son, nodeTmp);
+            
+        }LINK_DATA_FOREACH_END
+
+    }
+    *outp = out;
+    return RET_OK;
+}
+
 
 
 /*==============================================================
@@ -655,7 +693,7 @@ void soap_test()
     soap_node_append_son(node, subNode1);
     soap_node_append_son(node, subNode2);
 
-    __test_show_node(soap->root);
+    //__test_show_node(soap->root);
     
     //摧毁    
     //pool_show();
@@ -699,12 +737,20 @@ void soap_test()
 
 
     //测试清空 
-    pool_show();
-    soap_node_clear(soap->root);
+//    pool_show();
+//    soap_node_clear(soap->root);
+//
+//    pool_show();
 
+    //测试复制
+    soap_node_t *nodeCopy;
+    soap_node_copy(soap->root, &nodeCopy);
+    soap_destroy(soap);
     pool_show();
-
+    __test_show_node(nodeCopy);
+    soap_destroy_node(nodeCopy);
     
+    pool_show();
 }
 
 

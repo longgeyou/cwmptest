@@ -206,6 +206,14 @@ void log_test(void)
 	LOG_ALARM("this is log alarm!\n");
     LOG_DEBUG("this is log debug !\n");
 
+//    time_t current_time;
+//    time(&current_time);
+//    LOG_SHOW("%d\n", current_time);
+//
+//    system("sleep 2");
+//    time(&current_time);
+//    LOG_SHOW("%d\n", current_time);
+
 }
 
 

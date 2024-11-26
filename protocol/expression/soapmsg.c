@@ -101,7 +101,7 @@ int soapmsg_set_base(soap_obj_t *soap, soap_header_t *header)
     }
         
     //添加头部 ，如果 header 为 NULL则跳过
-    char buf[16];
+    //char buf[16];
     if(header != NULL)
     {
         soap_node_t *nodeHeader = soap_create_node_set_value("soap:Header", NULL);
@@ -117,8 +117,8 @@ int soapmsg_set_base(soap_obj_t *soap, soap_header_t *header)
 
             if(header->holdRequestsEn == 1)
             {
-                sprintf(buf, "%d", header->HoldRequests);
-                soap_node_t *nodeHoldRequests = soap_create_node_set_value("cwmp:HoldRequests", buf);
+                //sprintf(buf, "%d", header->HoldRequests);
+                soap_node_t *nodeHoldRequests = soap_create_node_set_value("cwmp:HoldRequests", header->HoldRequests);
                 if(nodeHoldRequests != NULL)
                     keyvalue_append_set_str(nodeHoldRequests->attr, "soapenv:mustUnderstand", "1");
                 soap_node_append_son(nodeHeader, nodeHoldRequests);
@@ -519,7 +519,7 @@ soap_node_t *soapmsg_to_node_Fault(rpc_fault_t data, rpc_soap_fault_t soapData)
     soap_node_append_son(nodeSoapFault, nodeDetail);
 
     //2、设置 cwmp:Fault
-    soap_node_t *node = soap_create_node_set_value("Fault", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:Fault", NULL);
 
     //2.1 添加 FaultCode 、FaultString
     snprintf(buf8, 8, "%d", data.FaultCode);
@@ -555,7 +555,7 @@ void soapmsg_test()
     soap_header_t header = {
         .ID = "long123",
         .idEn = 1,
-        .HoldRequests = 1,
+        .HoldRequests = "false",
         .holdRequestsEn = 1
     };
     soapmsg_set_base(soap, &header);
@@ -586,7 +586,7 @@ void soapmsg_test2()
     soap_header_t header = {
         .ID = "long123",
         .idEn = 1,
-        .HoldRequests = 1,
+        .HoldRequests = "false",
         .holdRequestsEn = 1
     };
 
@@ -751,7 +751,7 @@ void soapmsg_test3()
     soap_header_t header = {
         .ID = "long123",
         .idEn = 1,
-        .HoldRequests = 1,
+        .HoldRequests = "false",    //注意这个值只能是 false 或者 ture
         .holdRequestsEn = 1
     };
 
