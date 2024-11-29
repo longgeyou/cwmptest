@@ -51,6 +51,8 @@ void soap_mg_init();
 
 void soap_test();
 void soap_node_show(soap_node_t *node);
+void soap_node_show_print2log(soap_node_t *node);
+
 
 
 

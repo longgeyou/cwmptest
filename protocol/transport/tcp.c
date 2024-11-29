@@ -387,7 +387,7 @@ void *thread_tcp_transceiver(void *in)
                 //memset(buf, '\0', strlen(buf));                 
                 //len = read(fds[i].fd, buf, READ_BLOCK_SIZE); 
 
-                LOG_SHOW("---->POLL    IN  ready:%d\n", user_p->bufReady);
+                //LOG_SHOW("---->POLL    IN  ready:%d\n", user_p->bufReady);
             
                 pthread_mutex_lock(&(user_p->mutex));   //该锁用于保护 tcp user 缓存相关的资源
                 
@@ -472,7 +472,7 @@ void *thread_tcp_client_transceiver(void *in)
         //读取的长度len大于0，说明有数据可读；等于0，代表断开连接，小于0，没有数据        
         if (fds[0].revents & POLLIN)  //有数据进入
         {
-            LOG_SHOW("---------------->POLL   IN\n");
+            //LOG_SHOW("---------------->POLL   IN\n");
                 
             pthread_mutex_lock(&(client->mutex));   //该锁用于保护 tcp user 缓存相关的资源
             

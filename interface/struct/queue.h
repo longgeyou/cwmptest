@@ -47,6 +47,7 @@ int queue_in(queue_obj_t *queue, queue_member_t *member);
 int queue_in_set_pointer(queue_obj_t *queue, void *data);
 int queue_out(queue_obj_t *queue, queue_member_t **memberP);
 int queue_out_get_pointer(queue_obj_t *queue, void **outP);
+int queue_get_head_pointer(queue_obj_t *queue, void **outP);
 int queue_get_num(queue_obj_t *queue);
 
 

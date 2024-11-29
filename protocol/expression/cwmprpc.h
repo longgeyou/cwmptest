@@ -451,6 +451,8 @@ int cwmprpc_str2dateTime(char *in, dateTime *date);
 
 int cwmprpc_cpe_method_soap_name_match(char *in);
 int cwmprpc_acs_method_soap_name_match(char *in);
+int cwmprpc_cpe_methodResponse_soap_name_match(char *in);
+int cwmprpc_acs_methodResponse_soap_name_match(char *in);
 
 
 

@@ -20,74 +20,20 @@
 /*==============================================================
                         数据结构
 ==============================================================*/
-//消息队列的数据元，用于存储 soap 信封
-typedef struct sessionacs_msgdata_t{
-    void *d;    //数据指针
-    int len;    //长度
-}sessionacs_msgdata_t;
-
-/*------------------------------------------------------------任务队列*/
-//任务类型
-typedef enum sessionacs_task_type_e{       
-    sessionacs_task_type_rpc_request,   //请求对方，这里是acs调用cpe方法
-    sessionacs_task_type_rpc_response,   //响应对方，这里是响应 cpe 的请求
-    sessionacs_task_type_other  //其他任务，有待拓展
-}sessionacs_task_type_e;
-
-//1、sessionacs_task_type_rpc_request 类型  下的任务数据
-typedef enum sessionacs_task_rpc_request_status_e{
-    sessionacs_task_rpc_request_status_start,   
-    sessionacs_task_rpc_request_status_send,   
-    sessionacs_task_rpc_request_status_getResposne,
-    sessionacs_task_rpc_request_status_end
-}sessionacs_task_rpc_request_status_e;
-
-typedef struct sessionacs_task_data_rpc_request_t{
-    //状态机
-    sessionacs_task_rpc_request_status_e status;
-
-    char method[64];
-    soap_node_t *soapNode;  //soap 节点，用于存储rpc request方法
-    soap_node_t *soapNodeResponse;  //soap 节点，用于存储对方回复的数据
-    //char soapNodeEn;
-}sessionacs_task_data_rpc_request_t;
-
-//sessionacs_task_type_rpc_response 类型  下的任务数据
-typedef enum sessionacs_task_rpc_response_status_e{
-    sessionacs_task_rpc_response_status_start,   
-    sessionacs_task_rpc_response_status_response,   
-    sessionacs_task_rpc_response_status_end  
-}sessionacs_task_rpc_response_status_e;
-
-typedef struct sessionacs_task_data_rpc_response_t{
-    //状态机
-    sessionacs_task_rpc_response_status_e status;
-
-    char method[64];
-    soap_node_t *soapNode;  //soap 节点，用于存储回复对方的数据
-    //char soapNodeEn;
-}sessionacs_task_data_rpc_response_t;
-
-
-
-//任务队列的数据元，用于存储 会话拆分成的一个个小任务
-typedef struct sessionacs_task_t{
-    sessionacs_task_type_e type;
-    union{ //共用体，不同任务类型所需的数据
-        sessionacs_task_data_rpc_request_t rpcRequest;  
-        sessionacs_task_data_rpc_response_t rpcResponse;
-    }data;       
-}sessionacs_task_t;
-/*------------------------------------------------------------任务队列*/
+#define SESSION_ACS_REQUEST_QUEUE_SIZE 10
+// 请求 数据结构
+typedef struct sessionacs_request_t{
+    soap_node_t *node;   //用soap节点来存储请求信息
+    char nodeEn;
+    char active;    //是否被激活：1 表示被激活，0表示没有被激活 
+}sessionacs_request_t;
 
 //会话状态机
 typedef enum sessionacs_status_e{
     sessionacs_status_start,    //开始
     sessionacs_status_establish_connection,     //建立连接
-    //sessionacs_status_send,     //发送状态
-    //sessionacs_status_wait_recv,    //等待接收状态
-    sessionacs_status_task,     //任务处理状态
-    sessionacs_status_task_empty,   //任务为空
+    sessionacs_status_send,     //发送状态
+    sessionacs_status_recv,    //等待接收状态
     sessionacs_status_disconnect,   //会话完成，请求断开状态
     sessionacs_status_end,   //结束
     sessionacs_status_error    //错误
@@ -97,36 +43,38 @@ typedef enum sessionacs_status_e{
 #define SESSION_ACS_MEMBER_MSG_QUEUE_SIZE 10
 #define SESSION_ACS_MEMBER_TASK_QUEUE_SIZE 10
 
-typedef struct sessionacs_obj_t sessionacs_obj_t;    //声明
+#define SESSIONACS_MSG_SIZE 10240
+typedef struct sessionacs_obj_t sessionacs_obj_t;
 typedef struct sessionacs_member_t{
-    sessionacs_status_e status;     //状态机
+    //数据收发接口
     httpUser_obj_t *user;   //htt用户
 
-    //cwmp:ID 号
-    //我理解为一个用户同时只有一次会话，每次会话只有一个cwmpid 事务进行，只有
-    //等待上一次事务所结束后才能进行下一次事务，或者另一个cwmpid（当然可能理
-    //解不对）看情况吧，以后可能要改动
-    int cwmpid;   
-
-    //soap 信息队列
-    queue_obj_t *msgQueue;
-    pthread_mutex_t mutexMsgQueue; //互斥锁，保护msgQueue资源的互斥锁
-    int msgRecvEn;  //控制消息队列的接收行为，1表示可以接收，0表示不允许
-    pthread_cond_t condMsgQueueReady;   //条件变量，表示有消息
-
-    //任务队列
-    queue_obj_t *taskQueue;
-    pthread_mutex_t mutexTaskQueue; //互斥锁，保护 taskQueue 资源的互斥锁
-    char timeout;   //超时标志
-    char timeoutValue;    //超时的数值，单位是秒
-
+    //信息接收
+    char msg[SESSIONACS_MSG_SIZE + 8];
+    int msgLen;
+    int msgReady;  //msg是否已准备好，1表示准备好了，0表示没有准备好   
+    pthread_mutex_t mutexMsg; //互斥锁，保护msgQueue资源的互斥锁
+    pthread_cond_t condMsgReady;   //条件变量，表示有消息
+    
+    //状态机
+    sessionacs_status_e status;     
+    
     //线程
     pthread_t threadSession;    //会话线程
     pthread_t threadMsgRecv;    //消息接收线程
 
+    //会话控制信息
+    //char HoldRequests;  //soap头部控制信息，用于维持链接，1.4版本弃用；但是cpe还是需要支持，0代表false
+    char cwmpid[64];
+    char lastRecvRequestExist; //上一次的接收有acs请求，这意味着下一次发送不应该是请求（详情参考会话流程）
+    char HoldRequests; 
+    
+    //请求队列
+    queue_obj_t *requestQueue;
+    pthread_mutex_t mutexRequestQueue; //互斥锁，保护 retquestQueue 资源的互斥锁
 
-    //指向包含自己的sessionacs_obj_t
-    sessionacs_obj_t *session;
+    //会话对象接口
+    //sessionacs_obj_t *session;
 }sessionacs_member_t;
 
 
@@ -140,9 +88,7 @@ typedef struct sessionacs_obj_t{
 
     //线程
     pthread_t threadNewUser;  //接收线程
-    
-
-    
+      
 }sessionacs_obj_t;
  
 
@@ -187,232 +133,148 @@ void sessionacs_mg_init()
 
 
 /*==============================================================
-                        taskQueue 对象
+                        request 队列
 ==============================================================*/
-//创建任务 对象    
-sessionacs_task_t *sessionacs_task_create(sessionacs_task_type_e type)
+//创建 request 对象
+sessionacs_request_t *sessionacs_request_create()
 {
-    sessionacs_task_t *task = (sessionacs_task_t *)MALLOC(sizeof(sessionacs_task_t));
-    if(task == NULL)
-    {
-        LOG_ALARM("task malloc faild");
-        return NULL;
-    }
+    sessionacs_request_t *request = (sessionacs_request_t *)MALLOC(sizeof(sessionacs_request_t));
 
-    task->type = type;
-    if(type == sessionacs_task_type_rpc_request)
-    {
-        task->data.rpcRequest.status = sessionacs_task_rpc_request_status_start;
-        memset(task->data.rpcRequest.method, '\0', 64);
-        task->data.rpcRequest.soapNode = NULL;
-        task->data.rpcRequest.soapNodeResponse = NULL;
-        //task->data.rpcRequest.soapNode = soap_create_node_default_size();
-        //task->data.rpcRequest.soapNodeResponse = soap_create_node_default_size();
-        
-    }
-    else if(type == sessionacs_task_type_rpc_response)
-    {
-        task->data.rpcResponse.status = sessionacs_task_rpc_response_status_start;
-        memset(task->data.rpcResponse.method, '\0', 64);
-        task->data.rpcResponse.soapNode = NULL;
-        //task->data.rpcResponse.soapNode = soap_create_node_default_size();
+    if(request == NULL)return NULL;
 
-    }  
-    else if(type == sessionacs_task_type_other)
+    request->active = 0;
+    request->nodeEn = 0;
+    
+    
+    return request;
+}
+
+//摧毁 request 对象
+void sessionacs_request_destroy(sessionacs_request_t *request)
+{
+    if(request == NULL)return ;
+
+    FREE(request);
+}
+
+//request 队列入队列
+int sessionacs_requestQueue_in(sessionacs_member_t *member, sessionacs_request_t *request)
+{
+    if(member == NULL || request == NULL || member->requestQueue == NULL)return RET_FAILD;
+
+    return queue_in_set_pointer(member->requestQueue, (void *)request);
+    
+}
+
+//request 入队列，创建新的request 并返回指针
+sessionacs_request_t *sessionacs_requestQueue_in_new(sessionacs_member_t *member)
+{
+    int ret;
+    if(member == NULL ||  member->requestQueue == NULL)return NULL;
+
+    sessionacs_request_t *request = sessionacs_request_create();
+    if(request == NULL)return NULL;
+    ret = sessionacs_requestQueue_in(member, request);
+    if(ret == RET_OK)
     {
-        ;
+        return request;
     }
     else
     {
-        FREE(task);
-        return NULL;
-    }
-        
-
-
-    return task;
-}
-
-//销毁任务对象
-void sessionacs_task_destroy(sessionacs_task_t *task)
-{
-    if(task == NULL)return;
-
-    //释放成员 
-    switch(task->type)
-    {
-        case sessionacs_task_type_rpc_request:{
-            soap_destroy_node(task->data.rpcRequest.soapNode);
-            soap_destroy_node(task->data.rpcRequest.soapNodeResponse);
-                
-        }break;
-        case sessionacs_task_type_rpc_response:{
-            soap_destroy_node(task->data.rpcResponse.soapNode);
-        }break;    
-        case sessionacs_task_type_other:{
-            ;
-        }break;
-        default:{
-            ;
-
-        }break;
-       
+        sessionacs_request_destroy(request);
     }
 
-    //释放自己
-    FREE(task);
-}
-
-//会话的taskQueue 添加任务，如果成功则返回 任务结构体 的指针
-sessionacs_task_t *sessionacs_taskQueue_in(sessionacs_member_t *member, sessionacs_task_type_e type)
-{
-    int ret;
-    if(member == NULL || member->taskQueue == NULL)return NULL;
-
-    sessionacs_task_t *task = sessionacs_task_create(type);
-    if(task == NULL)
-    {
-        LOG_ALARM("sessionacs_task_create 失败 ");
-        return NULL;
-    }
-
-    ret = queue_in_set_pointer(member->taskQueue, (void *)task);
-
-    //LOG_SHOW("----------------------- debug    empty:%d\n", queue_isEmpty(session->taskQueue));
-    
-    if(ret == RET_OK)
-    {
-        return task;
-    }
-    else
-    {
-        sessionacs_task_destroy(task);
-        return NULL;
-    }
-          
     return NULL;
 }
 
-//会话的taskQueue 取出任务
-sessionacs_task_t *sessionacs_taskQueue_out(sessionacs_member_t *member)
+
+//request 队列出队列
+int sessionacs_requestQueue_out(sessionacs_member_t *member, sessionacs_request_t **out)
 {
     int ret;
-    if(member == NULL || member->taskQueue == NULL)return NULL;
-
-    sessionacs_task_t *task = NULL;
-    ret = queue_out_get_pointer(member->taskQueue, (void **)(&task));
-    if(ret == RET_OK)
+    void *tmp = NULL;
+    if(member == NULL || member->requestQueue == NULL || out == NULL)return RET_FAILD;
+    ret = queue_out_get_pointer(member->requestQueue, &tmp);
+    if(ret == RET_OK && tmp != NULL)
     {
-        return task;
+        *out = (sessionacs_request_t *)tmp;
+        return RET_OK;
     }
-      
-    return NULL;
+    return RET_FAILD;
 }
-
-//会话的taskQueue 清空任务
-int sessionacs_taskQueue_clear(sessionacs_member_t *member)
+//request 得到队列头元素
+int sessionacs_requestQueue_get_head(sessionacs_member_t *member, sessionacs_request_t **out)
 {
-    LOG_SHOW("开始清空 taskQueue\n");
-
-    if(member == NULL || member->taskQueue == NULL)return RET_FAILD;
-
-    QUEUE_FOEWACH_START(member->taskQueue, probe)
-    {
-        sessionacs_task_destroy((sessionacs_task_t *)(probe->d));
-    }QUEUE_FOEWACH_END;
+    int ret;
+    void *tmp = NULL;
+    if(member == NULL || member->requestQueue == NULL || out == NULL)return RET_FAILD;
     
-    queue_clear(member->taskQueue);
+    ret = queue_get_head_pointer(member->requestQueue, &tmp);
 
-    return RET_OK;
+    if(ret == RET_OK && tmp != NULL)
+    {
+        *out = (sessionacs_request_t *)tmp;
+        return RET_OK;
+    }
+    return RET_FAILD;
 }
 
+//request 队列清空
+void sessionacs_requestQueue_clear(sessionacs_member_t *member)
+{
+    if(member == NULL || member->requestQueue == NULL)return ;
+    QUEUE_FOEWACH_START(member->requestQueue, probe)
+    {
+        if(probe->en == 1 && probe->d != NULL)
+        {
+            sessionacs_request_t *iter = (sessionacs_request_t *)(probe->d);
+            sessionacs_request_destroy(iter);
+        }
+    }QUEUE_FOEWACH_END
+
+    queue_clear(member->requestQueue);
+}
 
 
 /*==============================================================
-                        对象
+                        会话对象
 ==============================================================*/
-/*-------------------------------------------------msg 数据元 */
-//创建 msg 数据元
-sessionacs_msgdata_t *sessionacs_create_msg(int size)
-{
-    if(size < 0)return NULL;
-    sessionacs_msgdata_t *msgdata = (sessionacs_msgdata_t *)MALLOC(sizeof(sessionacs_msgdata_t));
-    if(msgdata == NULL)return NULL;
-
-    if(size == 0)
-    {
-        msgdata->d = NULL;
-        msgdata->len = 0;
-    }
-    if(size > 0)
-    {
-        msgdata->d = (void *)MALLOC(size + 8);  //多分配几个字节，用于存字符串结尾字符 '\0'
-        msgdata->len = size;
-        if(msgdata->d == NULL)  //失败
-        {
-            FREE(msgdata);
-            return NULL;
-        }
-        
-    }
-        
-    return msgdata;
-}
-
-//创建 msg 数据元，同时给定 数据
-sessionacs_msgdata_t *sessionacs_create_msg_set_data(void *data, int len)
-{
-    if(len < 0 || data == NULL)return NULL;
-    sessionacs_msgdata_t *msgdata = (sessionacs_msgdata_t *)MALLOC(sizeof(sessionacs_msgdata_t));
-    if(msgdata == NULL)return NULL;
-
-    if(len == 0 || data == NULL)    //空数据
-    {
-        msgdata->d = NULL;
-        msgdata->len = 0;
-    }
-    if(len > 0)
-    {
-        msgdata->d = (void *)MALLOC(len);
-        msgdata->len = len;
-        if(msgdata->d == NULL)  //失败
-        {
-            FREE(msgdata);
-            return NULL;
-        }
-
-        memcpy(msgdata->d, data, len);
-    }
-        
-    return msgdata;
-}
-/*-------------------------------------------------msg 数据元 */
-
 //创建会话 成员
 sessionacs_member_t *sessionacs_create_member()
 {
     sessionacs_member_t *member = (sessionacs_member_t *)MALLOC(sizeof(sessionacs_member_t));
     if(member == NULL)return NULL;
-    
+
+    //数据收发接口
+    member->user = NULL; 
+
+    //信息接收
+    memset(member->msg, '\0', SESSIONACS_MSG_SIZE);
+    member->msgLen = 0;
+    member->msgReady = 0;  //默认不允许信息进入队列
+    pthread_mutex_init(&(member->mutexMsg), NULL);   //初始化互斥锁
+    pthread_cond_init(&(member->condMsgReady), NULL);  //准备好信息的条件变量
+
+    //状态机
     member->status = sessionacs_status_start;
-    member->user = NULL;
-    member->cwmpid = 0;
-
-    //soap 信息队列
-    member->msgQueue = queue_create(SESSION_ACS_MEMBER_MSG_QUEUE_SIZE);
-    pthread_mutex_init(&(member->mutexMsgQueue), NULL);   //初始化互斥锁
-    member->msgRecvEn = 0;  //默认不允许信息进入队列
-    pthread_cond_init(&(member->condMsgQueueReady), NULL);  //准备好信息的条件变量
-
-    //任务队列
-    member->taskQueue = queue_create(SESSION_ACS_MEMBER_TASK_QUEUE_SIZE);
-    pthread_mutex_init(&(member->mutexTaskQueue), NULL);   //初始化互斥锁
-    member->timeout = 0;
     
-    member->session = NULL;
+    //线程（不用操作）
+    
+    //会话控制信息
+    memset(member->cwmpid, '\0', 64);     
+    member->lastRecvRequestExist = 0;
+ 
+    
+    //request 队列
+    member->requestQueue = queue_create(SESSION_ACS_REQUEST_QUEUE_SIZE);
+    pthread_mutex_init(&(member->mutexRequestQueue), NULL);   //初始化互斥锁 
+
+    //会话对象接口
+    //member->session = NULL;
 
     return member;
 }
+
 //创建会话成员， 并给定user 指针
 sessionacs_member_t *sessionacs_create_member_set_user(httpUser_obj_t *user)
 {
@@ -424,7 +286,6 @@ sessionacs_member_t *sessionacs_create_member_set_user(httpUser_obj_t *user)
 
     return member;
 }
-
 
 //创建一个会话对象
 sessionacs_obj_t *sessionacs_create()
@@ -472,8 +333,8 @@ void sessionacs_destroy_member(sessionacs_member_t *member)
 {
     if(member == NULL)return ;
 
-    //释放 soap 信息队列
-    queue_destroy(member->msgQueue);
+    //释放 request 队列
+    queue_destroy(member->requestQueue);
     
     FREE(member);
 }
@@ -522,25 +383,19 @@ void sessionacs_destroy_and_http(sessionacs_obj_t *session)
     FREE(session);
 }
 
-/*==============================================================
-                        基本操作
-==============================================================*/
 //向会话添加 子成员
 int sessionacs_append(sessionacs_obj_t *session, sessionacs_member_t *member)
 {
     if(session == NULL || member == NULL)return RET_FAILD;
 
-    member->session = session;
+    //member->session = session;
     link_append_by_set_pointer(session->memberLink, (void *)member);
 
     return RET_OK;
 }
 
 
-
-
-
-
+#if 0
 
 /*==============================================================
                         应用
@@ -727,7 +582,6 @@ static int __aux_establish_connection(sessionacs_member_t *member)
     char buf[BUF_SIZE + 8] = {0};
     //char buf64[64] = {0};
     int pos = 0;
-    int ret;
     sessionacs_msgdata_t *msgData;
     soap_node_t *soapNodeRoot;
     soap_node_t *soapNodeInform;
@@ -791,11 +645,11 @@ static int __aux_establish_connection(sessionacs_member_t *member)
     pthread_mutex_unlock(&(member->mutexMsgQueue));
     
    
-    //没有得到 Inform 消息，发送回复，不进行下面动作，而是直接返回
+    //没有得到 Inform 消息，发送回复，不进行下面动作，而是直接返回（响应 http 认证，需要优化）
     if(informExit == 0) 
     {
         httpmsg_server_response_hello(buf1024, 1024);
-        LOG_SHOW("开始发送 http 的回复信息\n");
+        //LOG_SHOW("开始发送 http 的回复信息\n");
         httpUser_send_str(member->session->http, member->user, buf1024); 
         
         return -1;  //没有得到 Inform 消息，发送回复（测试行为）
@@ -829,15 +683,12 @@ static int __aux_establish_connection(sessionacs_member_t *member)
     rpc_InformResponse_t dataInformResponse = {.MaxEnvelopes = 1};
     soap_node_append_son(body, soapmsg_to_node_InformResponse(dataInformResponse));
 
-    //2.2 生成soap信封，并通过http 接口发送给 acs   
+    //2.2 生成soap信封，并通过http 接口发送给对方   
     soap_node_to_str(soap->root, buf, &pos, BUF_SIZE);
     
-    ret = http_send_msg(member->user, (void *)buf, strlen(buf), 200, "OK");
+    http_send_msg(member->user, (void *)buf, strlen(buf), 200, "OK");
 
-    if(ret == 0)
-    {
-        //LOG_SHOW("发送 Inform 完成\n");
-    }
+    
     
     return 0;    
 }
@@ -977,7 +828,7 @@ void *thread_sessionacs(void *in)
         switch(member->status)
         {
            case sessionacs_status_start:{
-                
+                LOG_SHOW("\n-------------------【cpe会话 start】---------------  \n");
                 //开始允许 msgQueue 接收信息
                 pthread_mutex_lock(&(member->mutexMsgQueue));
                 member->msgRecvEn = 1;
@@ -990,7 +841,7 @@ void *thread_sessionacs(void *in)
            case sessionacs_status_establish_connection:{    //建立连接
                 LOG_SHOW("\n-------------------【cpe会话 establish_connection】---------------  \n");
                 ret = __aux_establish_connection(member);
-                
+                LOG_SHOW("__aux_establish_connection 返回值 ret:%d  \n", ret);
                 if(ret == 0)
                 {
                     //到任务处理前的操作
@@ -1001,7 +852,7 @@ void *thread_sessionacs(void *in)
                 }
                 else if(ret == -1)
                 {
-                    LOG_SHOW("__aux_establish_connection 失败，返回值 -1\n");
+                    ;//LOG_SHOW("__aux_establish_connection 失败，返回值 -1\n");
                 }
                 
 
@@ -1112,6 +963,841 @@ void *thread_sessionacs(void *in)
     return NULL;
 }
 
+#endif
+
+/*==============================================================
+                        acs为主体，接收来自cpe的请求
+==============================================================*/
+//1、对 "cwmp:GetRPCMethods" 的响应
+static int __acs_pro_GetRPCMethods(sessionacs_member_t *member)
+{
+    int i;
+    int num;
+    soap_node_t *nodeBody;
+    char buf[SESSIONACS_MSG_SIZE + 8] = {0};
+    int posTmp;
+    
+    if(member == NULL)return -1;
+
+    //1、本地处理（无）
+    
+    //2、发送响应消息
+    //2.1 构建信封基础
+    soap_obj_t *soap = soap_create();
+    soap_header_t header;
+    strcpy(header.ID, member->cwmpid);    //和
+    header.idEn = 1,
+    header.holdRequestsEn = 0;    
+    
+    soapmsg_set_base(soap, &header);
+    nodeBody = soap_node_get_son(soap->root, "soap:Body");
+
+    //2.2 构建响应节点
+    rpc_GetRPCMethodsResponse_t dataGetRPCMethodsResponse;
+    dataGetRPCMethodsResponse.MethodList = link_create();
+    char *methodList[] = {       //或者用 cwmprpc_acs_methodResponse_g
+        "GetRPCMethods",
+        "SetParameterValues",
+        "GetParameterValues",
+        "GetParameterNames",
+        "SetParameterAttributes",
+        "GetParameterAttributes",
+        "AddObject",
+        "DeleteObject",
+        "Reboot",
+        "Download"
+    }; 
+    num = sizeof(methodList) / sizeof(methodList[0]);
+    for(i = 0; i < num; i++)
+    {
+        link_append_by_set_value(dataGetRPCMethodsResponse.MethodList, 
+                                    (void *)(methodList[i]), strlen(methodList[i]) + 1);
+    }
+
+    soap_node_append_son(nodeBody, soapmsg_to_node_GetRPCMethodsResponse(dataGetRPCMethodsResponse));
+    
+    link_destroy_and_data(dataGetRPCMethodsResponse.MethodList);    //回收内存
+
+    //3、发送 信息
+    posTmp = 0;
+    soap_node_to_str(soap->root, buf, &posTmp, SESSIONACS_MSG_SIZE);
+    soap_destroy(soap); //回收内存
+    LOG_SHOW("__acs_pro_GetRPCMethods 要发送的数据长度:%d\n", posTmp);
+    http_send_msg(member->user, (void *)buf, posTmp, 200, "OK");   
+
+    return 0;
+}
+
+
+//acs为主体，接收来自cpe的请求
+/*
+    "cwmp:Inform"
+    "cwmp:GetRPCMethods"
+    "cwmp:TransferComplete"
+*/
+int sessionacs_request_msg_pro(sessionacs_member_t *member, soap_node_t *node)
+{
+    int ret;
+    if(member == NULL || node == NULL)return -1;
+
+    if(strcmp(node->name, "cwmp:Inform") == 0)
+    {
+        //动作...
+        return 0;
+    }
+    else if(strcmp(node->name, "cwmp:GetRPCMethods") == 0)
+    {
+        ret = __acs_pro_GetRPCMethods(member);
+        LOG_SHOW("acs为主体，接收来自cpe的请求 GetRPCMethods， 返回值 ret:%d\n", ret);
+        return 0;
+    }
+    else if(strcmp(node->name, "cwmp:TransferComplete") == 0)
+    {
+        //动作...
+        return 0;
+    }
+    
+
+    
+    return -2;  //没有匹配到对应的响应函数
+}
+
+/*==============================================================
+                        acs为主体，接收来自cpe的响应 
+==============================================================*/
+//处理 GetRPCMethodsResponse 信息
+static int __acs_pro_GetRPCMethodsResponse(sessionacs_member_t *member, soap_node_t *node)
+{
+    //测试
+    char buf[SESSIONACS_MSG_SIZE + 8] = {0};
+    int posTmp;
+
+    if(member == NULL || node == NULL)return -1;
+
+    posTmp = 0;
+    soap_node_to_str(node, buf, &posTmp, SESSIONACS_MSG_SIZE);
+    LOG_SHOW("GetRPCMethodsResponse 信息：【%s】\n", buf);
+
+    return 0;
+}
+
+//处理 SetParameterValuesResponse 信息 
+static int __acs_pro_SetParameterValuesResponse(sessionacs_member_t *member, soap_node_t *node)
+{
+    //测试
+    char buf[SESSIONACS_MSG_SIZE + 8] = {0};
+    int posTmp;
+
+    if(member == NULL || node == NULL)return -1;
+
+    posTmp = 0;
+    soap_node_to_str(node, buf, &posTmp, SESSIONACS_MSG_SIZE);
+    LOG_SHOW("SetParameterValuesResponse 信息：【%s】\n", buf);
+
+    return 0;
+}
+
+
+//acs为主体，接收来自cpe的响应 
+/*
+   "cwmp:GetRPCMethodsResponse",
+   "cwmp:SetParameterValuesResponse",
+   "cwmp:GetParameterValuesResponse",
+   "cwmp:GetParameterNamesResponse",
+   "cwmp:SetParameterAttributesResponse",
+   "cwmp:GetParameterAttributesResponse",
+   "cwmp:AddObjectResponse",
+   "cwmp:DeleteObjectResponse",
+   "cwmp:RebootResponse",
+   "cwmp:DownloadResponse"
+
+*/
+int sessionacs_response_msg_pro(sessionacs_member_t *member, soap_node_t *node)
+{
+    int ret;
+    int result;
+    if(member == NULL || node == NULL)return -99;
+    
+    //请求队列（requestQueue）的对应，这里只考虑了队列头元素，
+     //如果要考虑全部请求是否和响应匹配，则比较复杂
+    sessionacs_request_t *request = NULL;
+    sessionacs_requestQueue_get_head(member, &request);
+    //exist = 0;
+    if(request != NULL && request->active == 1)
+    {
+        result = sessionacs_requestQueue_out(member, &request);
+        if(result == RET_OK && request != NULL && request->nodeEn == 1 && request->node != NULL)
+        {
+            ;   //exist = 1;
+        }
+        else
+        {
+            LOG_ALARM("request 不符合要求");
+            return -4;
+        }
+    }
+    else
+    {
+        
+        return -3;  //请求为NULL或者没有被激活
+    }
+    
+    ret = -2;   //没有匹配到对应的响应函数
+    if(strcmp(node->name, "cwmp:GetRPCMethodsResponse") == 0)
+    {
+        if(strcmp(request->node->name, "cwmp:GetRPCMethods") != 0)
+        {
+            LOG_ALARM("响应【%s】和当前的请求列表头【%s】不匹配", node->name, request->node->name);
+            ret =  -5;  //响应和激活的请求不匹配
+        }
+        else
+        {
+             result = __acs_pro_GetRPCMethodsResponse(member, node);
+            LOG_SHOW("处理 GetRPCMethodsResponse 信息， 返回值 result:%d\n", result);
+            ret = 0;
+        }
+    }
+    else if(strcmp(node->name, "cwmp:SetParameterValuesResponse") == 0)
+    {
+        if(strcmp(request->node->name, "cwmp:SetParameterValues") != 0)
+        {
+            LOG_ALARM("响应【%s】和当前的请求列表头【%s】不匹配", node->name, request->node->name);
+            
+            ret = -5;  //响应和激活的请求不匹配
+        }
+        else
+        {
+            result = __acs_pro_SetParameterValuesResponse(member, node);
+            LOG_SHOW("处理 SetParameterValuesResponse 信息， 返回值 result:%d\n", result);
+            ret = 0;
+        }   
+    }
+    else if(strcmp(node->name, "cwmp:GetParameterValuesResponse") == 0)
+    {
+        ;
+    }
+
+    
+    sessionacs_request_destroy(request);    //释放内存
+    
+    return ret;  
+}
+/*==============================================================
+                        rpc 错误码的处理
+==============================================================*/
+int sessionacs_fault_msg_pro(sessionacs_member_t *member, soap_node_t *node)
+{
+    //int ret;
+    if(member == NULL || node == NULL)return -1;
+
+    soap_node_show(node);
+    
+    return 0;
+}
+
+
+/*==============================================================
+                        会话过程辅助函数
+==============================================================*/
+//0.1 等待接收
+#define SESSIONCPE_RECV_TIMEOUT 30
+static int __acsAux_wait_msg_timeout(sessionacs_member_t *member, int timeout)
+{
+    int ret;
+    int result;
+
+    LOG_SHOW("超时等待msg，超时时间%d秒\n", timeout);
+    
+    if(member == NULL)
+    {
+        return -99;  //参数出错
+    }
+
+    if(member->msgReady == 1)
+    {
+        LOG_ALARM("session->msgReady 不为 0");
+        return -1;  
+    }
+
+    ret = -4;   //未知错误
+    if(timeout == 0 )
+    {
+        return -2;  //无等待，参数错误
+    }
+    else if(timeout < 0)   //表示需要一直等待
+    {
+        pthread_mutex_lock(&(member->mutexMsg));
+        while (member->msgReady == 0) {
+            //LOG_SHOW("阻塞等待消息队列非空...\n");
+            
+            // 阻塞等待条件变量
+            pthread_cond_wait(&(member->condMsgReady), &(member->mutexMsg)); 
+        }
+        
+        pthread_mutex_unlock(&(member->mutexMsg));
+        ret = 0;    //一直等待成功
+    }
+    else //超时等待
+    {
+        ret = 0;    //超时等待成功
+        pthread_mutex_lock(&(member->mutexMsg));
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_sec += timeout; // 设置超时时间为 x 秒后
+        while (member->msgReady == 0) {
+            //LOG_SHOW("阻塞等待消息队列非空...\n");
+            
+            // 阻塞等待条件变量
+            result = pthread_cond_timedwait(&(member->condMsgReady), &(member->mutexMsg), &ts);
+            if (result == ETIMEDOUT) 
+            {
+               LOG_SHOW("等待超时，不再等待\n");
+               ret = -3;    //超时等待失败
+               break;
+            }
+        }
+        pthread_mutex_unlock(&(member->mutexMsg));
+
+    }
+
+    return ret;    
+}
+
+//0.2 soap头部处理
+static int __acsAux_saop_header_pro(sessionacs_member_t *member, soap_node_t *header)
+{
+    soap_node_t *nodeID;
+    //soap_node_t *nodeHoldRequests;
+    
+    if(member == NULL || header == NULL)
+        return -1;
+
+    nodeID = soap_node_get_son(header, "cwmp:ID");
+    if(nodeID != NULL)
+    {
+        strcpy(member->cwmpid, nodeID->name);
+    }
+
+    //1.4 版本 acs弃用 HoldRequests
+//    nodeHoldRequests = soap_node_get_son(header, "cwmp:HoldRequests");
+//    if(nodeHoldRequests != NULL)
+//    {
+//        if(strcmp(nodeHoldRequests->value, "true") == 0)
+//            member->HoldRequests = 1;
+//        else if(strcmp(nodeHoldRequests->value, "false") == 0)
+//            member->HoldRequests = 0;
+//    }
+    
+    return 0;
+}
+
+//0.3 soap信封 soap:body 处理
+static int __acsAux_saop_body_pro(sessionacs_member_t *member, soap_node_t *body)
+{
+    int ret;
+    soap_node_t *nodeTmp;
+    if(member == NULL || body == NULL || body->son == NULL)return -99;
+
+    //LOG_SHOW("要处理的信封:");
+    //soap_node_show(body);
+    //1、查找响应：acs为主体，接收来自cpe的响应 
+    LINK_DATA_FOREACH_START(body->son, probeData)
+    {   
+        nodeTmp = (soap_node_t *)probeData;
+
+        ret = cwmprpc_cpe_methodResponse_soap_name_match(nodeTmp->name);
+        if(ret == 0)    //匹配成功
+        {
+            sessionacs_response_msg_pro(member, nodeTmp);
+        }
+    
+    }LINK_DATA_FOREACH_END
+        
+    //2、查找请求：acs为主体，接收来自cpe的请求
+    member->lastRecvRequestExist = 0;  ////此条信息会影响 cpe 是否发送请求
+    LINK_DATA_FOREACH_START(body->son, probeData)
+    {   
+        nodeTmp = (soap_node_t *)probeData;
+
+        ret = cwmprpc_acs_method_soap_name_match(nodeTmp->name);
+        //LOG_SHOW("cwmprpc_acs_method_soap_name_match name:%s ret:%d\n", nodeTmp->name, ret);
+        if(ret == 0)    //匹配成功
+        {
+            sessionacs_request_msg_pro(member, nodeTmp);
+            if(member->lastRecvRequestExist == 0)  
+            {
+                member->lastRecvRequestExist = 1;
+            }
+        }
+    
+    }LINK_DATA_FOREACH_END
+
+    //3、错误码
+    LINK_DATA_FOREACH_START(body->son, probeData)
+    {   
+        nodeTmp = (soap_node_t *)probeData;
+
+        ret = strcmp(nodeTmp->name, "soap:Fault");
+        if(ret == 0)    //匹配成功
+        {
+            sessionacs_fault_msg_pro(member, nodeTmp);
+        }
+    
+    }LINK_DATA_FOREACH_END
+
+   return 0;
+}
+
+
+//1、建立连接（默认acs 被动接收到 Inform 消息，然后开始建立会话）
+static int __acsAux_establish_connection(sessionacs_member_t *member)
+{
+#undef BUF_SIZE
+#define BUF_SIZE 4096
+    char buf[BUF_SIZE + 8] = {0};
+    int pos;
+    soap_node_t *nodeRoot;
+    soap_node_t *nodeHeader;
+    soap_node_t *nodeInform;
+    int ret;
+    int result;
+    char buf1024[1024 + 8] = {0};
+
+    if(member == NULL)return RET_FAILD;
+
+
+    //1、等待可用msg
+    pthread_mutex_lock(&(member->mutexMsg));
+    member->msgReady = 0; 
+    pthread_mutex_unlock(&(member->mutexMsg));
+        
+    
+    result = __acsAux_wait_msg_timeout(member, 30);  //超时时间 x 秒
+    if(result != 0)
+    {
+        LOG_SHOW("没等到可用的 msg\n");
+        return -1;  //没等到可用的 msg
+    }
+
+    //2、取出队列第一个 msg，看是否匹配 Inform 消息
+    ret = -99;    //未知错误
+    pthread_mutex_lock(&(member->mutexMsg));
+    if(member->msgLen > 0)
+    {
+        LOG_SHOW("接收到http msg消息 长度:%d 内容:\n【%s】\n", member->msgLen, member->msg);
+        nodeRoot = soap_str2node(member->msg);
+        //soap_node_show(soapNodeRoot);
+
+        //soap 头部处理
+        nodeHeader = soap_node_get_son(
+                            soap_node_get_son(
+                            nodeRoot, 
+                            "soap:Envelope"), 
+                            "soap:Header");
+        result = __acsAux_saop_header_pro(member, nodeHeader); //返回值暂不作处理
+       
+        // 找到 "cwmp:InformResponse" 节点
+        nodeInform = soap_node_get_son(
+                            soap_node_get_son(
+                            soap_node_get_son(
+                            nodeRoot, 
+                            "soap:Envelope"), 
+                            "soap:Body"), 
+                            "cwmp:Inform");
+       if(nodeInform != NULL)  
+       {
+            //开始处理 Inform 信息 （这里略过，以后补足）
+       
+            ret = 0;     //找到了节点 "cwmp:Inform"
+       }    
+       else
+       {
+            ret = -2;    //没找到节点
+       }
+       soap_destroy_node(nodeRoot);  //用完后需及时释放内存
+    }
+    else
+    {
+        LOG_SHOW("接收到空的http msg信息\n");
+        ret = -3;   //空的msg
+    }
+    pthread_mutex_unlock(&(member->mutexMsg));  
+
+    if(ret == -2 || ret == -3)//不是预期的msg，为了 http 认证动作，这里选择回复简单http 内容
+    {
+        httpmsg_server_response_hello(buf1024, 1024);
+        LOG_SHOW("开始发送 http 的回复信息\n");
+        httpUser_send_str2(member->user, buf1024);
+        
+        return ret;
+    }
+    
+    //3、 构建 InformResponse 消息
+    //3.1 添加基础内容
+    soap_obj_t *soap = soap_create();
+    soap_header_t header;
+    strcpy(header.ID, member->cwmpid);
+    header.idEn = 1;
+    header.holdRequestsEn = 0;  //1.4版本的acs弃用 HoldRequests
+   
+    soapmsg_set_base(soap, &header);
+    soap_node_t *root = soap->root;
+
+    soap_node_t *body = soap_node_get_son(root, "soap:Body");
+    
+    //3.2 添加rpc方法 InformResponse
+    rpc_InformResponse_t dataInformResponse = {.MaxEnvelopes = 1};
+    soap_node_append_son(body, soapmsg_to_node_InformResponse(dataInformResponse));
+
+    //3.3 生成soap信封，并通过http 接口发送给对方   
+    soap_node_to_str(soap->root, buf, &pos, BUF_SIZE);
+    
+    http_send_msg(member->user, (void *)buf, strlen(buf), 200, "OK");
+
+    
+    
+    return 0;    
+}
+
+
+//2、接收和处理msg
+static int __acsAux_recv(sessionacs_member_t *member)
+{
+    int ret;
+    soap_node_t *nodeRoot;
+    soap_node_t *nodeHeader;
+    soap_node_t *nodeBody;
+    int result;
+    
+    if(member == NULL)return -99;
+
+    //1、超时接收新的信息
+    pthread_mutex_lock(&(member->mutexMsg));  
+    member->msgReady = 0;
+    pthread_mutex_unlock(&(member->mutexMsg));
+    result = __acsAux_wait_msg_timeout(member, 30); //SESSIONCPE_RECV_TIMEOUT
+    if(result != 0)
+    {
+        LOG_SHOW("没等到可用的 msg\n");
+        return -1;  //没等到可用的 msg，超时
+    }
+
+    //2、把soap信封解析为soap节点，注意：这里只处理单个信封，不支持多个信封
+    //可能要考虑处理多个信封，以便兼容旧版本
+    ret = -99;    //未知错误
+    pthread_mutex_lock(&(member->mutexMsg));
+    if(member->msgLen > 0)
+    { 
+        LOG_SHOW("接收到http信息，长度：%d，内容：\n【%s】\n", member->msgLen, member->msg);
+        nodeRoot = soap_str2node(member->msg);
+        if(nodeRoot == NULL)
+        {
+            ret = -2;  //msg 并不是预期的soap 信封，或者解析出错
+        }
+        else
+        {
+            //3.1 处理soap信封的 头部    
+            nodeHeader = soap_node_get_son(
+                                    soap_node_get_son(
+                                    nodeRoot, 
+                                    "soap:Envelope"), 
+                                    "soap:Header");
+            if(nodeHeader != NULL)
+            {
+                __acsAux_saop_header_pro(member, nodeHeader); 
+            }
+            
+            //3.2 处理 soap:Body 里面的信息，包括请求、响应和错误码
+            nodeBody = soap_node_get_son(
+                                    soap_node_get_son(
+                                    nodeRoot, 
+                                    "soap:Envelope"), 
+                                    "soap:Body");
+            if(nodeBody != NULL)
+            {
+                ret = __acsAux_saop_body_pro(member, nodeBody); 
+
+                ret = 0;
+            }
+            else
+            {
+                ret = -3;  //msg 并不是预期的soap 信封，或者解析出错
+            }
+        }  
+    }
+    else
+    {
+        LOG_SHOW("接收到空的http信息\n");
+        ret = -4;   //空msg信息
+    }
+    
+    pthread_mutex_unlock(&(member->mutexMsg));
+    
+    return ret;  //未知错误
+}
+
+//3、发送处理
+static int __acsAux_send(sessionacs_member_t *member)
+{
+    int ret;
+    char buf[SESSIONACS_MSG_SIZE + 8];
+    int tmp;
+    if(member == NULL || member->requestQueue == NULL)return -99;
+    
+    //acs 获得主动权，开始处理本地的请求队列
+    //0、停止接收消息（或许不用）
+    pthread_mutex_lock(&(member->mutexMsg));  
+    member->msgReady = 1;
+    pthread_mutex_unlock(&(member->mutexMsg));  
+    
+    //1、如果本地请求队列为空，那么发送 空http 报文；
+    
+    //pthread_mutex_lock(&(session->mutexRequestQueue));    //资源锁，如果有其他线程要访问requestQueue，则需要
+    
+    if(queue_isEmpty(member->requestQueue))
+    {
+        LOG_SHOW("请求队列为空\n");
+        
+        ret = http_send_msg(member->user, NULL, 0, 200, "OK");
+        
+        if(ret != RET_OK)
+        {
+            LOG_ALARM("报文发送失败");
+            return -1;
+        }
+        return 1;
+    }
+    //2、开始处理请求队列
+    else
+    {
+        
+        sessionacs_request_t *request = NULL;
+        //sessioncpe_request_t *requestTmp = NULL;
+        ret = sessionacs_requestQueue_get_head(member, &request);
+        if(request->active == 1)
+        {
+            if(request->node != NULL)
+            {
+                LOG_ALARM("已激活的请求【%s】在下一次的交流中，没有收到有效回复", request->node->name);
+            }   
+            else
+            {
+                LOG_ALARM("已激活的请求，既没有收到回复，而且 request->node 为 NULL");
+            }
+                
+            sessionacs_requestQueue_out(member, &request); //出队列并释放该请求
+            sessionacs_request_destroy(request);    
+            return -4;  //已激活的请求在下一次交流中，没有收到有效回复
+        }
+        
+        if(ret == RET_OK && request->nodeEn == 1)
+        {
+            //2.1 创建soap信封节点
+            soap_obj_t *soap = soap_create();
+            soap_header_t header = {
+                .ID = "cwmp",
+                .idEn = 1,
+                //.HoldRequests = "false",
+                .holdRequestsEn = 0
+            };
+
+            soapmsg_set_base(soap, &header);
+            soap_node_t *root = soap->root;
+            soap_node_t *body = soap_node_get_son(root, "soap:Body");
+            soap_node_append_son(body, request->node);
+            
+            //2.2 激活请求，节点转化为字符串并发送信息
+            request->active = 1;
+            tmp = 0;    //代表要发送内容的起始字节，必须先清零
+            soap_node_to_str(soap->root, buf, &tmp, SESSIONACS_MSG_SIZE);
+            
+            
+            link_remove_node_by_data_pointer(body->son, (void *)(request->node));  //先剥离request->node，再释放soap节点 
+            soap_destroy(soap);     
+            
+            ret = http_send_msg(member->user, buf, tmp, 200, "OK");
+            if(ret != RET_OK)
+            {
+                LOG_ALARM("报文发送失败");
+                return -2;  //报文发送失败
+            }
+            return 2;   //成功发送请求
+        }
+        else
+        {
+            return -3; //得到的request不可用，或者没有得到
+        }  
+    }
+    
+    return -99;     //未知错误
+    
+}
+
+
+/*==============================================================
+                        会话
+==============================================================*/
+
+//会话线程
+void *thread_sessionacs(void *in)
+{   
+    if(in == NULL)
+    {
+        LOG_ALARM("thread_sessionacs: in is NULL");
+        return NULL;
+    }
+    
+    sessionacs_member_t *member = (sessionacs_member_t *)in;
+    //httpUser_obj_t *user = member->user;
+    int ret;
+    int outWhile = 0;
+    int faildCnt;
+    
+    while(1)
+    {
+        switch(member->status)
+        {
+           case sessionacs_status_start:{
+                LOG_SHOW("\n-------------------【acs会话 start】---------------  \n");
+                //开始允许 msgQueue 接收信息
+                pthread_mutex_lock(&(member->mutexMsg));
+                member->msgReady = 0;
+                pthread_mutex_unlock(&(member->mutexMsg));
+                faildCnt = 0;   //失败次数
+                
+                //进入下一阶段：建立连接
+                member->status = sessionacs_status_establish_connection;    
+                
+           }break;
+           case sessionacs_status_establish_connection:{    //建立连接
+                LOG_SHOW("\n-------------------【acs会话 establish_connection】---------------  \n");
+                ret = __acsAux_establish_connection(member);
+                LOG_SHOW("__acsAux_establish_connection 返回值 ret:%d  \n", ret);
+                if(ret == 0)
+                {
+                    //进入下一状态 recv；一般情况下，acs在上一次没收到请求时候才能到 send 状态
+                    member->status = sessionacs_status_recv;
+                }
+                //【-1】等待超时【-2】没找到Inform节点【-3】空msg消息
+                else if(ret == -1 || ret == -2 || ret == -3)
+                {
+                    faildCnt++;
+                    if(faildCnt > 2)
+                    {
+                        LOG_ALARM("失败次数到达限定值，faildCnt:%d", faildCnt);
+                        member->status = sessionacs_status_error;
+                    }
+                    
+                    //如果无转移状态，将重入
+                }
+                else    //例如 -99
+                {
+                    member->status = sessionacs_status_error;
+                }
+               
+                //outWhile = 1;
+           }break;
+           case sessionacs_status_send:{
+                LOG_SHOW("\n-------------------【acs会话 send】---------------  \n");
+                ret = __acsAux_send(member);
+                LOG_SHOW("__acsAux_send 处理完成，返回值 ret:%d  \n", ret);
+                // 【1】没有请求 【2】请求发送成功
+                if(ret == 1 || ret == 2)
+                {
+                    //进入 recv 状态
+                    member->status = sessionacs_status_recv;  
+                }
+                else 
+                {   
+                    //【-1】空报文发送失败 【-2】有msg报文发送失败 【-3】请求队列无法获取第一个元素 
+                    if(ret == -1 || ret == -2 || ret == -3)  
+                    {
+                        member->status = sessionacs_status_disconnect;   
+                    }
+                    if(ret == -4)   //已激活的请求在下一次交流中，没有收到有效回复
+                    {
+                        ;   //无状态转移，表示重入此状态
+                    }
+                    //【-99】其他情况
+                    else    
+                    {
+                        member->status = sessionacs_status_error; 
+                    }   
+                }
+
+         
+                //outWhile = 1;
+           }break;    
+           case sessionacs_status_recv:{  // taskQueue为空的情况下进入
+                LOG_SHOW("\n-------------------【acs会话 recv】---------------  \n");
+
+                ret = __acsAux_recv(member);
+                LOG_SHOW("__acsAux_recv 处理完成，返回值 ret:%d  \n", ret);
+
+                if(ret == 0)    //完成接收和处理
+                {
+                    //上一次接收到了请求，对方可能还有请求，所以acs应该等待
+                    if(member->lastRecvRequestExist == 1)  
+                    {
+                        ;   //无状态转移，则会重入当前状态
+                    }
+                    else
+                    {
+                        //进入接收状态
+                        member->status = sessionacs_status_send;
+                    }
+                    
+                }
+                else if(ret == -4)  //接收到空的msg 信息，表示cpe已经没有请求
+                {
+                    member->status = sessionacs_status_send;
+                }                
+                //【-1】等待超时【-2】未解析出nodeRoot节点【-3】未解析出nodeBody节点
+                else if(ret == -1 || ret == -2 || ret == -3)
+                {
+                    member->status = sessionacs_status_disconnect;
+                }
+                else    //其他情况，例如 -99
+                {
+                    member->status = sessionacs_status_error;
+                }
+                //outWhile = 1;
+           }break;
+           case sessionacs_status_disconnect:{
+                LOG_SHOW("\n-------------------【acs会话 disconnect】---------------  \n");
+
+                
+                outWhile = 1;
+           }break;
+           case sessionacs_status_end:{
+                LOG_SHOW("\n-------------------【acs会话 end---------------  \n");
+
+                outWhile = 1;
+           }break;
+           case sessionacs_status_error:{
+                LOG_SHOW("\n-------------------【acs会话 error】---------------  \n");              
+                outWhile = 1;
+
+           }break;
+           default:{    //其他的情况
+                LOG_SHOW("\n-------------------【acs会话 default】---------------  \n");
+                outWhile = 1;
+           }break;
+           //outWhile = 1;
+         
+        }
+
+        
+        if(outWhile)
+        {
+            LOG_SHOW("【acs会话，即将退出循环 ......】");
+            break;
+        }
+    }    
+    
+    return NULL;
+}
+
 
 //消息接收线程
 void *thread_msg_recv(void *in)
@@ -1122,8 +1808,10 @@ void *thread_msg_recv(void *in)
         return NULL;
     }
 
+
     sessionacs_member_t *member = (sessionacs_member_t *)in;
     httpUser_obj_t *httpUser = member->user;
+    
     //queue_member_t *qm;
     while(1)
     {
@@ -1132,38 +1820,32 @@ void *thread_msg_recv(void *in)
         
         http_payload_t *payload = &(httpUser->payload);
 
-        httpUser->retHttpMsg = -2;  //无动作
+        httpUser->retHttpMsg = -1;  //无动作
 
-        pthread_mutex_lock(&(member->mutexMsgQueue));
-        if(member->msgRecvEn == 1)  //允许接收
+        pthread_mutex_lock(&(member->mutexMsg));
+        if(member->msgReady == 0)  //说明msg被处理完了，现在可以接收新的消息
         {
-           
-            if(queue_isFull(member->msgQueue))
-            {
-                httpUser->retHttpMsg = -1;  
-                
+            memset(member->msg, '\0', SESSIONACS_MSG_SIZE);
+            if(payload->len <= 0 )    //载荷可能为空
+            {   
+                member->msgLen = 0;           
             }
             else
             {
-                queue_in_set_pointer(member->msgQueue, 
-                    (void *)sessionacs_create_msg_set_data((void *)(payload->buf), payload->len));            
-                httpUser->retHttpMsg = 0;              
+                memcpy(member->msg, (void *)(payload->buf), payload->len);
+                member->msgLen = payload->len;
             }
+            member->msgReady = 1;
             
+            pthread_cond_signal(&(member->condMsgReady)); //发送条件变量
+            httpUser->retHttpMsg = 0;
         }
         else
         {
-            httpUser->retHttpMsg = -3;   //返回信息：msgQueue 不允许增加信息
+            httpUser->retHttpMsg = -2;   //返回信息：msg 还未被处理
         }
 
-        if(!queue_isEmpty(member->msgQueue))
-        {
-            LOG_SHOW("开始发送条件变量....\n");
-            pthread_cond_signal(&(member->condMsgQueueReady)); //发送条件变量
-        }
-            
-        
-        pthread_mutex_unlock(&(member->mutexMsgQueue));
+        pthread_mutex_unlock(&(member->mutexMsg));
         
         sem_post(&(httpUser->semHttpMsgRecvComplete));  //完成的信号
         
@@ -1203,24 +1885,37 @@ void *thread_new_user(void *in)
         }
 
         //------------------------------------------------------------------------------------------
-        //一些测试，比如预先设置 member的任务队列
-        sessionacs_task_t *taskTmp;
+        //一些测试，比如预先设置 member的请求队列
+        sessionacs_request_t *requestTmp;
         char *strTmp;
         char buf64[64] = {0};
-        if(newMember->user->tcpUser->port == 8081 || newMember->user->tcpUser->port == 8082)  //特定端口测试
+        //if(newMember->user->tcpUser->port == 8081 || newMember->user->tcpUser->port == 8082)  //特定端口测试
+        if(newMember->user->tcpUser->port > 8080)
         {
             //清空 任务队列
-            sessionacs_taskQueue_clear(newMember);
+            sessionacs_requestQueue_clear(newMember);
+            //0、添加rpc方法 SetParameterValues
+            //0.1 新任务
+            requestTmp = sessionacs_requestQueue_in_new(newMember);  
+            requestTmp->active = 0;
+            requestTmp->nodeEn = 1;
+            if(requestTmp != NULL)
+            {
+                //0.2 soap_node 存储数据
+                rpc_GetRPCMethods_t dataGetRPCMethods ={
+                    .null = NULL      
+                };
+                //0.3 节点存入新的 请求
+                requestTmp->node = soapmsg_to_node_GetRPCMethods(dataGetRPCMethods);
+            }
             //1、添加rpc方法 GetParameterValues
             //1.1 新任务
-            taskTmp = sessionacs_taskQueue_in(newMember, sessionacs_task_type_rpc_request);  
-          
-            //LOG_SHOW("thread_new_user sessionacs_taskQueue_in taskTmp:%p\n", taskTmp);
-            if(taskTmp != NULL)
+            requestTmp = sessionacs_requestQueue_in_new(newMember);  
+            requestTmp->active = 0; //未被激活状态
+            requestTmp->nodeEn = 1;
+            if(requestTmp != NULL)
             {
-                //1.2 请求的方法名
-                strcpy(taskTmp->data.rpcRequest.method, "GetParameterValues");
-                //1.3 soap_node 存储数据
+                //1.2 soap_node 存储数据
                 link_obj_t *linkParameterNames = link_create();     //链表成员数据的类型 ： char [256]
 
                 strTmp = (char *)link_append_by_malloc(linkParameterNames, sizeof(256)); 
@@ -1233,20 +1928,19 @@ void *thread_new_user(void *in)
                     .ParameterNames = linkParameterNames     //链表成员数据的类型 ： char [256]
                 };
 
-                //1.4 节点存入新的 task
-                taskTmp->data.rpcRequest.soapNode = soapmsg_to_node_GetParameterValues(dataGetParameterValues);
+                //1.3 节点存入新的 request
+                requestTmp->node = soapmsg_to_node_GetParameterValues(dataGetParameterValues);
                 link_destroy_and_data(linkParameterNames);
 
             }
             //2、添加rpc方法 SetParameterValues
             //2.1 新任务
-            taskTmp = sessionacs_taskQueue_in(newMember, sessionacs_task_type_rpc_request);  
-            
-            if(taskTmp != NULL)
+            requestTmp = sessionacs_requestQueue_in_new(newMember);  
+            requestTmp->active = 0;
+            requestTmp->nodeEn = 1;
+            if(requestTmp != NULL)
             {
-                //1.2 请求的方法名
-                strcpy(taskTmp->data.rpcRequest.method, "SetParameterValues");
-                //2.3 soap_node 存储数据
+                //2.2 soap_node 存储数据
                 link_obj_t *linkParameterList = link_create();
                 ParameterValueStruct *pvs1 = (ParameterValueStruct *)link_append_by_malloc
                                                 (linkParameterList, sizeof(ParameterValueStruct));    
@@ -1260,21 +1954,23 @@ void *thread_new_user(void *in)
                     .ParameterKey = "paramter_key_1"
                 };
 
-                //2.4 节点存入新的 task
-                taskTmp->data.rpcRequest.soapNode = soapmsg_to_node_SetParameterValues(dataSetParameterValues);
+                //2.3 节点存入新的 请求
+                requestTmp->node = soapmsg_to_node_SetParameterValues(dataSetParameterValues);
                 link_destroy_and_data(linkParameterList);
 
             }
-            
+
+            LOG_SHOW("当前请求列表的个数：%d\n", queue_get_num(newMember->requestQueue));   
         }
         else
         {
-            LOG_SHOW("未匹配到 tcp 接口 port:%d\n", newMember->user->tcpUser->port);
+            LOG_SHOW("request 队列添加测试：未匹配到 tcp 接口 port:%d\n", newMember->user->tcpUser->port);
         }
         //------------------------------------------------------------------------------------------
 
         
         sessionacs_append(session, newMember);
+        
         //开启消息接收线程
         ret = pthread_create(&(newMember->threadMsgRecv), NULL, thread_msg_recv, (void *)newMember);
         if(ret != 0)
@@ -1317,17 +2013,20 @@ int sessionacs_start(sessionacs_obj_t *session)
 /*==============================================================
                         测试
 ==============================================================*/
+
 void sessionacs_test()
 {
     //printf("sessionacs test start ...\n");
-    
+
     sessionacs_obj_t * session = sessionacs_create_set_httpParamters("192.168.1.20", 8080);
 
     sessionacs_start(session);
 
     printf("acs session start ...\n");
 
-    for(;;);    
+    for(;;);   
+   
+    
 }
 
 

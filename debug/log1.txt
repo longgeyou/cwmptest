@@ -1,89 +1,36 @@
 
 ======================log start=======================
-[info 0][Tue Nov 26 16:14:47 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:573 
+当前请求列表的个数：1
+[info 0][Fri Nov 29 15:34:29 2024]file:protocol/transport/tcp.c  fun:tcp_client_start  line:573 
 connect to [192.168.1.20:8080] OK
-等待消息队列非空...
----------------->POLL   IN
-解析头部 version:http/1.1 code:401 reason:Unauthorized
-============================show head
-num:1
---------------show line--------------
-name:WWW-Authenticate
-key:Digest realm value:/cwmp 
-key:qop value:auth-int 
-key:nonce value:0447abac039f384b4f7c60fc7b6e1414 
-key:opaque value:3fe9b40d19cbd9031e8512aff1559ca6 
-[info 1][Tue Nov 26 16:14:47 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
-http 头部处理完毕 ...
- 客户端 http 报文接收处理
+
+-------------------【cpe会话 start】---------------  
+超时等待msg，超时时间30秒
 需要摘要认证 ...
-计算摘要认证 ...
-计算摘要值所需参数：
-pszNonce:0447abac039f384b4f7c60fc7b6e1414
-pszCNonce:da34d4e22
-pszUser:admin
-pszRealm:/cwmp
-pszPass:123456
-pszAlg:md5
-szNonceCount:00000010
-pszMethod:GET
-pszQop:auth-int
-pszURI:/cwmp
-Response = 02065d3f0255b0670b4225c5866f254a
+[info 1][Fri Nov 29 15:34:29 2024]file:protocol/session/http.c  fun:__http_client_msg_recv_pro  line:2108 
 发送摘要认证测试 长度:269 内容:GET /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=0447abac039f384b4f7c60fc7b6e1414, uri="/cwmp", response="02065d3f0255b0670b4225c5866f254a", opaque=3fe9b40d19cbd9031e8512aff1559ca6, qop=auth-int, nc=10, cnonce="da34d4e22"
+Authorization: Digest username="admin", realm=/cwmp, nonce=34236584c43ae1c70d48e670e04a3815, uri="/cwmp", response="b2f117d049ef464c9f7a2664f24597f4", opaque=dcb0290159e8ea3c619efaadd1e09225, qop=auth-int, nc=10, cnonce="154538bc2"
 Content-Length:0
 
 
-http_status_head_pro：http 401 处理， 对方要求认证 
----------------->POLL   IN
-解析头部 version:HTTP/1.1 code:200 reason:OK
-============================show head
-num:3
---------------show line--------------
-name:Host
-key:cwmp.example.com 
---------------show line--------------
-name:Content-Type
-key:text/xml 
-key:charset value:"UTF-8" 
---------------show line--------------
-name:Content-Length
-key:14 
-[info 2][Tue Nov 26 16:14:47 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
-http 头部处理完毕 ...
- 客户端 http 报文接收处理
------>__get_http_payload_len payloadNeedLen:14
-开始发送条件变量....
-开始处理消息队列表...
----->http_status_data_pro 完成, retHttpMsg :0
-msgData len:14 msg:
+
+[info 2][Fri Nov 29 15:34:30 2024]file:protocol/session/sessioncpe.c  fun:__cpeAux_http_auth  line:1557 
+接收到http消息 长度:14 内容:
 【hello visitor!】
-已经存入消息队列
-sessioncpe_status_start ret:0
-sessioncpe_status_establish_connection 来了......
-计算摘要值所需参数：
-pszNonce:0447abac039f384b4f7c60fc7b6e1414
-pszCNonce:da34d4e22
-pszUser:admin
-pszRealm:/cwmp
-pszPass:123456
-pszAlg:md5
-szNonceCount:00000011
-pszMethod:POST
-pszQop:auth-int
-pszURI:/cwmp
-Response = 60f155446acfc21a349574a772d9a23a
-客户端发送msg 长度:1523 内容:POST /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=0447abac039f384b4f7c60fc7b6e1414, uri="/cwmp", response="60f155446acfc21a349574a772d9a23a", opaque=3fe9b40d19cbd9031e8512aff1559ca6, qop=auth-int, nc=11, cnonce="da34d4e22"
+
+__cpeAux_http_auth ret:0
+
+-------------------【cpe会话 connection】---------------  
+客户端发送msg 长度:1521 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=34236584c43ae1c70d48e670e04a3815, uri="/cwmp", response="e13f9c49fa25ce0b88517ec017ec3eeb", opaque=dcb0290159e8ea3c619efaadd1e09225, qop=auth-int, nc=11, cnonce="154538bc2"
 Content-Type: text/xml; charset="UTF-8"
-Content-Length: 1169
+Content-Length: 1167
 SOAPAction:"urn:dslforum-org:cwmp-1-4"
 
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
 <soap:Header>
 <cwmp:ID soapenv:mustUnderstand=1>
-long123
+start
 </cwmp:ID>
 </soap:Header>
 <soap:Body>
@@ -151,45 +98,15 @@ parameter_2
 </soap:Body>
 </soap:Envelope>
 
-发送完成，返回值 ret:1523
-等待消息队列非空...
----------------->POLL   IN
-解析头部 version:http/1.1 code:200 reason:OK
-============================show head
-num:4
---------------show line--------------
-name:WWW-Authenticate
-key:Digest realm value:/cwmp 
-key:qop value:auth-int 
-key:nonce value:0447abac039f384b4f7c60fc7b6e1414 
-key:opaque value:3fe9b40d19cbd9031e8512aff1559ca6 
---------------show line--------------
-name:Content-Type
-key:text/xml 
-key:charset value:"UTF-8" 
---------------show line--------------
-name:Content-Length
-key:385 
---------------show line--------------
-name:SOAPAction
-key:"urn:dslforum-org:cwmp-1-4" 
-[info 3][Tue Nov 26 16:14:48 2024]file:protocol/session/http.c  fun:http_client_accept  line:2281 
-http 头部处理完毕 ...
- 客户端 http 报文接收处理
+发送完成，返回值 ret:1521
+超时等待msg，超时时间30秒
 需要摘要认证 ...
-计算摘要认证 ...
------>__get_http_payload_len payloadNeedLen:385
-开始发送条件变量....
-开始处理消息队列表...
--->msgData len:385 msg:
+接收到http msg消息 长度:313 内容:
 【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
 <soap:Header>
 <cwmp:ID soapenv:mustUnderstand=1>
-long123
+cwmp:ID
 </cwmp:ID>
-<cwmp:HoldRequests soapenv:mustUnderstand=1>
-false
-</cwmp:HoldRequests>
 </soap:Header>
 <soap:Body>
 <cwmp:InformResponse>
@@ -200,34 +117,266 @@ false
 </soap:Body>
 </soap:Envelope>
 】
----->http_status_data_pro 完成, retHttpMsg :0
-已经存入消息队列
-开始清空 taskQueue
+__cpeAux_http_auth ret:0
 
--------------------【cpe会话 task_pro】---------------  
-__aux_task_queue_pro 返回值 ret:-2 
+-------------------【cpe会话 send】---------------  
+客户端发送msg 长度:607 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=34236584c43ae1c70d48e670e04a3815, uri="/cwmp", response="b4423caf992a368e04b507ad5e055417", opaque=dcb0290159e8ea3c619efaadd1e09225, qop=auth-int, nc=12, cnonce="735a763c7"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 254
+SOAPAction:"urn:dslforum-org:cwmp-1-4"
 
--------------------【cpe会话 task_void】---------------  
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:GetRPCMethods/>
+</soap:Body>
+</soap:Envelope>
 
--------------------【cpe会话 task_pro】---------------  
-计算摘要值所需参数：
-pszNonce:0447abac039f384b4f7c60fc7b6e1414
-pszCNonce:0d6cb05b4
-pszUser:admin
-pszRealm:/cwmp
-pszPass:123456
-pszAlg:md5
-szNonceCount:00000012
-pszMethod:POST
-pszQop:auth-int
-pszURI:/cwmp
-Response = 2c0a745b5bbb0f2a49db6433b0b38ac8
+发送完成，返回值 ret:607
+__cpeAux_send ret:2
+
+-------------------【cpe会话 recv】---------------  
+超时等待msg，超时时间30秒
+需要摘要认证 ...
+接收到http信息，长度：698，内容：
+【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp:ID
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:GetRPCMethodsResponse>
+<MethodList soapenc:arrayType=xs:string[10]>
+<string>
+GetRPCMethods
+</string>
+<string>
+SetParameterValues
+</string>
+<string>
+GetParameterValues
+</string>
+<string>
+GetParameterNames
+</string>
+<string>
+SetParameterAttributes
+</string>
+<string>
+GetParameterAttributes
+</string>
+<string>
+AddObject
+</string>
+<string>
+DeleteObject
+</string>
+<string>
+Reboot
+</string>
+<string>
+Download
+</string>
+</MethodList>
+</cwmp:GetRPCMethodsResponse>
+</soap:Body>
+</soap:Envelope>
+】
+GetRPCMethodsResponse 信息的处理，内容为（该内容控制台会显示但log不显示）：cpe为主体，收到来自acs的 GetRPCMethodsResponse 信息， 返回值 ret:0
+__cpeAux_recv ret:0 lastRecvRequestExist:0
+
+-------------------【cpe会话 send】---------------  
+请求队列为空
 客户端发送msg 长度:351 内容:POST /cwmp http/1.1
-Authorization: Digest username="admin", realm=/cwmp, nonce=0447abac039f384b4f7c60fc7b6e1414, uri="/cwmp", response="2c0a745b5bbb0f2a49db6433b0b38ac8", opaque=3fe9b40d19cbd9031e8512aff1559ca6, qop=auth-int, nc=12, cnonce="0d6cb05b4"
+Authorization: Digest username="admin", realm=/cwmp, nonce=34236584c43ae1c70d48e670e04a3815, uri="/cwmp", response="5de4949fc2c7805afaed9ebcf6a1dae2", opaque=dcb0290159e8ea3c619efaadd1e09225, qop=auth-int, nc=13, cnonce="88b3c3e43"
 Content-Type: text/xml; charset="UTF-8"
 Content-Length: 0
 SOAPAction:"urn:dslforum-org:cwmp-1-4"
 
 
 发送完成，返回值 ret:351
-等待消息队列非空...
+__cpeAux_send ret:1
+
+-------------------【cpe会话 recv】---------------  
+超时等待msg，超时时间30秒
+需要摘要认证 ...
+接收到http信息，长度：254，内容：
+【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:GetRPCMethods/>
+</soap:Body>
+</soap:Envelope>
+】
+客户端发送msg 长度:800 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=34236584c43ae1c70d48e670e04a3815, uri="/cwmp", response="41738a830c5cf7cc453a43100d358c7c", opaque=dcb0290159e8ea3c619efaadd1e09225, qop=auth-int, nc=14, cnonce="d772fc798"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 447
+SOAPAction:"urn:dslforum-org:cwmp-1-4"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp:ID
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:GetRPCMethodsResponse>
+<MethodList soapenc:arrayType=xs:string[3]>
+<string>
+Inform
+</string>
+<string>
+GetRPCMethods
+</string>
+<string>
+TransferComplete
+</string>
+</MethodList>
+</cwmp:GetRPCMethodsResponse>
+</soap:Body>
+</soap:Envelope>
+
+发送完成，返回值 ret:800
+cpe为主题，接收到来自acs的请求 GetRPCMethods ， 返回值 ret:0__cpeAux_recv ret:0 lastRecvRequestExist:1
+
+-------------------【cpe会话 recv】---------------  
+超时等待msg，超时时间30秒
+需要摘要认证 ...
+接收到http信息，长度：423，内容：
+【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:GetParameterValues>
+<ParameterNames soapenc:arrayType=xs:string[2]>
+<string>
+parameter_name_1
+</string>
+<string>
+parameter_name_2
+</string>
+</ParameterNames>
+</cwmp:GetParameterValues>
+</soap:Body>
+</soap:Envelope>
+】
+要获取的参数，相关节点为：【】
+客户端发送msg 长度:838 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=34236584c43ae1c70d48e670e04a3815, uri="/cwmp", response="2b9bad9a46abbae68f5064acfd7b9bd9", opaque=dcb0290159e8ea3c619efaadd1e09225, qop=auth-int, nc=15, cnonce="77f8b9945"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 485
+SOAPAction:"urn:dslforum-org:cwmp-1-4"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp:ID
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:GetParameterValuesResponse>
+<ParameterList soapenc:arrayType=tns:ParameterValueStruct[1]>
+<ParameterValueStruct>
+<Name>
+parameter_1
+</Name>
+<Value>
+76616c7565
+</Value>
+</ParameterValueStruct>
+</ParameterList>
+</cwmp:GetParameterValuesResponse>
+</soap:Body>
+</soap:Envelope>
+
+发送完成，返回值 ret:838
+cpe为主题，接收到来自acs的请求 GetParameterValues ， 返回值 ret:0__cpeAux_recv ret:0 lastRecvRequestExist:1
+
+-------------------【cpe会话 recv】---------------  
+超时等待msg，超时时间30秒
+需要摘要认证 ...
+接收到http信息，长度：521，内容：
+【<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:SetParameterValues>
+<ParameterList soapenc:arrayType=tns:ParameterValueStruct[1]>
+<ParameterValueStruct>
+<Name>
+parameter_name_1
+</Name>
+<Value>
+76616c75655f31
+</Value>
+</ParameterValueStruct>
+</ParameterList>
+<ParameterKey>
+paramter_key_1
+</ParameterKey>
+</cwmp:SetParameterValues>
+</soap:Body>
+</soap:Envelope>
+】
+要设置的参数，相关节点为：【<ParameterValueStruct>
+<Name>
+
+parameter_name_1
+
+</Name>
+<Value>
+
+76616c75655f31
+
+</Value>
+</ParameterValueStruct>
+】
+客户端发送msg 长度:678 内容:POST /cwmp http/1.1
+Authorization: Digest username="admin", realm=/cwmp, nonce=34236584c43ae1c70d48e670e04a3815, uri="/cwmp", response="9ccc697891be4f5eb9f90b94038839cc", opaque=dcb0290159e8ea3c619efaadd1e09225, qop=auth-int, nc=16, cnonce="f89e1c209"
+Content-Type: text/xml; charset="UTF-8"
+Content-Length: 325
+SOAPAction:"urn:dslforum-org:cwmp-1-4"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cwmp="urn:dslforum-org:cwmp-1-4">
+<soap:Header>
+<cwmp:ID soapenv:mustUnderstand=1>
+cwmp:ID
+</cwmp:ID>
+</soap:Header>
+<soap:Body>
+<cwmp:SetParameterValuesResponse>
+<Status>
+1
+</Status>
+</cwmp:SetParameterValuesResponse>
+</soap:Body>
+</soap:Envelope>
+
+发送完成，返回值 ret:678
+cpe为主题，接收到来自acs的请求 SetParameterValues ， 返回值 ret:0__cpeAux_recv ret:0 lastRecvRequestExist:1
+
+-------------------【cpe会话 recv】---------------  
+超时等待msg，超时时间30秒
+需要摘要认证 ...
+接收到空的http信息
+__cpeAux_recv ret:-4 lastRecvRequestExist:1
+
+-------------------【cpe会话 disconnect】---------------  
+【cpe会话】离开循环 ......

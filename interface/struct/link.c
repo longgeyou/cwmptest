@@ -389,6 +389,35 @@ int link_remove_by_node(link_obj_t *link, link_node_t *node)
     return RET_FAILD;
 }
 
+//删除链表指定的某个节点（默认释放 节点 占用的动态内存, 但是不释放 node->data 指向的动态内存）
+int link_remove_node_by_data_pointer(link_obj_t *link, void *poniter)
+{
+    if(link == NULL)return RET_FAILD;
+
+    link_node_t *probe = link->head->next;
+    link_node_t *last = link->head;
+    
+    while(probe != NULL)
+    {
+        if(probe->data == poniter)
+        {
+           last->next = probe->next;
+           
+           //link_destory_node_and_data(probe);
+            link_destory_node(probe);
+           
+           link->nodeNum--;
+           
+           return RET_OK;
+        }
+        last = probe;
+        probe = probe->next; 
+    }
+    return RET_FAILD;
+}
+
+
+
 //判断节点是否存在
 int link_node_is_exist(link_obj_t *link, link_node_t *node)
 {

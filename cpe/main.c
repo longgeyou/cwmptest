@@ -105,9 +105,10 @@ void test(int port)
     //soap_test();
     //queue_test();
     //soapmsg_test();
-    //cwmprpc_test();
+    cwmprpc_test();
     //soapmsg_test2();
     //soapmsg_test3();
+
     
 }
 

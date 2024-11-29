@@ -27,6 +27,7 @@ cwmp 远程过程调用 数据模型
 
 /*==============================================================
                         cpe支持的rpc方法
+                            【默认支持，但对端可能部分支持，需要注意】
 ==============================================================*/
 const char *cwmprpc_cpe_method_g[] = {
     "GetRPCMethods",
@@ -55,19 +56,65 @@ const char *cwmprpc_cpe_method_soap_name_g[] = {
     "cwmp:Download"
 };
 
+//对应的响应
+const char *cwmprpc_cpe_methodResponse_g[] = {
+    "GetRPCMethodsResponse",
+    "SetParameterValuesResponse",
+    "GetParameterValuesResponse",
+    "GetParameterNamesResponse",
+    "SetParameterAttributesResponse",
+    "GetParameterAttributesResponse",
+    "AddObjectResponse",
+    "DeleteObjectResponse",
+    "RebootResponse",
+    "DownloadResponse"
+};
+
+
+const char *cwmprpc_cpe_methodResponse_soap_name_g[] = {
+    "cwmp:GetRPCMethodsResponse",
+    "cwmp:SetParameterValuesResponse",
+    "cwmp:GetParameterValuesResponse",
+    "cwmp:GetParameterNamesResponse",
+    "cwmp:SetParameterAttributesResponse",
+    "cwmp:GetParameterAttributesResponse",
+    "cwmp:AddObjectResponse",
+    "cwmp:DeleteObjectResponse",
+    "cwmp:RebootResponse",
+    "cwmp:DownloadResponse"
+};
+
+
+/*==============================================================
+                        acs支持的rpc方法
+==============================================================*/
 
 const char *cwmprpc_acs_method_g[] = {
-    "Inform"
-    "GetRPCMethods"
+    "Inform",
+    "GetRPCMethods",
     "TransferComplete"
 };
 
-
 const char *cwmprpc_acs_method_soap_name_g[] = {
-    "cwmp:Inform"
-    "cwmp:GetRPCMethods"
+    "cwmp:Inform",
+    "cwmp:GetRPCMethods",
     "cwmp:TransferComplete"
 };
+
+//对应的响应
+const char *cwmprpc_acs_methodResponse_g[] = {
+    "InformResponse",
+    "GetRPCMethodsResponse",
+    "TransferCompleteResponse"
+};
+
+const char *cwmprpc_acs_methodResponse_soap_name_g[] = {
+    "cwmp:InformResponse",
+    "cwmp:GetRPCMethodsResponse",
+    "cwmp:TransferCompleteResponse"
+};
+
+
 
 
 
@@ -238,7 +285,8 @@ int cwmprpc_str2dateTime(char *in, dateTime *date)
     return 0;
 }
 
-//匹配 cpe rpc 方法，例如 "cwmp:GetRPCMethods"
+
+//匹配 cpe   方法，例如 "cwmp:GetParameterValues",
 int cwmprpc_cpe_method_soap_name_match(char *in)
 {
     if(in == NULL)return -1;
@@ -255,7 +303,7 @@ int cwmprpc_cpe_method_soap_name_match(char *in)
     return -2;
 }
 
-//匹配 acs rpc 方法，例如 "cwmp:GetRPCMethods"
+//匹配 acs 方法，例如 "Inform"
 int cwmprpc_acs_method_soap_name_match(char *in)
 {
     if(in == NULL)return -1;
@@ -265,6 +313,7 @@ int cwmprpc_acs_method_soap_name_match(char *in)
     num = sizeof(cwmprpc_acs_method_soap_name_g) / sizeof(char *);
     for(i = 0; i < num; i++)
     {
+        //printf("i:%d in:【%s】name:【%s】\n", i, in, cwmprpc_acs_method_soap_name_g[i]);
         if(strcmp(cwmprpc_acs_method_soap_name_g[i], in) == 0)
             return 0;   //说明匹配到了
     }
@@ -272,31 +321,69 @@ int cwmprpc_acs_method_soap_name_match(char *in)
     return -2;
 }
 
+//匹配 cpe   方法响应，例如 "cwmp:GetParameterValuesResponse",
+int cwmprpc_cpe_methodResponse_soap_name_match(char *in)
+{
+    if(in == NULL)return -1;
+
+    int i;
+    int num;
+    num = sizeof(cwmprpc_cpe_methodResponse_soap_name_g) / sizeof(char *);
+    for(i = 0; i < num; i++)
+    {
+        if(strcmp(cwmprpc_cpe_methodResponse_soap_name_g[i], in) == 0)
+            return 0;   //说明匹配到了
+    }
+    
+    return -2;
+}
+
+//匹配 acs 方法，例如 "InformResponse"
+int cwmprpc_acs_methodResponse_soap_name_match(char *in)
+{
+    if(in == NULL)return -1;
+
+    int i;
+    int num;
+    num = sizeof(cwmprpc_acs_methodResponse_soap_name_g) / sizeof(char *);
+    for(i = 0; i < num; i++)
+    {
+        if(strcmp(cwmprpc_acs_methodResponse_soap_name_g[i], in) == 0)
+            return 0;   //说明匹配到了
+    }
+    
+    return -2;
+}
+
+
+
 
 /*==============================================================
                         测试
 ==============================================================*/
 void cwmprpc_test()
 {
-    dateTime date;
-    date.year = 1;
-    date.mouth = 1;
-    date.day = 1;
-    date.hour = 1;
-    date.minute = 1;
-    date.second = 1;
+//    dateTime date;
+//    date.year = 1;
+//    date.mouth = 1;
+//    date.day = 1;
+//    date.hour = 1;
+//    date.minute = 1;
+//    date.second = 1;
+//
+//       char buf64[64] = {0};
+//    cwmprpc_dateTime2str(date, buf64, 64);
+//
+//    printf("--->%s\n", buf64);
+//
+//    dateTime date2;
+//    cwmprpc_str2dateTime(buf64, &date2);
+//    
+//    printf("%04d-%02d-%02dT%02d:%02d:%02d\n",
+//                date.year + 1, date.mouth + 1, date.day + 1,
+//                date.hour, date.minute, date.second);
 
-       char buf64[64] = {0};
-    cwmprpc_dateTime2str(date, buf64, 64);
-
-    printf("--->%s\n", buf64);
-
-    dateTime date2;
-    cwmprpc_str2dateTime(buf64, &date2);
-    
-    printf("%04d-%02d-%02dT%02d:%02d:%02d\n",
-                date.year + 1, date.mouth + 1, date.day + 1,
-                date.hour, date.minute, date.second);
+    printf("--->%d\n", cwmprpc_acs_method_soap_name_match("cwmp:GetRPCMethods"));        
 }
 
 

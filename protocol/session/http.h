@@ -217,6 +217,7 @@ int http_send(http_server_t *http, int userId, void *data, int dataLen);
 int http_send_str(http_server_t *http, int userId, char *str);
 int httpUser_send(http_server_t *http, httpUser_obj_t *user, void *data, int dataLen);
 int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str);
+int httpUser_send_str2(httpUser_obj_t *user, char *str);
 int http_send_msg(httpUser_obj_t *user, void *msg, 
                     int msgLen, int faultCode, char *reason);
 

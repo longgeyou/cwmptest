@@ -64,6 +64,7 @@ int link_append_by_set_value(link_obj_t *link, void *data, int dataLen);
 int link_insert(link_obj_t *link, link_node_t *node, int index);
 int link_remove_by_id(link_obj_t *link, int index);
 int link_remove_by_node(link_obj_t *link, link_node_t *node);
+int link_remove_node_by_data_pointer(link_obj_t *link, void *poniter);
 int link_node_is_exist(link_obj_t *link, link_node_t *node);
 int link_size(link_obj_t *link);
 int link_node_alter(link_node_t *node, void *data, int dataLen);

@@ -298,6 +298,23 @@ int queue_out_get_pointer(queue_obj_t *queue, void **outP)
     return RET_OK;
 }
 
+//从队列中取得队列头的元素
+int queue_get_head_pointer(queue_obj_t *queue, void **outP)
+{
+    if(queue == NULL)return RET_FAILD;
+    if(queue_isEmpty(queue))return RET_FAILD;
+
+    *outP = (queue->array)[queue->bottom]->d;
+    //queue_destroy_member((queue->array)[queue->bottom]);
+    
+    //queue->bottom = (queue->bottom + 1) % queue->size;
+
+    return RET_OK;
+}
+
+
+
+
 //获取队列当前成员个数
 int queue_get_num(queue_obj_t *queue)
 {

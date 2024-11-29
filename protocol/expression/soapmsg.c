@@ -158,6 +158,7 @@ soap_node_t *soapmsg_to_node_GetRPCMethodsResponse(rpc_GetRPCMethodsResponse_t d
 {
     char buf64[64];
     soap_node_t *node = soap_create_node_set_value("cwmp:GetRPCMethodsResponse", NULL);
+  
     if(node == NULL)return NULL;
 
     // 添加 MethodList （方法列表） 
@@ -231,7 +232,7 @@ soap_node_t *soapmsg_to_node_SetParameterValues(rpc_SetParameterValues_t data)
 soap_node_t *soapmsg_to_node_SetParameterValuesResponse(rpc_SetParameterValuesResponse_t data)
 {
     char buf8[8] = {0};
-    soap_node_t *node = soap_create_node_set_value("cwmp:SetParameterValues", NULL);
+    soap_node_t *node = soap_create_node_set_value("cwmp:SetParameterValuesResponse", NULL);
     
     //添加 Status 成员
     sprintf(buf8, "%d", data.Status);
@@ -607,6 +608,19 @@ void soapmsg_test2()
     };
     //soap_node_t *nodeGetRPCMethods = soapmsg_to_node_GetRPCMethods(dataGetRPCMethods);
     soap_node_append_son(body, soapmsg_to_node_GetRPCMethods(dataGetRPCMethods));
+
+    //2-1、添加rpc方法 GetRPCMethodsResponse
+    rpc_GetRPCMethodsResponse_t dataGetRPCMethodsResponse;
+    dataGetRPCMethodsResponse.MethodList = link_create();
+    char *methodListTmp[] = {
+        "method_1",
+        "method_2"
+    }; 
+    link_append_by_set_value(dataGetRPCMethodsResponse.MethodList, (void *)(methodListTmp[0]), strlen(methodListTmp[0]));
+    link_append_by_set_value(dataGetRPCMethodsResponse.MethodList, (void *)(methodListTmp[1]), strlen(methodListTmp[1]));
+    soap_node_append_son(body, soapmsg_to_node_GetRPCMethodsResponse(dataGetRPCMethodsResponse));
+
+    link_destroy_and_data(dataGetRPCMethodsResponse.MethodList);
 
     //3、添加rpc方法 SetParameterValues
     link_obj_t *linkParameterList = link_create();

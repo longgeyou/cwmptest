@@ -612,6 +612,14 @@ int httpUser_send_str(http_server_t *http, httpUser_obj_t *user, char *str)
     return httpUser_send(http, user, (void *)str, strlen(str) + 1);
 }
 
+//用户发送字符串
+int httpUser_send_str2(httpUser_obj_t *user, char *str)
+{
+    return tcpUser_send(user->tcpUser, (void *)str, strlen(str) + 1);
+}
+
+
+
 //服务器向用户发送 http 报文（带有 http 认证）
 int http_send_msg(httpUser_obj_t *user, void *msg, 
                     int msgLen, int faultCode, char *reason)
@@ -755,7 +763,7 @@ int http_send_msg(httpUser_obj_t *user, void *msg,
         if(len > lenTmp)len = lenTmp;
         if(probe->en == 1 && strncmp(iter->name, HTTP_AUTH_STR_A, len) == 0) //第三个参数可能要取最小值
         {
-            LOG_SHOW("存在 Authorization，可以开始认证 len:%d result:%d str:%s name:%s\n", len, strncmp(iter->name, HTTP_AUTH_STR_A, len), HTTP_AUTH_STR_A, iter->name);
+            //LOG_SHOW("存在 Authorization，可以开始认证 len:%d result:%d str:%s name:%s\n", len, strncmp(iter->name, HTTP_AUTH_STR_A, len), HTTP_AUTH_STR_A, iter->name);
             line = iter;
             exist = 1;
             break;
@@ -799,7 +807,7 @@ int http_send_msg(httpUser_obj_t *user, void *msg,
         //1.2 摘要认证（部分功能未实现，例如 opaque 更新策略）
         if(user->useDigestAuth == 1)
         {
-            LOG_SHOW("摘要认证开始 ...\n");
+            //LOG_SHOW("摘要认证开始 ...\n");
             //user->auth.staus = digest_auth_status_wait_reply;   //测试用
             switch(user->auth.staus)    //状态机
             {
@@ -862,7 +870,7 @@ int http_send_msg(httpUser_obj_t *user, void *msg,
                     if(step == 2)
                     {
                         //LOG_SHOW("【摘要认证 1】 nonce 匹配\n");
-                        LOG_SHOW("  客户端上来的 nonce:%s 本地:%s\n", data_nonce->value, user->auth.nonce);
+                        //LOG_SHOW("  客户端上来的 nonce:%s 本地:%s\n", data_nonce->value, user->auth.nonce);
                         if(data_nonce != NULL)
                         {
                             if(data_nonce->value != NULL && data_nonce->valueEn == 1)
@@ -887,7 +895,7 @@ int http_send_msg(httpUser_obj_t *user, void *msg,
                         if(data_nc != NULL)
                         {
                             int count = (unsigned long)(atoi(data_nc->value));
-                            LOG_SHOW("  本地nc值:%d 报文nc值:%d\n", user->auth.nc, count);
+                            //LOG_SHOW("  本地nc值:%d 报文nc值:%d\n", user->auth.nc, count);
                             if(count > user->auth.nc)   //需要验证上来的摘要认证内容 nc 在自增 
                             {
                                 user->auth.nc = count;
@@ -919,7 +927,7 @@ int http_send_msg(httpUser_obj_t *user, void *msg,
                         //密码查找                         
                         keyvalue_get_value_by_str(http->account, pszUser, bufValue, BUF_VALUE_LEN);
                         char * pszPass = bufValue;                        
-                        LOG_INFO("  用户名：%s 密码：%s\n", pszUser, pszPass);
+                        //LOG_INFO("  用户名：%s 密码：%s\n", pszUser, pszPass);
                                                
                         char * pszAlg = "md5";
                         char szNonceCount[9];   //8 hex digits 
@@ -932,31 +940,31 @@ int http_send_msg(httpUser_obj_t *user, void *msg,
                         HASHHEX HA2 = "";
                         HASHHEX Response;
 
-                        LOG_SHOW("计算摘要值所需参数：\n"
-                                    "pszNonce:%s\n"
-                                    "pszCNonce:%s\n"
-                                    "pszUser:%s\n"
-                                    "pszRealm:%s\n"
-                                    "pszPass:%s\n"
-                                    "pszAlg:%s\n"
-                                    "szNonceCount:%s\n"
-                                    "pszMethod:%s\n"
-                                    "pszQop:%s\n"
-                                    "pszURI:%s\n",
-                                    pszNonce,
-                                    pszCNonce,
-                                    pszUser,
-                                    pszRealm,
-                                    pszPass,
-                                    pszAlg,
-                                    szNonceCount,
-                                    pszMethod,
-                                    pszQop,
-                                    pszURI);
+//                        LOG_SHOW("计算摘要值所需参数：\n"
+//                                    "pszNonce:%s\n"
+//                                    "pszCNonce:%s\n"
+//                                    "pszUser:%s\n"
+//                                    "pszRealm:%s\n"
+//                                    "pszPass:%s\n"
+//                                    "pszAlg:%s\n"
+//                                    "szNonceCount:%s\n"
+//                                    "pszMethod:%s\n"
+//                                    "pszQop:%s\n"
+//                                    "pszURI:%s\n",
+//                                    pszNonce,
+//                                    pszCNonce,
+//                                    pszUser,
+//                                    pszRealm,
+//                                    pszPass,
+//                                    pszAlg,
+//                                    szNonceCount,
+//                                    pszMethod,
+//                                    pszQop,
+//                                    pszURI);
 
                         DigestCalcHA1(pszAlg, pszUser, pszRealm, pszPass, pszNonce, pszCNonce, HA1);
                         DigestCalcResponse(HA1, pszNonce, szNonceCount, pszCNonce, pszQop, pszMethod, pszURI, HA2, Response);
-                        LOG_SHOW("Response = %s client msgResponse:%s\n", Response, msgResponse);
+                        //LOG_SHOW("Response = %s client msgResponse:%s\n", Response, msgResponse);
 
                         if(strcmp(Response, msgResponse) == 0)
                         {
@@ -1176,7 +1184,7 @@ int http_data_accept(http_server_t *http, int userId)
     //int pos;
     int endPos;
     static int payloadNeedLen = 0;  //需要静态类型，用于重入
-    
+    static int dataProFaildCnt = 0;  //需要静态类型，用于重入
 
 
     //接收数据（来自 tcp 接口的数据）
@@ -1305,13 +1313,14 @@ int http_data_accept(http_server_t *http, int userId)
                 }
                 else if(ret == RET_OK)  //找到了空行    
                 {
-                    LOG_SHOW("解析http头部 成功\n");
-                    httphead_show(httpUser->head.parse);
+                    //LOG_SHOW("解析http头部 成功\n");
+                    //httphead_show(httpUser->head.parse);
 
                     memmove(httpUser->buf, httpUser->buf + 1, httpUser->bufLen - 1);   //去掉空行
                     httpUser->bufLen--;
                     
                     //LOG_INFO("http 头部处理完毕 ...");
+                    dataProFaildCnt = 0;
                     httpUser->status = http_status_head_pro;
                     http_data_accept(http, userId); //状态转移，然后重入
                 }
@@ -1327,16 +1336,16 @@ int http_data_accept(http_server_t *http, int userId)
             if(ret == RET_OK)    //成功
             {                   
                 payloadNeedLen = __get_http_payload_len(httpUser);  //获取负载长度，一般在http头部的 "Content-Length"后面
-                LOG_SHOW("----->__get_http_payload_len payloadNeedLen:%d\n", payloadNeedLen);
+                //LOG_SHOW("----->__get_http_payload_len payloadNeedLen:%d\n", payloadNeedLen);
 
                 if(payloadNeedLen < 0)
                 {
-                    LOG_ALARM("payloadLen < 0");
+                    //LOG_ALARM("payloadLen < 0");
                     payloadNeedLen = 0;
                 }
                 else if(payloadNeedLen > HTTP_PAYLOAD_BUF_SIZE)
                 {
-                    LOG_ALARM("负载长度超过缓存容量，需要额外处理");
+                    //LOG_ALARM("负载长度超过缓存容量，需要额外处理");
                     payloadNeedLen = HTTP_PAYLOAD_BUF_SIZE;
                 }
                 
@@ -1394,7 +1403,7 @@ int http_data_accept(http_server_t *http, int userId)
         case http_status_data_pro:
         {
             httpUser->payload.buf[httpUser->payload.len] = '\0';
-            LOG_SHOW("----->http_status_data_pro 开始 ......\n【%s】\n", httpUser->payload.buf);
+            //LOG_SHOW("----->http_status_data_pro 开始 ......\n【%s】\n", httpUser->payload.buf);
 
             httpUser->retHttpMsg = 0;
             sem_post(&(httpUser->semHttpMsgReady));    //发送信号 上层会接收到，目标是会话层session，
@@ -1403,24 +1412,55 @@ int http_data_accept(http_server_t *http, int userId)
             sem_wait(&(httpUser->semHttpMsgRecvComplete));  //等待对方完成，一般来说是把信息放到 session 的
                                                             //消息队列，如果队列满了，可能就阻塞，或者传回
                                                             //队列已满的消息，例如返回值
-            LOG_SHOW("---->http_status_data_pro 完成, retHttpMsg :%d\n", httpUser->retHttpMsg );                                                
-            if(httpUser->retHttpMsg == -1)
+            LOG_SHOW("http_status_data_pro 完成, retHttpMsg :%d\n", httpUser->retHttpMsg );                                                
+//            if(httpUser->retHttpMsg == -1)
+//            {
+//                //LOG_INFO("session 消息队列满了，来不及处理\n");
+//            }
+//            else if(httpUser->retHttpMsg == 0)
+//            {
+//                //LOG_INFO("已经存入消息队列\n");
+//                httpUser->status = http_status_end;    //状态转移
+//                http_data_accept(http, userId);
+//            }
+//            else if(httpUser->retHttpMsg == -3) 
+//            {
+//                LOG_SHOW("消息队列不允许被操作\n"); 
+//            }
+//            else if(httpUser->retHttpMsg == -2) 
+//            {
+//                //LOG_INFO("其他情况\n");;  
+//            }
+
+
+            if(httpUser->retHttpMsg == 0)
             {
-                //LOG_INFO("session 消息队列满了，来不及处理\n");
-            }
-            else if(httpUser->retHttpMsg == 0)
-            {
-                //LOG_INFO("已经存入消息队列\n");
+                //LOG_SHOW("已经存入消息队列\n");
                 httpUser->status = http_status_end;    //状态转移
                 http_data_accept(http, userId);
             }
-            else if(httpUser->retHttpMsg == -3) 
+            else    //没有被正确处理，可能需要阻塞
             {
-                LOG_SHOW("消息队列不允许被操作\n"); 
-            }
-            else if(httpUser->retHttpMsg == -2) 
-            {
-                //LOG_INFO("其他情况\n");;  
+                if(httpUser->retHttpMsg == -1)
+                {
+                    //LOG_SHOW("session 消息 无动作\n");
+                }
+                else if(httpUser->retHttpMsg == -2) 
+                {
+                    //LOG_SHOW("session 消息没有处理，阻塞\n"); 
+                }
+                
+                //测试：阻塞后，每隔1s 重入
+                
+                if(dataProFaildCnt > 3)
+                {
+                    LOG_ALARM("http_status_data_pro 失败重入次数大于%d", dataProFaildCnt);
+                    httpUser->status = http_status_end;    //状态转移
+                    http_data_accept(http, userId);
+                }
+                dataProFaildCnt++;
+                system("sleep 1");
+                http_data_accept(http, userId);
             }
                                 
         }break;
@@ -1691,7 +1731,7 @@ static int __http_client_msg_first_line_parse(http_client_t *client, int *endPos
             client->parse.code = atoi(client->parse.codeStr);
             if(client->parse.code > 0)
             {
-                LOG_SHOW("解析头部 version:%s code:%d reason:%s\n", client->parse.version, client->parse.code, client->parse.reason);
+                //LOG_SHOW("解析头部 version:%s code:%d reason:%s\n", client->parse.version, client->parse.code, client->parse.reason);
                 ret = RET_OK;
                 break;
             }
@@ -1775,7 +1815,7 @@ static int __http_client_msg_head_parse(http_client_t *client, int *endPos)
                            
         httphead_parse_head(client->parse.head, buf); 
 
-        httphead_show(client->parse.head);
+        //httphead_show(client->parse.head);
         
     }
     
@@ -1824,31 +1864,31 @@ void __http_client_digest_calc(http_client_t *client, char * pszMethod, char * p
     HASHHEX HA2 = "";
     HASHHEX Response;
 
-    LOG_SHOW("计算摘要值所需参数：\n"
-                            "pszNonce:%s\n"
-                            "pszCNonce:%s\n"
-                            "pszUser:%s\n"
-                            "pszRealm:%s\n"
-                            "pszPass:%s\n"
-                            "pszAlg:%s\n"
-                            "szNonceCount:%s\n"
-                            "pszMethod:%s\n"
-                            "pszQop:%s\n"
-                            "pszURI:%s\n",
-                            pszNonce,
-                            pszCNonce,
-                            pszUser,
-                            pszRealm,
-                            pszPass,
-                            pszAlg,
-                            szNonceCount,
-                            pszMethod,
-                            pszQop,
-                            pszURI);
+//    LOG_SHOW("计算摘要值所需参数：\n"
+//                            "pszNonce:%s\n"
+//                            "pszCNonce:%s\n"
+//                            "pszUser:%s\n"
+//                            "pszRealm:%s\n"
+//                            "pszPass:%s\n"
+//                            "pszAlg:%s\n"
+//                            "szNonceCount:%s\n"
+//                            "pszMethod:%s\n"
+//                            "pszQop:%s\n"
+//                            "pszURI:%s\n",
+//                            pszNonce,
+//                            pszCNonce,
+//                            pszUser,
+//                            pszRealm,
+//                            pszPass,
+//                            pszAlg,
+//                            szNonceCount,
+//                            pszMethod,
+//                            pszQop,
+//                            pszURI);
     
     DigestCalcHA1(pszAlg, pszUser, pszRealm, pszPass, pszNonce, pszCNonce, HA1);
     DigestCalcResponse(HA1, pszNonce, szNonceCount, pszCNonce, pszQop, pszMethod, pszURI, HA2, Response);
-    LOG_SHOW("Response = %s\n", Response);
+    //LOG_SHOW("Response = %s\n", Response);
 
     
     //把计算结果存入本地
@@ -1883,7 +1923,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
     int lenBasic, lenDigest;
     //int ret;
     
-    LOG_SHOW(" 客户端 http 报文接收处理\n");
+    //LOG_SHOW(" 客户端 http 报文接收处理\n");
 
     if(client == NULL) return RET_FAILD;
 
@@ -1918,7 +1958,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
                             //data->valueEn == 1 && 
                             strncmp(HTTP_CLIENT_MSG_AUTH_BASIC, data->key, lenBasic) == 0)
                         {
-                            LOG_SHOW("需要基础认证 ...\n");                 
+                            //LOG_SHOW("需要基础认证 ...\n");                 
                             authType = _isBasic;
                             
 
@@ -1993,7 +2033,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
         keyvalue_data_t *data_opaque;
         keyvalue_data_t *data_qop;
 
-        keyvalue_show(keyvalue);
+        //keyvalue_show(keyvalue);
         
         data_realm = keyvalue_get_data_by_str(keyvalue, HTTP_DIGWST_AUTH_REALM);
         data_nonce = keyvalue_get_data_by_str(keyvalue, HTTP_DIGWST_AUTH_NONCE);
@@ -2005,7 +2045,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
             data_opaque != NULL &&
             data_qop != NULL)
         {
-            LOG_SHOW("计算摘要认证 ...\n");
+            //LOG_SHOW("计算摘要认证 ...\n");
 
 
             //把摘要认证所需参数存入本地
@@ -2062,7 +2102,7 @@ static int __http_client_msg_recv_pro(http_client_t *client)
             //bufAuth[pos] = '\n';
             //bufAuth[pos+1] = '\0';
             
-            LOG_SHOW("发送摘要认证测试 长度:%d 内容:%s\n", pos, bufAuth);
+            LOG_INFO("发送摘要认证测试 长度:%d 内容:%s\n", pos, bufAuth);
             tcp_client_send(client->tcp, bufAuth, pos);
         }
         else
@@ -2274,7 +2314,7 @@ int http_client_accept(http_client_t *client)
                 else if(ret == RET_OK)  //找到了空行    
                 {
                   
-                    LOG_INFO("http 头部处理完毕 ...");
+                    //LOG_INFO("http 头部处理完毕 ...");
                     client->status = http_status_head_pro;
                     http_client_accept(client); //状态转移，然后重入
                 }
@@ -2289,7 +2329,7 @@ int http_client_accept(http_client_t *client)
             {
                 payloadNeedLen = __http_client_get_payload_len(client);
                 
-                LOG_SHOW("----->__get_http_payload_len payloadNeedLen:%d\n", payloadNeedLen);
+                //LOG_SHOW("----->__get_http_payload_len payloadNeedLen:%d\n", payloadNeedLen);
 
                 if(payloadNeedLen < 0)
                 {
@@ -2311,7 +2351,10 @@ int http_client_accept(http_client_t *client)
             else 
             {
                 if(ret == 401)
-                    LOG_SHOW("http_status_head_pro：http 401 处理， 对方要求认证 \n");
+                {
+                    //LOG_SHOW("http回复码为 401 ， 对方要求认证 \n");
+                }
+                    
    
                 client->status = http_status_recv_head_find;    
                 http_client_accept(client); 
@@ -2359,12 +2402,12 @@ int http_client_accept(http_client_t *client)
             
             sem_wait(&(client->semHttpMsgRecvComplete));  
             
-            LOG_SHOW("---->http_status_data_pro 完成, retHttpMsg :%d\n", client->retHttpMsg ); 
+            //LOG_SHOW("---->http_status_data_pro 完成, retHttpMsg :%d\n", client->retHttpMsg ); 
             
             
             if(client->retHttpMsg == 0)
             {
-                LOG_SHOW("已经存入消息队列\n");
+                //LOG_SHOW("已经存入消息队列\n");
                 client->status = http_status_end;    //状态转移
                 http_client_accept(client);
             }
@@ -2372,17 +2415,13 @@ int http_client_accept(http_client_t *client)
             {
                 if(client->retHttpMsg == -1)
                 {
-                    //LOG_SHOW("session 消息队列满了，来不及处理\n");
-                }
-                else if(client->retHttpMsg == -3) 
-                {
-                    //LOG_SHOW("消息队列不允许被操作\n"); 
+                    //LOG_SHOW("session 消息 无动作\n");
                 }
                 else if(client->retHttpMsg == -2) 
                 {
-                    //LOG_SHOW("其他情况\n");;  
+                    //LOG_SHOW("session 消息没有处理，阻塞\n"); 
                 }
-
+                
                 //测试：阻塞后，每隔1s 重入
                 system("sleep 1");
                 http_client_accept(client);

@@ -7,7 +7,7 @@
 #include "soap.h"
 #include "pool2.h"
 
-
+#include "log.h"
 
 
 
@@ -652,6 +652,40 @@ void __test_show_node(soap_node_t *node)
     printf("</%s>\n", node->name);
 }
 
+void __test_show_node_print2log(soap_node_t *node)
+{
+    if(node == NULL)return ;
+    LOG_SHOW("<%s", node->name);
+    
+    KEYVALUE_FOREACH_START(node->attr, iter){
+        if(iter->keyEn == 1 && iter->valueEn == 1)LOG_SHOW(" %s=%s", (char *)(iter->key), (char*)(iter->value));
+    }KEYVALUE_FOREACH_END;
+    
+    if(node->son->head->next == NULL && node->valueEn != 1)
+    {
+        LOG_SHOW("/>\n");
+        return;
+    }        
+    else
+    {
+        LOG_SHOW(">\n");  
+    }  
+    
+    if(node->valueEn == 1)LOG_SHOW("%s\n", node->value);
+
+    
+    LINK_FOREACH(node->son, linkProbe)
+    {
+        if(linkProbe->en == 1)
+        {
+            __test_show_node((soap_node_t *)(linkProbe->data));
+        }       
+    }
+    
+    LOG_SHOW("</%s>\n", node->name);
+}
+
+
 void __test_show_soap(soap_obj_t *soap)
 {
     if(soap == NULL)return ;
@@ -663,8 +697,15 @@ void __test_show_soap(soap_obj_t *soap)
 //显示接口
 void soap_node_show(soap_node_t *node)
 {
+    printf("\n---------------------soap node show---------------------\n");
     __test_show_node(node);
 }
+void soap_node_show_print2log(soap_node_t *node)
+{
+     LOG_SHOW("\n---------------------soap node show---------------------\n");
+    __test_show_node_print2log(node);
+}
+
 
 
 void soap_test()
